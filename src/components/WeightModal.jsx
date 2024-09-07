@@ -4,20 +4,17 @@ import "./Modal.css"; // Ensure this includes your existing modal and checkbox s
 import Button from "../layouts/Button";
 
 const Modal = ({ img, title, price, description, isOpen, onClose }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
     additions: [],
   });
 
-  const { addToCart } = useContext(CartContext); // Access addToCart function
+  const { addToCart } = useContext(CartContext); // Access addToCart function from CartContext
 
   if (!isOpen) return null;
 
-  const handleQuantityChange = (delta) => {
-    setQuantity((prev) => Math.max(1, prev + delta));
-  };
-
+  // Handle vegetable selection
   const handleVegetableChange = (vegetable) => {
     setSelectedOptions((prev) => ({
       ...prev,
@@ -27,24 +24,33 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
     }));
   };
 
+  // Extract the numeric price from the addition string
   const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/);
-    return priceMatch ? parseFloat(priceMatch[1]) : 0;
+    const priceMatch = addition.match(/(\d+)/); // Extract number from string
+    return priceMatch ? parseFloat(priceMatch[1]) : 0; // Return price as float
   };
 
+  // Handle addition selection
   const handleAdditionChange = (addition) => {
     const additionPrice = getPrice(addition);
+
     setSelectedOptions((prev) => ({
       ...prev,
       additions: prev.additions.some((item) => item.addition === addition)
-        ? prev.additions.filter((item) => item.addition !== addition)
-        : [...prev.additions, { addition, price: additionPrice }],
+        ? prev.additions.filter((item) => item.addition !== addition) // Remove if deselected
+        : [...prev.additions, { addition, price: additionPrice }], // Add the new addition
     }));
   };
 
+  // Calculate the total price
   const calculateTotalPrice = () => {
+    // Sum up the prices of the selected additions
     const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
-    const totalPrice = (parseFloat(price) + additionsTotal) * quantity;
+
+    // Multiply the base price by the selected grams (divided by 100) and add the additions
+    const totalPrice = parseFloat(price) * (selectedGrams / 100) + additionsTotal;
+
+    // Format to show no decimals for whole numbers and two decimals for non-whole numbers
     return Number.isInteger(totalPrice) ? totalPrice : totalPrice.toFixed(2);
   };
 
@@ -54,13 +60,14 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
       id: `${title}-${Math.random().toString(36).substring(7)}`, // Generate a unique ID
       img,
       title,
-      price: parseFloat(price),
-      quantity,
+      price: parseFloat(price), // Base price of the item per 100g (not multiplied by grams)
+      quantity: selectedGrams, // Quantity in grams
+      isWeighted: true, // Flag to indicate this is a weighted item
       selectedOptions,
-      totalPrice: parseFloat(totalPrice),
+      totalPrice: parseFloat(totalPrice), // Total price calculated based on grams
     };
 
-    addToCart(itemToAdd); // Add to cart via context
+    addToCart(itemToAdd); // Add the item to the cart via context
     onClose(); // Close the modal
   };
 
@@ -79,6 +86,22 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
         </p>
 
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
+
+        {/* Dropdown for selecting quantity in grams */}
+        <div className="modal-options text-center">
+          <h3 className="text-2xl font-semibold pb-10">:כמות (בגרמים)</h3>
+          <select
+            className="modal-dropdown mx-auto block"
+            value={selectedGrams}
+            onChange={(e) => setSelectedGrams(parseInt(e.target.value))}
+          >
+            {[200, 300, 400, 500, 600, 700, 800, 900, 1000].map((grams) => (
+              <option key={grams} value={grams}>
+                {grams} גרם
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Options for Vegetables */}
         <div className="modal-options">
@@ -116,16 +139,6 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
               </div>
             )
           )}
-        </div>
-
-        <div className="modal-quantity">
-          <button className="quantity-button" onClick={() => handleQuantityChange(-1)}>
-            -
-          </button>
-          <span className="quantity-display">{quantity}</span>
-          <button className="quantity-button" onClick={() => handleQuantityChange(1)}>
-            +
-          </button>
         </div>
 
         <div className="modal-add-button-container">

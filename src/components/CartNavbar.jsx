@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Link as ScrollLink } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
 import Button from "../layouts/Button.jsx";
 
-const Navbar = () => {
+const CartNavbar = () => {
   const [menu, setMenu] = useState(false);
 
   const handleChange = () => {
@@ -25,16 +24,16 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-row items-center text-lg font-medium gap-8">
-          <ScrollLink to="home" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
+          {/* Use regular anchor links for navigation */}
+          <RouterLink to="/" className="hover:text-brightColor transition-all cursor-pointer">
             בית
-          </ScrollLink>
-          <ScrollLink to="about" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
+          </RouterLink>
+          <RouterLink to="/#about" className="hover:text-brightColor transition-all cursor-pointer">
             עלינו
-          </ScrollLink>
-          <ScrollLink to="menu" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
+          </RouterLink>
+          <RouterLink to="/#menu" className="hover:text-brightColor transition-all cursor-pointer">
             תפריט
-          </ScrollLink>
-          {/* Use Router Link for the Cart Page */}
+          </RouterLink>
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
@@ -57,37 +56,15 @@ const Navbar = () => {
           menu ? "translate-x-0" : "-translate-x-full"
         } md:hidden flex flex-col absolute bg-black text-white left-0 top-20 font-semibold text-2xl text-center pt-8 pb-4 gap-8 w-full h-fit transition-transform duration-300`}
       >
-        <ScrollLink
-          to="home"
-          spy={true}
-          smooth={true}
-          duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
-          onClick={closeMenu}
-        >
+        <RouterLink to="/" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           בית
-        </ScrollLink>
-        <ScrollLink
-          to="about"
-          spy={true}
-          smooth={true}
-          duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
-          onClick={closeMenu}
-        >
+        </RouterLink>
+        <RouterLink to="/#about" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           עלינו
-        </ScrollLink>
-        <ScrollLink
-          to="menu"
-          spy={true}
-          smooth={true}
-          duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
-          onClick={closeMenu}
-        >
+        </RouterLink>
+        <RouterLink to="/#menu" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           תפריט
-        </ScrollLink>
-        {/* Cart Link for Mobile */}
+        </RouterLink>
         <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           עגלה
         </RouterLink>
@@ -98,4 +75,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default CartNavbar;
