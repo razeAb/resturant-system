@@ -34,7 +34,7 @@
   border: none;
   font-size: 40px;
   cursor: pointer;
-  color: #22d3ee;
+  color: red;
 }
 
 /* Image styling */
@@ -189,6 +189,50 @@
   align-items: center;
   margin-bottom: 8px;
   flex-direction: row-reverse; /* To align checkboxes from right to left */
+}
+
+/* Gram Adjustment Buttons */
+.gram-adjustment-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* Consistent Plus and Minus Buttons */
+.gram-button {
+  font-size: 24px; /* Same as quantity buttons */
+  width: 20px;
+  height: 20px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.gram-button:disabled {
+  background-color: #ccc; /* Disable button when not clickable */
+  cursor: not-allowed;
+}
+
+.gram-button:hover:not(:disabled) {
+  background-color: #e0e0e0; /* Hover effect to match quantity buttons */
+  transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+.gram-display {
+  font-size: 12px; /* Consistent with quantity display */
+  font-weight: bold;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 60px;
+  margin: 0 15px; /* Space between plus and minus buttons */
 }
 
 /* Responsive adjustments */

@@ -19,8 +19,12 @@ const Navbar = () => {
     <div className="fixed w-full bg-white shadow-[0_3px_10px_rgba(0,0,0,0.2)] z-50">
       <div className="flex flex-row justify-between p-5 md:px-32">
         <div className="flex items-center">
-          <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
-          <h1 className="text-xl font-semibold ml-2">hungry</h1>
+          <RouterLink to="/">
+            <div className="flex items-center cursor-pointer">
+              <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
+              <h1 className="text-xl font-semibold ml-2">hungry</h1>
+            </div>
+          </RouterLink>
         </div>
 
         {/* Desktop Navigation */}
@@ -28,9 +32,9 @@ const Navbar = () => {
           <ScrollLink to="home" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
             בית
           </ScrollLink>
-          <ScrollLink to="about" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
+          <RouterLink to="/about" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
             עלינו
-          </ScrollLink>
+          </RouterLink>
           <ScrollLink to="menu" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
             תפריט
           </ScrollLink>
@@ -38,7 +42,7 @@ const Navbar = () => {
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
-          <Button title="Login" />
+          {/* <Button title="Login" /> */}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -67,8 +71,8 @@ const Navbar = () => {
         >
           בית
         </ScrollLink>
-        <ScrollLink
-          to="about"
+        <RouterLink
+          to="/about"
           spy={true}
           smooth={true}
           duration={500}
@@ -76,7 +80,7 @@ const Navbar = () => {
           onClick={closeMenu}
         >
           עלינו
-        </ScrollLink>
+        </RouterLink>
         <ScrollLink
           to="menu"
           spy={true}
@@ -92,7 +96,7 @@ const Navbar = () => {
           עגלה
         </RouterLink>
 
-        <Button title="Login" />
+        {/* <Button title="Login" /> */}
       </div>
     </div>
   );

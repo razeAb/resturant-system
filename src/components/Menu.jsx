@@ -15,16 +15,16 @@ const Menu = () => {
         <DishesCard
           id="6"
           img="/photos/ontrib.jpg"
-          title="אונטרייב, צלי כתף חריפות 18 שקל ל 100 גרם"
-          price="18"
+          title="אונטרייב, צלי כתף  22 שקל ל 100 גרם"
+          price="22"
           toggleOptions
           modalType="weighted"
         />
         <DishesCard
           id="7"
           img="/photos/asadoBone.webp"
-          title="אסאדו בלי עצם ,צוואר טלה 22 שקל ל 100 גרם"
-          price="22"
+          title="אסאדו בלי עצם ,צוואר טלה 26 שקל ל 100 גרם"
+          price="26"
           toggleOptions
           modalType="weighted"
         />
@@ -39,7 +39,7 @@ const Menu = () => {
         <DishesCard
           id="9"
           img="/photos/shoulder.jpeg"
-          title="כתף טלה שלם הזמנה לפני יום 30 שקל ל 100 גרם"
+          title="כתף טלה שלם הזמנה לפני יום 300 שקל ל 1 לקילו"
           price="30"
           toggleOptions
           modalType="weighted"

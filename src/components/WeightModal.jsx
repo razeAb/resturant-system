@@ -124,7 +124,7 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["הקפצת בלסמי 5", "12 צלי כתף", "אונטרייב 12", "ביקון טלה 10", "אסאדו 15", "רוטב גבינה 8", "פטריות 5", "ג׳בטה 5"].map(
+          {[  "רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map(
             (addition, index) => (
               <div key={index} className="checkbox-wrapper-30 checkbox-container">
                 <span className="checkbox">

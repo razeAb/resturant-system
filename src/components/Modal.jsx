@@ -32,34 +32,64 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
     return priceMatch ? parseFloat(priceMatch[1]) : 0;
   };
 
+  // Handle gram adjustment for certain additions (limit to 50g or 100g)
+  const handleGramAdjustment = (addition, delta) => {
+    setSelectedOptions((prev) => ({
+      ...prev,
+      additions: prev.additions.map((item) =>
+        item.addition === addition
+          ? {
+              ...item,
+              grams: item.grams + delta <= 100 && item.grams + delta >= 50 ? item.grams + delta : item.grams,
+            }
+          : item
+      ),
+    }));
+  };
+
   const handleAdditionChange = (addition) => {
     const additionPrice = getPrice(addition);
+    const isWeightAddition = addition.includes("50 גרם");
+
     setSelectedOptions((prev) => ({
       ...prev,
       additions: prev.additions.some((item) => item.addition === addition)
         ? prev.additions.filter((item) => item.addition !== addition)
-        : [...prev.additions, { addition, price: additionPrice }],
+        : [...prev.additions, { addition, price: additionPrice, grams: isWeightAddition ? 50 : null }],
     }));
   };
 
   const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
+    const additionsTotal = selectedOptions.additions.reduce((total, item) => {
+      // Check if grams are 50 or 100 and return corresponding pricing logic
+      if (item.grams === 50) {
+        return total + 13; // Add 13 for 50 grams
+      } else if (item.grams === 100) {
+        return total + 26; // Add 26 for 100 grams
+      } else {
+        return total + item.price; // Default price if no grams
+      }
+    }, 0);
+
     const totalPrice = (parseFloat(price) + additionsTotal) * quantity;
     return Number.isInteger(totalPrice) ? totalPrice : totalPrice.toFixed(2);
   };
-
   const handleAddToCart = () => {
     const totalPrice = calculateTotalPrice();
+    const isWeighted = selectedOptions.additions.some((add) => add.grams !== null);
+
     const itemToAdd = {
       id: `${title}-${Math.random().toString(36).substring(7)}`, // Generate a unique ID
       img,
       title,
-      price: parseFloat(price),
-      quantity,
-      selectedOptions,
-      totalPrice: parseFloat(totalPrice),
+      price: parseFloat(price), // base price
+      quantity, // quantity of the meal
+      selectedOptions, // includes additions and their grams
+      totalPrice: parseFloat(totalPrice), // calculated total price
+      isWeighted,
     };
 
+    console.log("Adding to cart:", itemToAdd); // Add this to debug
     addToCart(itemToAdd); // Add to cart via context
     onClose(); // Close the modal
   };
@@ -98,24 +128,52 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
           ))}
         </div>
 
-        {/* Options for Additions */}
+        {/* Options for Additions with Gram Control */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["הקפצת בלסמי 5", "12 צלי כתף", "אונטרייב 12", "ביקון טלה 10", "אסאדו 15", "רוטב גבינה 8", "פטריות 5", "ג׳בטה 5"].map(
-            (addition, index) => (
-              <div key={index} className="checkbox-wrapper-30 checkbox-container">
-                <span className="checkbox">
-                  <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
-                  <svg>
-                    <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                  </svg>
-                </span>
-                <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                  {addition}
-                </label>
-              </div>
-            )
-          )}
+          {[
+            "הקפצת בלסמי 5",
+            "13 (תוספת 50 גרם) צלי כתף",
+            "אונטרייב (תוספת 50 גרם) 13",
+            "ביקון טלה  10",
+            "אסאדו (תוספת 50 גרם) 15",
+            "רוטב גבינה 8",
+            "פטריות 5",
+            "ג׳בטה 5",
+          ].map((addition, index) => (
+            <div key={index} className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
+                {addition}
+              </label>
+
+              {/* If addition includes weight, add gram adjustment buttons */}
+              {addition.includes("50 גרם") && (
+                <div className="gram-adjustment-buttons">
+                  {/* Conditionally hide minus button if it's already 50 */}
+                  {selectedOptions.additions.find((item) => item.addition === addition)?.grams > 50 && (
+                    <button className="gram-button" onClick={() => handleGramAdjustment(addition, -50)}>
+                      -
+                    </button>
+                  )}
+                  <span className="gram-display">
+                    {selectedOptions.additions.find((item) => item.addition === addition)?.grams || 50} גרם
+                  </span>
+                  {/* Conditionally hide plus button if it's already 100 */}
+                  {selectedOptions.additions.find((item) => item.addition === addition)?.grams < 100 && (
+                    <button className="gram-button" onClick={() => handleGramAdjustment(addition, 50)}>
+                      +
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="modal-quantity">

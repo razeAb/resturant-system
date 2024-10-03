@@ -2,15 +2,19 @@ import React, { useState, useContext } from "react";
 import Button from "./Button";
 import Modal from "../components/Modal"; // Default modal
 import WeightedModal from "../components/WeightModal"; // Import WeightedModal
+import AlertModal from "../components/AlertModal"; // Import AlertModal
 import "../layouts/DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
 
 const DishesCard = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // State for AlertModal
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
 
   const handleButtonClick = () => {
-    if (props.toggleOptions) {
+    if (props.id === "8" || props.id === "9") {
+      setIsAlertOpen(true); // Open the AlertModal for items that require a day-before order
+    } else if (props.toggleOptions) {
       setIsModalOpen(true); // Open the modal for items with options
     } else {
       // For items without options, simply log or handle the action as before
@@ -20,6 +24,10 @@ const DishesCard = (props) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const handleCloseAlert = () => {
+    setIsAlertOpen(false); // Close the AlertModal
   };
 
   const handleAddToCart = (quantity, selectedOptions) => {
@@ -75,6 +83,9 @@ const DishesCard = (props) => {
           )}
         </>
       )}
+
+      {/* Render the AlertModal */}
+      <AlertModal isOpen={isAlertOpen} onClose={handleCloseAlert} />
     </div>
   );
 };

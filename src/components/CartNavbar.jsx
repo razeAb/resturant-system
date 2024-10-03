@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
-import Button from "../layouts/Button.jsx";
+import Button from "../layouts/Button.jsx"; // Assuming Button is being used elsewhere
 
 const CartNavbar = () => {
   const [menu, setMenu] = useState(false);
@@ -18,26 +18,23 @@ const CartNavbar = () => {
     <div className="fixed w-full bg-white shadow-[0_3px_10px_rgba(0,0,0,0.2)] z-50">
       <div className="flex flex-row justify-between p-5 md:px-32">
         <div className="flex items-center">
-          <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
-          <h1 className="text-xl font-semibold ml-2">hungry</h1>
+          {/* Wrap logo and name inside RouterLink for navigation */}
+          <RouterLink to="/" onClick={closeMenu}>
+            <div className="flex items-center cursor-pointer">
+              <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
+              <h1 className="text-xl font-semibold ml-2">hungry</h1>
+            </div>
+          </RouterLink>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-row items-center text-lg font-medium gap-8">
-          {/* Use regular anchor links for navigation */}
-          <RouterLink to="/" className="hover:text-brightColor transition-all cursor-pointer">
-            בית
+          <RouterLink to="/" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
+            חזרה לבית
           </RouterLink>
-          <RouterLink to="/#about" className="hover:text-brightColor transition-all cursor-pointer">
-            עלינו
-          </RouterLink>
-          <RouterLink to="/#menu" className="hover:text-brightColor transition-all cursor-pointer">
-            תפריט
-          </RouterLink>
-          <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
+          <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
             עגלה
           </RouterLink>
-          <Button title="Login" />
         </nav>
 
         {/* Mobile Menu Button */}
@@ -57,19 +54,11 @@ const CartNavbar = () => {
         } md:hidden flex flex-col absolute bg-black text-white left-0 top-20 font-semibold text-2xl text-center pt-8 pb-4 gap-8 w-full h-fit transition-transform duration-300`}
       >
         <RouterLink to="/" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
-          בית
-        </RouterLink>
-        <RouterLink to="/#about" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
-          עלינו
-        </RouterLink>
-        <RouterLink to="/#menu" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
-          תפריט
+          חזרה לבית
         </RouterLink>
         <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           עגלה
         </RouterLink>
-
-        <Button title="Login" />
       </div>
     </div>
   );
