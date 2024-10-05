@@ -23,6 +23,7 @@ const CartPage = () => {
   // Group items by id and calculate the quantity for identical items
   const groupCartItems = () => {
     const groupedItems = {};
+
     cartItems.forEach((item) => {
       if (groupedItems[item.id]) {
         groupedItems[item.id].quantity += item.quantity;
@@ -30,40 +31,60 @@ const CartPage = () => {
         groupedItems[item.id] = { ...item };
       }
     });
+
     return Object.values(groupedItems);
   };
 
-  // Calculate the total cost of each item, considering additional weights for grams
+  // Updated calculateItemTotal to apply the division by 10 if the id is greater than 10
   const calculateItemTotal = (item) => {
-    const additionsTotal =
-      item.selectedOptions?.additions?.reduce((total, add) => {
-        if (add.grams === 50) {
-          return total + 13; // Add 13 ILS for 50 grams
-        } else if (add.grams === 100) {
-          return total + 26; // Add 26 ILS for 100 grams
-        } else {
-          return total + add.price;
-        }
-      }, 0) || 0;
+    // Check if the item has selected options and additions (i.e., if it has a modal)
+    const hasAdditions = item.selectedOptions && item.selectedOptions.additions;
 
-    const itemTotal = item.isWeighted ? item.price * item.quantity + additionsTotal : item.price * item.quantity + additionsTotal;
+    // If the item has additions, calculate the additionsTotal, otherwise set it to 0
+    const additionsTotal = hasAdditions ? item.selectedOptions.additions.reduce((total, add) => total + add.price, 0) : 0;
 
-    return parseFloat(itemTotal.toFixed(2)); // Round to 2 decimal places
+    // Calculate the total price as (base price + additionsTotal) * quantity
+    let itemTotal = (item.price + additionsTotal) * item.quantity;
+
+    if (item.id > 8) {
+      itemTotal /= 10;
+    }
+    
+
+    return itemTotal; // Return the total price, formatted to 2 decimal places
+  };
+
+  // Function to calculate the total for the entire cart
+  const calculateCartTotal = () => {
+    return cartItems.reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0).toFixed(2);
   };
 
   const sendWhatsAppOrder = () => {
-    const currentDay = new Date().getDay();
+    const currentDay = new Date().getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 3 = Wednesday)
+
+    // If it's Wednesday (day 3), show the modal instead of sending the message
     if (currentDay === 3) {
-      setIsClosedModalOpen(true);
-      return;
+      setIsClosedModalOpen(true); // Open the modal that says the restaurant is closed
+      return; // Stop execution here to prevent sending the WhatsApp message
     }
 
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables = item.selectedOptions?.vegetables?.join(", ") || "אין";
+        const vegetables = item.id >= 10 && item.id <= 16 ? "" : item.selectedOptions?.vegetables?.join(", ") || "אין";
         const additions =
-          item.selectedOptions?.additions?.map((add) => `${add.addition} ${add.grams ? `(${add.grams} גרם)` : ""}`).join(", ") || "אין";
+          item.id >= 10 && item.id <= 16
+            ? ""
+            : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || "אין";
+
+        if (item.id >= 10 && item.id <= 16) {
+          return `
+            מוצר: ${item.title}
+            כמות: ${item.isWeighted ? item.quantity + " גרם" : item.quantity}
+            מחיר ליחידה: ${item.price} ILS
+            מחיר סופי: ${itemTotalPrice} ILS
+          `.trim();
+        }
 
         return `
           מוצר: ${item.title}
@@ -76,9 +97,7 @@ const CartPage = () => {
       })
       .join("\n\n");
 
-    const totalPrice = groupCartItems()
-      .reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0)
-      .toFixed(2);
+    const totalPrice = groupCartItems().reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0);
 
     const message = `פרטי הזמנה:\n\n${orderDetails}\n\nסה"כ: ${totalPrice} ILS`;
     const whatsappUrl = `https://wa.me/+972507203099?text=${encodeURIComponent(message)}`;
@@ -108,8 +127,12 @@ const CartPage = () => {
                 <th>תמונה</th>
                 <th>שם מוצר</th>
                 <th>כמות</th>
-                <th>ירקות</th>
-                <th>תוספות</th>
+                {groupCartItems().some((item) => item.id < 10 || item.id > 16) && (
+                  <>
+                    <th>ירקות</th>
+                    <th>תוספות</th>
+                  </>
+                )}
                 <th>מחיר ליחידה</th>
                 <th>מחיר סופי</th>
                 <th>פעולות</th>
@@ -125,13 +148,12 @@ const CartPage = () => {
                       <img src={item.img} alt={item.title} style={{ width: "100px", borderRadius: "8px" }} />
                     </td>
                     <td data-label="שם מוצר">{item.title}</td>
-                    <td data-label="כמות">{item.isWeighted ? `${item.quantity} גרם` : item.quantity}</td>
+                    <td data-label="כמות">{item.isWeighted ? item.quantity + " גרם" : item.quantity}</td>
+
+                    {/* Show vegetables and additions for all items */}
                     <td data-label="ירקות">{item.selectedOptions?.vegetables?.join(", ") || "אין"}</td>
-                    <td data-label="תוספות">
-                      {item.selectedOptions?.additions
-                        ?.map((add) => `${add.addition} ${add.grams ? `(${add.grams} גרם)` : ""}`)
-                        .join(", ") || "אין"}
-                    </td>
+                    <td data-label="תוספות">{item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || "אין"}</td>
+
                     <td data-label="מחיר ליחידה">{item.price} ILS</td>
                     <td data-label="מחיר סופי">{itemTotalPrice} ILS</td>
                     <td data-label="פעולות">
@@ -155,21 +177,16 @@ const CartPage = () => {
             </tbody>
           </table>
         </div>
-        <div className="cart-total">
-          סה"כ:{" "}
-          {groupCartItems()
-            .reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0)
-            .toFixed(2)}{" "}
-          ILS
-        </div>
+        <div className="cart-total">סה"כ: {calculateCartTotal()} ILS</div>
         <div style={{ marginTop: "20px" }}>
           <button onClick={handleOrderNow}>הזמן עכשיו</button>
         </div>
+
         {showConfirmationModal && !isClosedModalOpen && (
           <div className="modal-overlay">
             <div className="modal-content">
               <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
-              <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>ההזמנה שלך תישלח לוואטסאפ. נא לאשר.</p>
+              <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>ההזמנה שלך תישלח לוואטסאפ. נא לאשר.</p>{" "}
               <div className="modal-buttons" style={{ display: "flex", justifyContent: "space-between" }}>
                 <button
                   onClick={sendWhatsAppOrder}
@@ -197,6 +214,7 @@ const CartPage = () => {
           </div>
         )}
       </div>
+
       <style jsx>{`
         .cart-table {
           padding-top: 40px;

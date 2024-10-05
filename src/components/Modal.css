@@ -106,7 +106,14 @@
   cursor: pointer;
   font-size: 18px;
   text-align: center;
+  transition: background-color 0.3s ease;
 }
+
+.modal-add-button:hover {
+  background-color: #0056b3;
+}
+
+/* Checkbox styling */
 .checkbox-wrapper-30 .checkbox {
   --bg: #fff;
   --brdr: #d1d6ee;
@@ -191,168 +198,41 @@
   flex-direction: row-reverse; /* To align checkboxes from right to left */
 }
 
-/* Gram Adjustment Buttons */
-.gram-adjustment-buttons {
+/* Gram-based button styling */
+.addition-buttons {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
   margin-bottom: 10px;
-}
-
-/* Consistent Plus and Minus Buttons */
-.gram-button {
-  font-size: 24px; /* Same as quantity buttons */
-  width: 20px;
-  height: 20px;
-  background: #f0f0f0;
+  padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+  flex-direction: row-reverse; 
 }
 
-.gram-button:disabled {
-  background-color: #ccc; /* Disable button when not clickable */
-  cursor: not-allowed;
+.addition-buttons span {
+  flex-grow: 1;
+  font-size: 16px;
+  text-align: right;
 }
 
-.gram-button:hover:not(:disabled) {
-  background-color: #e0e0e0; /* Hover effect to match quantity buttons */
-  transform: scale(1.1); /* Slightly enlarge on hover */
-}
-
-.gram-display {
-  font-size: 12px; /* Consistent with quantity display */
-  font-weight: bold;
+.gram-button {
+  background-color: gray;
+  color: white;
+  border: none;
+  border-radius: 5px;
   padding: 5px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  text-align: center;
-  min-width: 60px;
-  margin: 0 15px; /* Space between plus and minus buttons */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 14px;
+  margin-left: 10px;
 }
 
-/* Responsive adjustments */
-@media screen and (max-width: 600px) {
-  .modal-content {
-    width: 100%; /* Full width on small screens */
-    padding: 10px; /* Reduce padding */
-    margin: 0 10px; /* Ensure there's some margin */
-  }
+.gram-button:hover {
+  background-color: #0056b3;
+}
 
-  .modal-price,
-  .modal-description {
-    font-size: 18px; /* Smaller text */
-  }
-
-  .modal-add-button {
-    font-size: 16px; /* Adjust button text size */
-  }
-
-  .quantity-button {
-    font-size: 20px; /* Reduce button size */
-    width: 30px;
-    height: 30px;
-  }
-
-  .quantity-display {
-    font-size: 20px;
-  }
-  .modal-dropdown {
-    width: 100px; /* Adjust this value as needed */
-    padding: 5px;
-    margin: 0 auto; /* This centers the dropdown horizontally */
-    display: block; /* Ensures the dropdown is treated as a block-level element */
-    text-align: center; /* Centers the text inside the dropdown */
-  }
-
-  .modal-options {
-    text-align: center; /* Centers the text inside this section */
-  }
-  .checkbox-wrapper-30 .checkbox {
-    --bg: #fff;
-    --brdr: #d1d6ee;
-    --brdr-actv: #1e2235;
-    --brdr-hovr: #bbc1e1;
-    --dur: calc((var(--size, 2) / 2) * 0.6s);
-    display: inline-block;
-    width: calc(var(--size, 1) * 22px);
-    position: relative;
-  }
-
-  .checkbox-wrapper-30 .checkbox:after {
-    content: "";
-    width: 100%;
-    padding-top: 100%;
-    display: block;
-  }
-
-  .checkbox-wrapper-30 .checkbox > * {
-    position: absolute;
-  }
-
-  .checkbox-wrapper-30 .checkbox input {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    -webkit-tap-highlight-color: transparent;
-    cursor: pointer;
-    background-color: var(--bg);
-    border-radius: calc(var(--size, 1) * 4px);
-    border: calc(var(--newBrdr, var(--size, 1)) * 1px) solid;
-    color: var(--newBrdrClr, var(--brdr));
-    outline: none;
-    margin: 0;
-    padding: 0;
-    transition: all calc(var(--dur) / 3) linear;
-  }
-
-  .checkbox-wrapper-30 .checkbox input:hover,
-  .checkbox-wrapper-30 .checkbox input:checked {
-    --newBrdr: calc(var(--size, 1) * 2);
-  }
-
-  .checkbox-wrapper-30 .checkbox input:hover {
-    --newBrdrClr: var(--brdr-hovr);
-  }
-
-  .checkbox-wrapper-30 .checkbox input:checked {
-    --newBrdrClr: var(--brdr-actv);
-    transition-delay: calc(var(--dur) / 1.3);
-  }
-
-  .checkbox-wrapper-30 .checkbox input:checked + svg {
-    --dashArray: 16 93;
-    --dashOffset: 109;
-  }
-
-  .checkbox-wrapper-30 .checkbox svg {
-    fill: none;
-    left: 0;
-    pointer-events: none;
-    stroke: var(--stroke, var(--border-active));
-    stroke-dasharray: var(--dashArray, 93);
-    stroke-dashoffset: var(--dashOffset, 94);
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 2px;
-    top: 0;
-    transition: stroke-dasharray var(--dur), stroke-dashoffset var(--dur);
-  }
-
-  .checkbox-wrapper-30 .checkbox svg,
-  .checkbox-wrapper-30 .checkbox input {
-    display: block;
-    height: 100%;
-    width: 100%;
-  }
-
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    flex-direction: row-reverse; /* To align checkboxes from right to left */
-  }
+.gram-button.selected {
+  background-color: #0056b3;
 }

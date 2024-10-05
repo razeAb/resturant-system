@@ -55,16 +55,19 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
   };
 
   const handleAddToCart = () => {
+    // Calculate the total price based on grams and additions
     const totalPrice = calculateTotalPrice();
+
+    // Add the item to the cart
     const itemToAdd = {
       id: `${title}-${Math.random().toString(36).substring(7)}`, // Generate a unique ID
       img,
       title,
-      price: parseFloat(price), // Base price of the item per 100g (not multiplied by grams)
-      quantity: selectedGrams, // Quantity in grams
+      price: parseFloat(price), // Base price per 100 grams
+      quantity: selectedGrams / 100, // Quantity in kilograms (to match your calculation)
       isWeighted: true, // Flag to indicate this is a weighted item
       selectedOptions,
-      totalPrice: parseFloat(totalPrice), // Total price calculated based on grams
+      totalPrice: parseFloat(totalPrice), // Total price calculated based on grams and additions
     };
 
     addToCart(itemToAdd); // Add the item to the cart via context
@@ -124,21 +127,19 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {[  "רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map(
-            (addition, index) => (
-              <div key={index} className="checkbox-wrapper-30 checkbox-container">
-                <span className="checkbox">
-                  <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
-                  <svg>
-                    <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                  </svg>
-                </span>
-                <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                  {addition}
-                </label>
-              </div>
-            )
-          )}
+          {["רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
+            <div key={index} className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
+                {addition}
+              </label>
+            </div>
+          ))}
         </div>
 
         <div className="modal-add-button-container">

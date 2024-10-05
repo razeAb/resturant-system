@@ -16,7 +16,7 @@ const CountableDishesCard = (props) => {
       id: props.id,
       img: props.img,
       title: props.title,
-      price: props.price * quantity, // Calculate total price based on quantity
+      price: props.price, // Calculate total price based on quantity
       quantity, // Include the selected quantity
     };
 
