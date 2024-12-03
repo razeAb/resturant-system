@@ -12,16 +12,10 @@ const Menu = () => {
         <DishesCard id="3" img="/photos/HotDog.jpeg" title="חריפות עגל וטלה מעושן בג׳בטה" price="35" toggleOptions />
         <DishesCard id="4" img="/photos/img5.webp" title="אסאדו בג׳בטה" price="45" toggleOptions />
         <DishesCard id="5" img="/photos/img4.webp" title="צוואר טלה בג׳בטה" price="45" toggleOptions />
+        <DishesCard id="6" img="/photos/ontrib.jpg" title="אונטרייב  22 שקל ל 100 גרם" price="22" toggleOptions modalType="weighted" />
+        <DishesCard id="7" img="/photos/shoulder1.jpeg" title=" צלי כתף  22 שקל ל 100 גרם" price="22" toggleOptions modalType="weighted" />
         <DishesCard
-          id="6"
-          img="/photos/ontrib.jpg"
-          title="אונטרייב, צלי כתף  22 שקל ל 100 גרם"
-          price="22"
-          toggleOptions
-          modalType="weighted"
-        />
-        <DishesCard
-          id="7"
+          id="8"
           img="/photos/asadoBone.webp"
           title="אסאדו בלי עצם ,צוואר טלה 26 שקל ל 100 גרם"
           price="26"
@@ -29,7 +23,7 @@ const Menu = () => {
           modalType="weighted"
         />
         <DishesCard
-          id="8"
+          id="9"
           img="/photos/OsbacsoFull.jpeg"
           title="אוסובוקו שלם הזמנה לפני יום 120 שקל לקילו"
           price="120"
@@ -37,7 +31,7 @@ const Menu = () => {
           modalType="weighted"
         />
         <DishesCard
-          id="9"
+          id="10"
           img="/photos/shoulder.jpeg"
           title="כתף טלה שלם הזמנה לפני יום 300 שקל ל 1 לקילו"
           price="30"
@@ -51,8 +45,8 @@ const Menu = () => {
 
       <h1 className="text-4xl font-semibold text-center pb-10">תוספות בצד</h1>
       <div className="flex flex-wrap gap-8 justify-center">
-        <CountableDishesCard id="10" img="/photos/French_Fries.jpeg" title="צ׳יפס" price="10" />
-        <CountableDishesCard id="11" img="/photos/WhiteRice.jpg" title="אורז" price="10" />
+        <CountableDishesCard id="11" img="/photos/French_Fries.jpeg" title="צ׳יפס" price="10" />
+        <CountableDishesCard id="12" img="/photos/WhiteRice.jpg" title="אורז" price="10" />
       </div>
 
       <br />
@@ -60,11 +54,11 @@ const Menu = () => {
 
       <h1 className="text-4xl font-semibold text-center pb-10">שתיה</h1>
       <div className="flex flex-wrap gap-8 justify-center">
-        <CountableDishesCard id="12" img="/photos/coke.webp" title="קולה" price="8" />
-        <CountableDishesCard id="13" img="/photos/cokezero.webp" title="קולה זירו" price="8" />
-        <CountableDishesCard id="14" img="/photos/soda.jpg" title="סודה" price="8" />
-        <CountableDishesCard id="15" img="/photos/water.webp" title="מים" price="6" />
-        <CountableDishesCard id="16" img="/photos/xl.webp" title="XL" price="8" />
+        <CountableDishesCard id="13" img="/photos/coke.webp" title="קולה" price="8" />
+        <CountableDishesCard id="14" img="/photos/cokezero.webp" title="קולה זירו" price="8" />
+        <CountableDishesCard id="15" img="/photos/soda.jpg" title="סודה" price="8" />
+        <CountableDishesCard id="16" img="/photos/water.webp" title="מים" price="6" />
+        <CountableDishesCard id="17" img="/photos/xl.webp" title="XL" price="8" />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ const CartPage = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
+  const [deliveryOption, setDeliveryOption] = useState(null);
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -49,7 +50,6 @@ const CartPage = () => {
     if (item.id > 8) {
       itemTotal /= 10;
     }
-    
 
     return itemTotal; // Return the total price, formatted to 2 decimal places
   };
@@ -59,7 +59,7 @@ const CartPage = () => {
     return cartItems.reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0).toFixed(2);
   };
 
-  const sendWhatsAppOrder = () => {
+  const sendWhatsAppOrder = (deliveryOption) => {
     const currentDay = new Date().getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 3 = Wednesday)
 
     // If it's Wednesday (day 3), show the modal instead of sending the message
@@ -68,20 +68,25 @@ const CartPage = () => {
       return; // Stop execution here to prevent sending the WhatsApp message
     }
 
+    const deliveryOptionHebrew = deliveryOption === "Pickup" ? "איסוף עצמי" : deliveryOption === "Delivery" ? "משלוח" : "אכילה במסעדה";
+
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables = item.id >= 10 && item.id <= 16 ? "" : item.selectedOptions?.vegetables?.join(", ") || "אין";
+        const vegetables = item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || "אין";
         const additions =
           item.id >= 10 && item.id <= 16
             ? ""
             : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || "אין";
 
-        if (item.id >= 10 && item.id <= 16) {
+        const comment = item.comment ? `הערות: ${item.comment}` : "הערות: אין";
+
+        if (item.id >= 10 && item.id <= 17) {
           return `
             מוצר: ${item.title}
             כמות: ${item.isWeighted ? item.quantity + " גרם" : item.quantity}
             מחיר ליחידה: ${item.price} ILS
+                        ${comment}
             מחיר סופי: ${itemTotalPrice} ILS
           `.trim();
         }
@@ -92,6 +97,7 @@ const CartPage = () => {
           ירקות: ${vegetables}
           תוספות: ${additions}
           מחיר ליחידה: ${item.price} ILS
+                    ${comment}
           מחיר סופי: ${itemTotalPrice} ILS
         `.trim();
       })
@@ -99,7 +105,7 @@ const CartPage = () => {
 
     const totalPrice = groupCartItems().reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0);
 
-    const message = `פרטי הזמנה:\n\n${orderDetails}\n\nסה"כ: ${totalPrice} ILS`;
+    const message = `פרטי הזמנה:\n\n${orderDetails}\n\nאפשרות משלוח: ${deliveryOptionHebrew}\n\nסה"כ: ${totalPrice} ILS`;
     const whatsappUrl = `https://wa.me/+972507203099?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -127,7 +133,7 @@ const CartPage = () => {
                 <th>תמונה</th>
                 <th>שם מוצר</th>
                 <th>כמות</th>
-                {groupCartItems().some((item) => item.id < 10 || item.id > 16) && (
+                {groupCartItems().some((item) => item.id < 11 || item.id > 17) && (
                   <>
                     <th>ירקות</th>
                     <th>תוספות</th>
@@ -186,24 +192,78 @@ const CartPage = () => {
           <div className="modal-overlay">
             <div className="modal-content">
               <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
-              <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>ההזמנה שלך תישלח לוואטסאפ. נא לאשר.</p>{" "}
+              <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
+                {" "}
+                אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
+              </p>{" "}
               <div className="modal-buttons" style={{ display: "flex", justifyContent: "space-between" }}>
                 <button
-                  onClick={sendWhatsAppOrder}
+                  onClick={() => {
+                    setDeliveryOption("Pickup");
+                    sendWhatsAppOrder("Pickup");
+                  }}
                   style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
                     padding: "10px 20px",
                     backgroundColor: "#25D366",
                     color: "#fff",
                     borderRadius: "5px",
                   }}
                 >
-                  שלח דרך וואטסאפ
+                  <img
+                    src="public\photos\restaurant-waiter-svgrepo-com (1).svg"
+                    alt="Pickup Icon"
+                    style={{ width: "20px", height: "20px" }}
+                  />
+                  איסוף עצמי
+                </button>
+                <button
+                  onClick={() => {
+                    setDeliveryOption("Delivery");
+                    sendWhatsAppOrder("Delivery");
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 20px",
+                    backgroundColor: "#25D366",
+                    color: "#fff",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <img
+                    src="public\photos\scooter-delivery-food-svgrepo-com.svg"
+                    alt="Delivery Icon"
+                    style={{ width: "20px", height: "20px" }}
+                  />
+                  משלוח
+                </button>
+                <button
+                  onClick={() => {
+                    setDeliveryOption("EatIn");
+                    sendWhatsAppOrder("EatIn");
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 20px",
+                    backgroundColor: "#25D366",
+                    color: "#fff",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <img src="public\photos\food-dish-svgrepo-com.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
+                  אכילה במסעדה
                 </button>
                 <button
                   onClick={closeModal}
                   style={{
                     padding: "10px 20px",
-                    backgroundColor: "#ccc",
+                    backgroundColor: "#050000",
                     borderRadius: "5px",
                   }}
                 >
@@ -288,9 +348,78 @@ const CartPage = () => {
           }
         }
 
+        .modal-content {
+          width: 90%;
+          max-width: 400px;
+          margin: auto;
+          background-color: #fff;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+          text-align: center;
+          font-family: Arial, sans-serif;
+        }
+
         .modal-buttons {
           display: flex;
+          flex-wrap: wrap;
           gap: 10px;
+          justify-content: center;
+          margin-top: 20px;
+        }
+
+        .modal-buttons button {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 15px;
+          background-color: #25d366;
+          color: #fff;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background-color 0.3s, transform 0.2s;
+          width: 48%; /* Make buttons fit nicely in the layout */
+          justify-content: center;
+        }
+
+        .modal-buttons button img {
+          width: 24px;
+          height: 24px;
+        }
+
+        .modal-buttons button:hover {
+          background-color: #20b860;
+          transform: scale(1.05);
+        }
+
+        .modal-buttons button:last-child {
+          background-color: #000;
+        }
+
+        .modal-buttons button:last-child:hover {
+          background-color: #333;
+        }
+
+        .modal-content h2 {
+          font-size: 20px;
+          margin-bottom: 10px;
+          color: #333;
+          direction: rtl;
+        }
+
+        .modal-content p {
+          font-size: 16px;
+          color: #666;
+          margin-bottom: 20px;
+          direction: rtl;
+        }
+
+        @media (max-width: 460px) {
+          .modal-buttons button {
+            width: 100%; /* Stack buttons on small screens */
+          }
         }
       `}</style>
 

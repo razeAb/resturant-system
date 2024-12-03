@@ -12,6 +12,8 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
 
   const { addToCart } = useContext(CartContext); // Access addToCart function from CartContext
 
+  const [comment, setComment] = useState(""); // Initial comment is an empty string
+
   if (!isOpen) return null;
 
   // Handle vegetable selection
@@ -67,10 +69,12 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
       quantity: selectedGrams / 100, // Quantity in kilograms (to match your calculation)
       isWeighted: true, // Flag to indicate this is a weighted item
       selectedOptions,
+      comment,
       totalPrice: parseFloat(totalPrice), // Total price calculated based on grams and additions
     };
 
     addToCart(itemToAdd); // Add the item to the cart via context
+    setComment(""); // Clear the comment
     onClose(); // Close the modal
   };
 
@@ -140,6 +144,24 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
               </label>
             </div>
           ))}
+
+          <div className="modal-comment">
+            <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
+            <textarea
+              placeholder="הוסף הערה (לא חובה)"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                direction: "rtl",
+                textAlign: "right",
+                margin: "10px 0",
+              }}
+            ></textarea>
+          </div>
         </div>
 
         <div className="modal-add-button-container">

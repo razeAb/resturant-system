@@ -11,6 +11,7 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
   });
 
   const { addToCart } = useContext(CartContext); // Access addToCart function
+  const [comment, setComment] = useState("");
 
   if (!isOpen) return null;
 
@@ -78,11 +79,13 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
       price: parseFloat(price), // Base price of the item (not multiplied by quantity)
       quantity, // The quantity of the meal
       selectedOptions, // Includes additions
+      comment,
       totalPrice: parseFloat(totalPrice), // Total price of one unit (without multiplying by quantity)
     };
 
     console.log("Adding to cart:", itemToAdd); // Debug log
     addToCart(itemToAdd); // Add to cart via context
+    setComment(""); // Clear the comment
     onClose(); // Close the modal
   };
 
@@ -135,7 +138,7 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
               <span>{addition.name}</span>
               <button
                 className={`gram-button ${
-                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name } (50 גרם)`)) ? "selected" : ""
+                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (50 גרם)`)) ? "selected" : ""
                 }`}
                 onClick={() => handleAdditionChange(addition.name, 50)}
               >
@@ -181,6 +184,24 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
           <button className="quantity-button" onClick={() => handleQuantityChange(1)}>
             +
           </button>
+        </div>
+
+        <div className="modal-comment">
+          <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
+          <textarea
+            placeholder="הוסף הערה (לא חובה)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+              direction: "rtl",
+              textAlign: "right",
+              margin: "10px 0",
+            }}
+          ></textarea>
         </div>
 
         <div className="modal-add-button-container">

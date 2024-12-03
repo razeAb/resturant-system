@@ -12,7 +12,7 @@ const DishesCard = (props) => {
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
 
   const handleButtonClick = () => {
-    if (props.id === "8" || props.id === "9") {
+    if (props.id === "9" || props.id === "10") {
       setIsAlertOpen(true); // Open the AlertModal for items that require a day-before order
     } else if (props.toggleOptions) {
       setIsModalOpen(true); // Open the modal for items with options
