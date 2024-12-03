@@ -212,7 +212,7 @@ const CartPage = () => {
                     borderRadius: "5px",
                   }}
                 >
-                  <img src="public\photos\waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
+                  <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
                   איסוף עצמי
                 </button>
                 <button
@@ -230,7 +230,7 @@ const CartPage = () => {
                     borderRadius: "5px",
                   }}
                 >
-                  <img src="public\photos\scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
+                  <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
                   משלוח
                 </button>
                 <button
@@ -272,6 +272,99 @@ const CartPage = () => {
       </div>
 
       <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000; /* Ensures it appears on top */
+        }
+
+        .modal-content {
+          width: 90%;
+          max-width: 450px;
+          background-color: #ffffff;
+          padding: 30px;
+          border-radius: 15px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Softer shadow */
+          text-align: center;
+          font-family: "Arial", sans-serif;
+          animation: slideIn 0.3s ease-out; /* Subtle animation */
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateY(-30px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .modal-buttons {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 15px;
+          justify-content: center;
+          margin-top: 20px;
+        }
+
+        .modal-buttons button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 12px 20px;
+          background-color: #25d366; /* WhatsApp green */
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background-color 0.3s, transform 0.2s;
+          width: 48%; /* Consistent button layout */
+        }
+
+        .modal-buttons button img {
+          width: 24px;
+          height: 24px;
+        }
+
+        .modal-buttons button:hover {
+          background-color: #1da558; /* Darker green on hover */
+          transform: scale(1.05); /* Slight zoom effect */
+        }
+
+        .modal-buttons button:last-child {
+          background-color: #f44336; /* Red for cancel */
+        }
+
+        .modal-buttons button:last-child:hover {
+          background-color: #d32f2f;
+        }
+
+        .modal-content h2 {
+          font-size: 22px;
+          font-weight: bold;
+          margin-bottom: 15px;
+          color: #333;
+        }
+
+        .modal-content p {
+          font-size: 16px;
+          color: #666;
+          margin-bottom: 25px;
+          line-height: 1.6; /* Better readability */
+        }
+
         .cart-table {
           padding-top: 40px;
           width: 100%;
@@ -342,79 +435,22 @@ const CartPage = () => {
             width: 80px;
             margin-bottom: 10px;
           }
-        }
 
-        .modal-content {
-          width: 90%;
-          max-width: 400px;
-          margin: auto;
-          background-color: #fff;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-          text-align: center;
-          font-family: Arial, sans-serif;
-        }
+          .modal-content {
+            padding: 20px;
+            width: 95%;
+          }
 
-        .modal-buttons {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          justify-content: center;
-          margin-top: 20px;
-        }
-
-        .modal-buttons button {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 15px;
-          background-color: #25d366;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background-color 0.3s, transform 0.2s;
-          width: 48%; /* Make buttons fit nicely in the layout */
-          justify-content: center;
-        }
-
-        .modal-buttons button img {
-          width: 24px;
-          height: 24px;
-        }
-
-        .modal-buttons button:hover {
-          background-color: #20b860;
-          transform: scale(1.05);
-        }
-
-        .modal-buttons button:last-child {
-          background-color: #000;
-        }
-
-        .modal-buttons button:last-child:hover {
-          background-color: #333;
-        }
-
-        .modal-content h2 {
-          font-size: 20px;
-          margin-bottom: 10px;
-          color: #333;
-          direction: rtl;
-        }
-
-        .modal-content p {
-          font-size: 16px;
-          color: #666;
-          margin-bottom: 20px;
-          direction: rtl;
-        }
-
-        @media (max-width: 460px) {
           .modal-buttons button {
             width: 100%; /* Stack buttons on small screens */
+          }
+
+          .modal-content h2 {
+            font-size: 18px;
+          }
+
+          .modal-content p {
+            font-size: 14px;
           }
         }
       `}</style>
