@@ -212,11 +212,7 @@ const CartPage = () => {
                     borderRadius: "5px",
                   }}
                 >
-                  <img
-                    src="public\photos\restaurant-waiter-svgrepo-com (1).svg"
-                    alt="Pickup Icon"
-                    style={{ width: "20px", height: "20px" }}
-                  />
+                  <img src="public\photos\waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
                   איסוף עצמי
                 </button>
                 <button
@@ -234,11 +230,7 @@ const CartPage = () => {
                     borderRadius: "5px",
                   }}
                 >
-                  <img
-                    src="public\photos\scooter-delivery-food-svgrepo-com.svg"
-                    alt="Delivery Icon"
-                    style={{ width: "20px", height: "20px" }}
-                  />
+                  <img src="public\photos\scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
                   משלוח
                 </button>
                 <button
@@ -256,7 +248,11 @@ const CartPage = () => {
                     borderRadius: "5px",
                   }}
                 >
-                  <img src="public\photos\food-dish-svgrepo-com.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
+                  <img
+                    src="/photos/dish.svg" // Correct path to the public folder
+                    alt="EatIn Icon"
+                    style={{ width: "20px", height: "20px" }}
+                  />
                   אכילה במסעדה
                 </button>
                 <button
