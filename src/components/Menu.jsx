@@ -45,8 +45,10 @@ const Menu = () => {
 
       <h1 className="text-4xl font-semibold text-center pb-10">תוספות בצד</h1>
       <div className="flex flex-wrap gap-8 justify-center">
-        <CountableDishesCard id="11" img="/photos/French_Fries.jpeg" title="צ׳יפס" price="10" />
-        <CountableDishesCard id="12" img="/photos/WhiteRice.jpg" title="אורז" price="10" />
+        <CountableDishesCard id="100" img="/photos/French_Fries.jpeg" title="צ׳יפס" price="10" />
+        <CountableDishesCard id="101" img="/photos/WhiteRice.jpg" title="אורז" price="10" />
+        <CountableDishesCard id="102" img="/photos/purree.jpg" title="כדורי פירה" price="10" />
+        <CountableDishesCard id="103" img="/photos/onionRing.jpg" title="טבעות בצל" price="10" />
       </div>
 
       <br />
