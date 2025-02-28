@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   points: { type: Number, default: 0 },
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
+  isAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
