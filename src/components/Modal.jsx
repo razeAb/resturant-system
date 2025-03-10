@@ -108,7 +108,7 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות על המנה</h3>
-          {["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט קרוב", "צימצורי"].map((vegetable, index) => (
+          {["בלי חסה", "בלי מלפפון חמוץ", "בלי עגבניה", "בלי בצל", "בלי סלט קרוב", "בלי צימצורי "].map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
