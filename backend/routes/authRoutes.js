@@ -41,7 +41,7 @@ router.post("/login", async (req, res) => {
 // ✅ Register a new user
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, adminKey } = req.body;
 
     // ✅ Validate input
     if (!name || !email || !password) {
@@ -57,6 +57,8 @@ router.post("/register", async (req, res) => {
     // ✅ Hash the password before saving
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
+    const isAdmin = adminKey === process.env.Admin_SECRET_KEY;
 
     // ✅ Create new user
     const newUser = await User.create({
