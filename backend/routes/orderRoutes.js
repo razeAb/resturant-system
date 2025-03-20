@@ -35,6 +35,12 @@ router.post("/", async (req, res) => {
       user.points = (user.points || 0) + 10; // Add 10 points per order
       
       await user.save();
+
+      //notify admin if stock is below threshhold
+      const lowStockProducts = products.filter((product) => product.stock <5);
+      if(lowStockProducts.length > 0){
+        console.log(`⚠️ Low Stock Alert:`, lowStockProducts.map((p) => p.name).join(", "));
+      }
       
       // ✅ Reward System
       let rewardMessage = "";
