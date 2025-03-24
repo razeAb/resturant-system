@@ -8,6 +8,8 @@ import Footer from "./components/Footer";
 import CartPage from "./components/CartPage";
 import { CartProvider } from "./context/CartContext"; // Cart context
 import CartIcon from "./components/CartIcon"; // Import CartIcon
+import AdminDashboard from "./components/AdminDashboard";
+import Login from "./components/Login";
 
 const App = () => {
   return (
@@ -34,6 +36,8 @@ const App = () => {
             {/* Cart page with regular CartNavbar */}
             <Route path="/cart" element={<CartPage />} />
             <Route path="/about" element={<About />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
 
           {/* CartIcon should be placed here to appear on all pages */}

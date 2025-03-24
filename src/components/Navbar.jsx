@@ -42,7 +42,9 @@ const Navbar = () => {
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
-          {/* <Button title="Login" /> */}
+          <RouterLink to="/login">
+            <Button title="Login" />
+          </RouterLink>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -96,7 +98,7 @@ const Navbar = () => {
           עגלה
         </RouterLink>
 
-        {/* <Button title="Login" /> */}
+        <Button title="Login" />
       </div>
     </div>
   );

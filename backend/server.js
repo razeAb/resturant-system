@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const adminRoutes = require("./routes/adminRoutes");
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ mongoose
 app.use("/api/auth", require("./routes/authRoutes")); // Authentication Routes
 app.use("/api/users", require("./routes/userRoutes")); // User Routes
 app.use("/api/products", require("./routes/productRoutes")); // Product Routes
+app.use("/api/orders", require("./routes/orderRoutes")); // ✅ Add Orders Route
+app.use("/api/admin", adminRoutes);
 
 // ✅ Basic Health Check
 app.get("/", (req, res) => {

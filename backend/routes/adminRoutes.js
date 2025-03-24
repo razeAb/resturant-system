@@ -1,6 +1,7 @@
+
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/authMiddleware"); // ✅ Import protect middleware
+const { protect } = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
@@ -21,34 +22,42 @@ router.get("/dashboard", protect, async (req, res) => {
     // ✅ Get Most Frequent Customers (Top 5)
     const topCustomers = users
       .filter((user) => user.orderCount > 0)
-      .sort((a, b) => b.orderCount - a.orderCount) // Sort by most orders
+      .sort((a, b) => b.orderCount - a.orderCount)
       .slice(0, 5);
 
     // ✅ Calculate Total Sales Revenue
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
 
-    // ✅ Calculate Product Sales Count
-    let productSalesMap = {};
-
+    // ✅ Count how many times each product has been ordered
+    const productOrderCounts = {};
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        const productId = item.product._id.toString();
-        if (!productSalesMap[productId]) {
-          productSalesMap[productId] = { 
-            name: item.product.name, 
-            totalSold: 0 
-          };
+        const productId = item.product?._id?.toString();
+        if (productId) {
+          productOrderCounts[productId] = (productOrderCounts[productId] || 0) + (item.quantity || 0);
         }
-        productSalesMap[productId].totalSold += item.quantity;
       });
     });
 
-    // ✅ Convert to Array and Sort Products by Sales
-    const sortedProducts = Object.values(productSalesMap).sort((a, b) => b.totalSold - a.totalSold);
+    // ✅ Convert product order count to an array and sort
+    const sortedProducts = Object.entries(productOrderCounts)
+      .map(([productId, orderCount]) => {
+        const product = products.find((p) => p._id.toString() === productId);
+        return product ? { product, orderCount } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.orderCount - a.orderCount);
 
     // ✅ Get Hot & Cold Products
-    const hotProducts = sortedProducts.slice(0, 5); // Top 5 best-selling
-    const coldProducts = sortedProducts.slice(-5).reverse(); // Bottom 5 least-selling
+    const hotProducts = sortedProducts.slice(0, 5).map((item) => ({
+      name: item.product.name,
+      orders: item.orderCount,
+    }));
+
+    const coldProducts = sortedProducts.slice(-5).map((item) => ({
+      name: item.product.name,
+      orders: item.orderCount,
+    }));
 
     // ✅ Return Admin Dashboard Data
     res.status(200).json({
@@ -59,8 +68,8 @@ router.get("/dashboard", protect, async (req, res) => {
       topCustomers,
       totalRevenue,
       lowStockProducts: products.filter((product) => product.stock < 5),
-      hotProducts, // 🔥 Best-selling products
-      coldProducts, // ❄️ Least-selling products
+      hotProducts,
+      coldProducts,
     });
   } catch (error) {
     console.error("❌ Error retrieving dashboard data:", error);
