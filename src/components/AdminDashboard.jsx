@@ -1,27 +1,23 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar"; // For main pages with scroll
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [error, setError] = useState("");
 
-  // Modern CSS-in-JS styles
   const styles = {
-    // Main container
     adminDashboard: {
       minHeight: "100vh",
       padding: "5rem 2rem 3rem",
       background: "linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)",
       fontFamily: "'Inter', -apple-system, sans-serif",
     },
-
-    // Header
     header: {
       textAlign: "center",
       marginBottom: "3rem",
-      animation: "$fadeIn 0.8s ease-out",
     },
     title: {
       fontSize: "2.5rem",
@@ -39,8 +35,6 @@ const AdminDashboard = () => {
       maxWidth: "600px",
       margin: "0 auto",
     },
-
-    // Stats cards
     statsGrid: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
@@ -52,11 +46,6 @@ const AdminDashboard = () => {
       borderRadius: "12px",
       padding: "1.5rem",
       boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-      transition: "transform 0.3s ease, box-shadow 0.3s ease",
-      "&:hover": {
-        transform: "translateY(-5px)",
-        boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-      },
     },
     statValue: {
       fontSize: "2rem",
@@ -72,8 +61,6 @@ const AdminDashboard = () => {
       alignItems: "center",
       gap: "0.5rem",
     },
-
-    // Products section
     sectionTitle: {
       fontSize: "1.25rem",
       fontWeight: "600",
@@ -93,11 +80,6 @@ const AdminDashboard = () => {
       borderRadius: "12px",
       overflow: "hidden",
       boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-      transition: "all 0.3s ease",
-      "&:hover": {
-        transform: "translateY(-5px)",
-        boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-      },
     },
     productImage: {
       width: "100%",
@@ -134,8 +116,6 @@ const AdminDashboard = () => {
       gap: "0.75rem",
       marginTop: "1rem",
     },
-
-    // Buttons
     primaryButton: {
       background: "linear-gradient(90deg, #6e48aa 0%, #9d50bb 100%)",
       color: "white",
@@ -145,12 +125,7 @@ const AdminDashboard = () => {
       fontSize: "0.95rem",
       fontWeight: "600",
       cursor: "pointer",
-      transition: "all 0.3s ease",
       boxShadow: "0 4px 15px rgba(110, 72, 170, 0.3)",
-      "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: "0 6px 20px rgba(110, 72, 170, 0.4)",
-      },
     },
     editButton: {
       background: "#3b82f6",
@@ -161,11 +136,7 @@ const AdminDashboard = () => {
       fontSize: "0.85rem",
       fontWeight: "500",
       cursor: "pointer",
-      transition: "all 0.2s ease",
       flex: 1,
-      "&:hover": {
-        background: "#2563eb",
-      },
     },
     deleteButton: {
       background: "#ef4444",
@@ -176,14 +147,8 @@ const AdminDashboard = () => {
       fontSize: "0.85rem",
       fontWeight: "500",
       cursor: "pointer",
-      transition: "all 0.2s ease",
       flex: 1,
-      "&:hover": {
-        background: "#dc2626",
-      },
     },
-
-    // Lists
     customerList: {
       listStyle: "none",
       padding: "0",
@@ -194,9 +159,6 @@ const AdminDashboard = () => {
       borderBottom: "1px solid #f1f5f9",
       display: "flex",
       justifyContent: "space-between",
-      "&:last-child": {
-        borderBottom: "none",
-      },
     },
     hotProduct: {
       color: "#ef4444",
@@ -205,11 +167,6 @@ const AdminDashboard = () => {
     coldProduct: {
       color: "#3b82f6",
       fontWeight: "500",
-    },
-
-    // Utility
-    fadeIn: {
-      animation: "fadeIn 0.5s ease-out",
     },
     loading: {
       textAlign: "center",
@@ -272,124 +229,105 @@ const AdminDashboard = () => {
   }, {});
 
   return (
-    <div style={styles.adminDashboard}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>Admin Dashboard</h1>
-        <p style={styles.subtitle}>Manage your products, view analytics, and track performance</p>
-      </header>
+    <>
+      <Navbar />
+      <div style={styles.adminDashboard}>
+        <header style={styles.header}>
+          <h1 style={styles.title}>Admin Dashboard</h1>
+          <p style={styles.subtitle}>Manage your products, view analytics, and track performance</p>
+        </header>
 
-      {/* Stats Overview */}
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>💰 Total Revenue</span>
-          <h3 style={styles.statValue}>₪{totalRevenue}</h3>
-        </div>
-        
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>📦 Total Products</span>
-          <h3 style={styles.statValue}>{products.length}</h3>
-        </div>
-        
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>🔥 Hot Products</span>
-          <h3 style={styles.statValue}>{hotProducts.length}</h3>
-        </div>
-        
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>❄️ Cold Products</span>
-          <h3 style={styles.statValue}>{coldProducts.length}</h3>
-        </div>
-      </div>
-
-      {/* Top Customers */}
-      <div style={{ marginBottom: "3rem" }}>
-        <h2 style={styles.sectionTitle}>🏆 Top Customers</h2>
-        <ul style={styles.customerList}>
-          {topCustomers.map((user) => (
-            <li key={user._id} style={styles.customerItem}>
-              <span>{user.name}</span>
-              <span>{user.orderCount} orders</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Product Performance */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "3rem" }}>
-        <div>
-          <h2 style={styles.sectionTitle}>🔥 Hot Products</h2>
-          <ul style={styles.customerList}>
-            {hotProducts.map((p, i) => (
-              <li key={i} style={styles.customerItem}>
-                <span style={styles.hotProduct}>{p.name}</span>
-                <span>{p.orders} orders</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <div>
-          <h2 style={styles.sectionTitle}>❄️ Cold Products</h2>
-          <ul style={styles.customerList}>
-            {coldProducts.map((p, i) => (
-              <li key={i} style={styles.customerItem}>
-                <span style={styles.coldProduct}>{p.name}</span>
-                <span>{p.orders} orders</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Add Product Button */}
-      <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-        <button 
-          onClick={() => navigate("/add-product")} 
-          style={styles.primaryButton}
-        >
-          ➕ Add New Product
-        </button>
-      </div>
-
-      {/* Products by Category */}
-      {Object.keys(groupedByCategory).map((category) => (
-        <div key={category} style={{ marginBottom: "3rem" }}>
-          <h2 style={styles.sectionTitle}>{category}</h2>
-          <div style={styles.productsGrid}>
-            {groupedByCategory[category].map((product) => (
-              <div key={product._id} style={styles.productCard}>
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  style={styles.productImage} 
-                />
-                <div style={styles.productContent}>
-                  <h3 style={styles.productName}>{product.name}</h3>
-                  <div style={styles.productDetails}>
-                    <span style={styles.productPrice}>₪{product.price}</span>
-                    <span style={styles.productStock}>Stock: {product.stock ?? "N/A"}</span>
-                  </div>
-                  <div style={styles.productActions}>
-                    <button 
-                      style={styles.editButton}
-                      onClick={() => handleEdit(product._id)}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      style={styles.deleteButton}
-                      onClick={() => handleDelete(product._id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+        <div style={styles.statsGrid}>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>💰 Total Revenue</span>
+            <h3 style={styles.statValue}>₪{totalRevenue}</h3>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>📦 Total Products</span>
+            <h3 style={styles.statValue}>{products.length}</h3>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>🔥 Hot Products</span>
+            <h3 style={styles.statValue}>{hotProducts.length}</h3>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>❄️ Cold Products</span>
+            <h3 style={styles.statValue}>{coldProducts.length}</h3>
           </div>
         </div>
-      ))}
-    </div>
+
+        <div style={{ marginBottom: "3rem" }}>
+          <h2 style={styles.sectionTitle}>🏆 Top Customers</h2>
+          <ul style={styles.customerList}>
+            {topCustomers.map((user) => (
+              <li key={user._id} style={styles.customerItem}>
+                <span>{user.name}</span>
+                <span>{user.orderCount} orders</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "3rem" }}>
+          <div>
+            <h2 style={styles.sectionTitle}>🔥 Hot Products</h2>
+            <ul style={styles.customerList}>
+              {hotProducts.map((p, i) => (
+                <li key={i} style={styles.customerItem}>
+                  <span style={styles.hotProduct}>{p.name}</span>
+                  <span>{p.orders} orders</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h2 style={styles.sectionTitle}>❄️ Cold Products</h2>
+            <ul style={styles.customerList}>
+              {coldProducts.map((p, i) => (
+                <li key={i} style={styles.customerItem}>
+                  <span style={styles.coldProduct}>{p.name}</span>
+                  <span>{p.orders} orders</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <button onClick={() => navigate("/add-product")} style={styles.primaryButton}>
+            ➕ Add New Product
+          </button>
+        </div>
+
+        {Object.keys(groupedByCategory).map((category) => (
+          <div key={category} style={{ marginBottom: "3rem" }}>
+            <h2 style={styles.sectionTitle}>{category}</h2>
+            <div style={styles.productsGrid}>
+              {groupedByCategory[category].map((product) => (
+                <div key={product._id} style={styles.productCard}>
+                  <img src={product.image} alt={product.name} style={styles.productImage} />
+                  <div style={styles.productContent}>
+                    <h3 style={styles.productName}>{product.name}</h3>
+                    <div style={styles.productDetails}>
+                      <span style={styles.productPrice}>₪{product.price}</span>
+                      <span style={styles.productStock}>Stock: {product.stock ?? "N/A"}</span>
+                    </div>
+                    <div style={styles.productActions}>
+                      <button style={styles.editButton} onClick={() => handleEdit(product._id)}>
+                        Edit
+                      </button>
+                      <button style={styles.deleteButton} onClick={() => handleDelete(product._id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 

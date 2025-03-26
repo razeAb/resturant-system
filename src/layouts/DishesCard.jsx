@@ -12,13 +12,23 @@ const DishesCard = (props) => {
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
 
   const handleButtonClick = () => {
-    if (props.id === "9" || props.id === "10") {
-      setIsAlertOpen(true); // Open the AlertModal for items that require a day-before order
-    } else if (props.toggleOptions) {
-      setIsModalOpen(true); // Open the modal for items with options
+    if (props.category === "Premium Meat") {
+      setIsAlertOpen(true); // Show AlertModal
+    } else if (props.category === "Meat") {
+      setIsModalOpen(true); // Weighted modal
+    } else if (props.category === "Sandwiches") {
+      setIsModalOpen(true); // Sandwich modal
     } else {
-      // For items without options, simply log or handle the action as before
-      console.log(`Added ${props.title} to cart.`);
+      // Direct add to cart
+      const itemToAdd = {
+        id: props.id,
+        img: props.img,
+        category: props.category,
+        title: props.title,
+        price: props.price,
+        quantity: 1,
+      };
+      addToCart(itemToAdd);
     }
   };
 
@@ -34,6 +44,7 @@ const DishesCard = (props) => {
     const itemToAdd = {
       id: props.id,
       img: props.img,
+      category: props.category,
       title: props.title,
       price: props.price * quantity, // Multiply the price by the quantity
       quantity,
@@ -57,9 +68,9 @@ const DishesCard = (props) => {
       </div>
 
       {/* Conditionally render the modal based on props.modalType */}
-      {props.toggleOptions && (
+      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meat") && (
         <>
-          {props.modalType === "weighted" ? (
+          {props.category === "Meat" ? (
             <WeightedModal
               img={props.img}
               title={props.title}
@@ -69,7 +80,7 @@ const DishesCard = (props) => {
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
             />
-          ) : (
+          ) : props.category === "Sandwiches" ? (
             <Modal
               img={props.img}
               title={props.title}
@@ -80,7 +91,7 @@ const DishesCard = (props) => {
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
             />
-          )}
+          ) : null}
         </>
       )}
 

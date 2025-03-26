@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link as ScrollLink } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
@@ -6,6 +6,19 @@ import Button from "../layouts/Button.jsx";
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserName(user.name || ""); // Fallback if name not present
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+      }
+    }
+  }, []);
 
   const handleChange = () => {
     setMenu(!menu);
@@ -22,7 +35,10 @@ const Navbar = () => {
           <RouterLink to="/">
             <div className="flex items-center cursor-pointer">
               <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
-              <h1 className="text-xl font-semibold ml-2">hungry</h1>
+              <div className="flex flex-col ml-2">
+                <h1 className="text-xl font-semibold">hungry</h1>
+                {userName && <span className="text-sm text-gray-600"> {userName}</span>}
+              </div>
             </div>
           </RouterLink>
         </div>
@@ -32,13 +48,12 @@ const Navbar = () => {
           <ScrollLink to="home" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
             בית
           </ScrollLink>
-          <RouterLink to="/about" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
+          <RouterLink to="/about" className="hover:text-brightColor transition-all cursor-pointer">
             עלינו
           </RouterLink>
           <ScrollLink to="menu" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
             תפריט
           </ScrollLink>
-          {/* Use Router Link for the Cart Page */}
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
@@ -68,19 +83,12 @@ const Navbar = () => {
           spy={true}
           smooth={true}
           duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
           onClick={closeMenu}
+          className="hover:text-brightColor transition-all cursor-pointer"
         >
           בית
         </ScrollLink>
-        <RouterLink
-          to="/about"
-          spy={true}
-          smooth={true}
-          duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
-          onClick={closeMenu}
-        >
+        <RouterLink to="/about" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
           עלינו
         </RouterLink>
         <ScrollLink
@@ -88,18 +96,17 @@ const Navbar = () => {
           spy={true}
           smooth={true}
           duration={500}
-          className="hover:text-brightColor transition-all cursor-pointer"
           onClick={closeMenu}
+          className="hover:text-brightColor transition-all cursor-pointer"
         >
           תפריט
         </ScrollLink>
-        {/* Cart Link for Mobile */}
-        <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
+        <RouterLink to="/cart" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
           עגלה
         </RouterLink>
         <RouterLink to="/login">
           <Button title="Login" />
-        </RouterLink>{" "}
+        </RouterLink>
       </div>
     </div>
   );
