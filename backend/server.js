@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const adminRoutes = require("./routes/adminRoutes");
+const cors = require("cors");
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // ✅ Middleware
+app.use(cors({ origin: "http://localhost:5173", credentials: true })); // ✅ Enable CORS
 app.use(express.json());
 
 // ✅ Connect to MongoDB

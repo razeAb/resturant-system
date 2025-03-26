@@ -97,8 +97,9 @@ const Navbar = () => {
         <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer" onClick={closeMenu}>
           עגלה
         </RouterLink>
-
-        <Button title="Login" />
+        <RouterLink to="/login">
+          <Button title="Login" />
+        </RouterLink>{" "}
       </div>
     </div>
   );
