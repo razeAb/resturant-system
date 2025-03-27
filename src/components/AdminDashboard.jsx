@@ -70,86 +70,6 @@ const AdminDashboard = () => {
       paddingBottom: "0.75rem",
       borderBottom: "2px solid #f1f5f9",
     },
-    productsGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-      gap: "1.5rem",
-      marginBottom: "3rem",
-    },
-    productCard: {
-      background: "white",
-      borderRadius: "12px",
-      overflow: "hidden",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-    },
-    productImage: {
-      width: "100%",
-      height: "180px",
-      objectFit: "cover",
-      borderBottom: "1px solid #f1f5f9",
-    },
-    productContent: {
-      padding: "1.25rem",
-    },
-    productName: {
-      fontSize: "1.1rem",
-      fontWeight: "600",
-      color: "#1e293b",
-      marginBottom: "0.5rem",
-    },
-    productDetails: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "1rem",
-    },
-    productPrice: {
-      fontSize: "1rem",
-      fontWeight: "700",
-      color: "#6e48aa",
-    },
-    productStock: {
-      fontSize: "0.85rem",
-      color: "#64748b",
-      fontWeight: "500",
-    },
-    productActions: {
-      display: "flex",
-      gap: "0.75rem",
-      marginTop: "1rem",
-    },
-    primaryButton: {
-      background: "linear-gradient(90deg, #6e48aa 0%, #9d50bb 100%)",
-      color: "white",
-      border: "none",
-      padding: "0.75rem 1.5rem",
-      borderRadius: "8px",
-      fontSize: "0.95rem",
-      fontWeight: "600",
-      cursor: "pointer",
-      boxShadow: "0 4px 15px rgba(110, 72, 170, 0.3)",
-    },
-    editButton: {
-      background: "#3b82f6",
-      color: "white",
-      border: "none",
-      padding: "0.5rem 1rem",
-      borderRadius: "6px",
-      fontSize: "0.85rem",
-      fontWeight: "500",
-      cursor: "pointer",
-      flex: 1,
-    },
-    deleteButton: {
-      background: "#ef4444",
-      color: "white",
-      border: "none",
-      padding: "0.5rem 1rem",
-      borderRadius: "6px",
-      fontSize: "0.85rem",
-      fontWeight: "500",
-      cursor: "pointer",
-      flex: 1,
-    },
     customerList: {
       listStyle: "none",
       padding: "0",
@@ -198,36 +118,10 @@ const AdminDashboard = () => {
     fetchDashboard();
   }, []);
 
-  const handleEdit = (productId) => {
-    navigate(`/edit-product/${productId}`);
-  };
-
-  const handleDelete = async (productId) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5001/api/products/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDashboardData((prev) => ({
-        ...prev,
-        products: prev.products.filter((p) => p._id !== productId),
-      }));
-    } catch (error) {
-      console.error("Failed to delete product:", error);
-    }
-  };
-
   if (error) return <div style={styles.error}>{error}</div>;
   if (!dashboardData) return <div style={styles.loading}>Loading...</div>;
 
   const { totalRevenue, topCustomers, hotProducts, coldProducts, products } = dashboardData;
-
-  const groupedByCategory = products.reduce((acc, product) => {
-    const cat = product.category || "Uncategorized";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(product);
-    return acc;
-  }, {});
 
   return (
     <>
@@ -270,7 +164,7 @@ const AdminDashboard = () => {
           </ul>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "3rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
           <div>
             <h2 style={styles.sectionTitle}>🔥 Hot Products</h2>
             <ul style={styles.customerList}>
@@ -294,40 +188,6 @@ const AdminDashboard = () => {
             </ul>
           </div>
         </div>
-
-        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <button onClick={() => navigate("/add-product")} style={styles.primaryButton}>
-            ➕ Add New Product
-          </button>
-        </div>
-
-        {Object.keys(groupedByCategory).map((category) => (
-          <div key={category} style={{ marginBottom: "3rem" }}>
-            <h2 style={styles.sectionTitle}>{category}</h2>
-            <div style={styles.productsGrid}>
-              {groupedByCategory[category].map((product) => (
-                <div key={product._id} style={styles.productCard}>
-                  <img src={product.image} alt={product.name} style={styles.productImage} />
-                  <div style={styles.productContent}>
-                    <h3 style={styles.productName}>{product.name}</h3>
-                    <div style={styles.productDetails}>
-                      <span style={styles.productPrice}>₪{product.price}</span>
-                      <span style={styles.productStock}>Stock: {product.stock ?? "N/A"}</span>
-                    </div>
-                    <div style={styles.productActions}>
-                      <button style={styles.editButton} onClick={() => handleEdit(product._id)}>
-                        Edit
-                      </button>
-                      <button style={styles.deleteButton} onClick={() => handleDelete(product._id)}>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
       </div>
     </>
   );

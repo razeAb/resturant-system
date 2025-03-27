@@ -11,6 +11,7 @@ import CartIcon from "./components/CartIcon"; // Import CartIcon
 import AdminDashboard from "./components/AdminDashboard";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import AdminProducts from "./components/AdminProducts";
 
 const App = () => {
   return (
@@ -40,8 +41,8 @@ const App = () => {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            {/* <Route path="/admin/products" element={<ProductList />} />
-            <Route path="/admin/add-product" element={<AddProduct />} /> */}
+            <Route path="/admin/products" element={<AdminProducts />} />
+            {/* <Route path="/admin/add-product" element={<AddProduct />} />  */}
           </Routes>
 
           {/* CartIcon should be placed here to appear on all pages */}

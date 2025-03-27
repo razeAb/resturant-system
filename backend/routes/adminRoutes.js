@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/authMiddleware");
@@ -16,7 +15,7 @@ router.get("/dashboard", protect, async (req, res) => {
 
     // ✅ Fetch Users, Products, and Orders
     const users = await User.find().select("name email orderCount points");
-    const products = await Product.find().select("name stock price");
+    const products = await Product.find().select("name stock price image category");
     const orders = await Order.find().populate("items.product", "name price");
 
     // ✅ Get Most Frequent Customers (Top 5)
