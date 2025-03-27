@@ -1,14 +1,23 @@
 import React from "react";
 
 const Button = ({ title, href, onClick }) => {
-  return (
-    <div>
-      <a href={href} onClick={onClick}>
-        <button className="px-6 py-1 border-2 border-brightColor text-brightColor hover:bg-brightColor hover:text-white transition-all rounded-full">
-          {title}
-        </button>
+  const classes =
+    "px-6 py-1 border-2 border-brightColor text-brightColor hover:bg-brightColor hover:text-white transition-all rounded-full";
+
+  // If href is provided, render <a> (for links)
+  if (href) {
+    return (
+      <a href={href} className={classes}>
+        {title}
       </a>
-    </div>
+    );
+  }
+
+  // Otherwise, render a regular button (for actions)
+  return (
+    <button onClick={onClick} className={classes}>
+      {title}
+    </button>
   );
 };
 

@@ -3,10 +3,14 @@ import { Link as ScrollLink } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
 import Button from "../layouts/Button.jsx";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);
   const [userName, setUserName] = useState("");
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -14,6 +18,8 @@ const Navbar = () => {
       try {
         const user = JSON.parse(storedUser);
         setUserName(user.name || ""); // Fallback if name not present
+        setIsLoggedIn(true);
+        setIsAdmin(user.isAdmin || false);
       } catch (e) {
         console.error("Failed to parse user from localStorage:", e);
       }
@@ -26,6 +32,14 @@ const Navbar = () => {
 
   const closeMenu = () => {
     setMenu(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setUserName("");
+    navigate("/");
   };
 
   return (
@@ -57,9 +71,20 @@ const Navbar = () => {
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
-          <RouterLink to="/login">
-            <Button title="Login" />
-          </RouterLink>
+          {isAdmin && (
+            <RouterLink to="/admin/dashboard" className="hover:text-brightColor transition-all cursor-pointer">
+              Admin Dashboard
+            </RouterLink>
+          )}
+          {isLoggedIn ? (
+            <button onClick={handleLogout} className="text-sm text-red-500 hover:underline">
+              Logout
+            </button>
+          ) : (
+            <RouterLink to="/login">
+              <Button title="Login" />
+            </RouterLink>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -104,9 +129,20 @@ const Navbar = () => {
         <RouterLink to="/cart" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
           עגלה
         </RouterLink>
-        <RouterLink to="/login">
-          <Button title="Login" />
-        </RouterLink>
+        {isAdmin && (
+          <RouterLink to="/admin/dashboard">
+            <Button title="admin dashboard" />
+          </RouterLink>
+        )}
+        {isLoggedIn ? (
+          <button onClick={handleLogout} className="text-mid text-red-500 hover:underline">
+            Logout
+          </button>
+        ) : (
+          <RouterLink to="/login">
+            <Button title="Login" />
+          </RouterLink>
+        )}
       </div>
     </div>
   );

@@ -40,6 +40,8 @@ const App = () => {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            {/* <Route path="/admin/products" element={<ProductList />} />
+            <Route path="/admin/add-product" element={<AddProduct />} /> */}
           </Routes>
 
           {/* CartIcon should be placed here to appear on all pages */}

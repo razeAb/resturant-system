@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar"; // For main pages with scroll
+import SideMenu from "./SideMenu";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -230,7 +231,8 @@ const AdminDashboard = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
+      <SideMenu />
       <div style={styles.adminDashboard}>
         <header style={styles.header}>
           <h1 style={styles.title}>Admin Dashboard</h1>
