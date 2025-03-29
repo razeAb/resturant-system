@@ -84,6 +84,12 @@ const AdminProducts = () => {
                         <button className="delete-button" onClick={() => handleDelete(product._id)}>
                           Delete
                         </button>
+                        <button
+                          class={`toggle-button ${product.isActive ? "active" : "inactive"}`}
+                          onClick={() => handleToggleActive(product._id, product.isActive)}
+                        >
+                          {product.isActive ? "Deactivate" : "Activate"}
+                        </button>
                       </div>
                     </div>
                   </div>

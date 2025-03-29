@@ -7,6 +7,10 @@ const productSchema = new mongoose.Schema({
   description: { type: String },
   image: { type: String },
   category: { type: String, required: true }, // ✅ Added required category
+  isActive:{
+    type: Boolean,
+    default: true
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
