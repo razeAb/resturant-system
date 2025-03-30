@@ -33,6 +33,17 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
+//Patch product toggle
+router.patch("/:id/toggle-active", async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    const updated = await Product.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update product status" });
+  }
+});
+
 // ✅ Add Multiple Products
 router.post("/add-products", protect, async (req, res) => {
   try {

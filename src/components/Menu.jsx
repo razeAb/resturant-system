@@ -20,7 +20,9 @@ const Menu = () => {
   }, []);
 
   const renderSection = (title, categories, isWeighted = false) => {
-    const filtered = products.filter((p) => (Array.isArray(categories) ? categories.includes(p.category) : p.category === categories));
+    const filtered = products.filter(
+      (p) => p.isActive && (Array.isArray(categories) ? categories.includes(p.category) : p.category === categories)
+    );
     if (filtered.length === 0) return null;
 
     return (

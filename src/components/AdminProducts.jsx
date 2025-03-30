@@ -25,6 +25,22 @@ const AdminProducts = () => {
     fetchProducts();
   }, []);
 
+  const handleToggleActive = async (productId, currentStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `http://localHost:5001/api/products/${productId}/toggle-active`,
+        { isActive: !currentStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setProducts((prev) => prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p)));
+    } catch (error) {
+      console.error("Failed to toggle product status:", error);
+    }
+  };
+
   const handleEdit = (productId) => {
     navigate(`/edit-product/${productId}`);
   };
@@ -66,8 +82,6 @@ const AdminProducts = () => {
             <h2 className="section-title">{category}</h2>
             <div className="products-grid">
               {groupedByCategory[category].map((product) => {
-                console.log("Image path:", product.image); // ✅ debugging output
-
                 return (
                   <div key={product._id} className="product-card">
                     <img src={product.image} alt={product.name} className="product-image" />
@@ -85,7 +99,7 @@ const AdminProducts = () => {
                           Delete
                         </button>
                         <button
-                          class={`toggle-button ${product.isActive ? "active" : "inactive"}`}
+                          className={`toggle-button ${product.isActive ? "active" : "inactive"}`}
                           onClick={() => handleToggleActive(product._id, product.isActive)}
                         >
                           {product.isActive ? "Deactivate" : "Activate"}
