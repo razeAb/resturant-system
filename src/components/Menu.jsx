@@ -10,7 +10,11 @@ const Menu = () => {
     const fetchMenu = async () => {
       try {
         const response = await axios.get("http://localhost:5001/api/products");
-        setProducts(response.data.products); // assuming your backend returns { products: [...] }
+        const normalizedProducts = response.data.products.map((product) => ({
+          ...product,
+          isActive: product.isActive === true,
+        }));
+        setProducts(normalizedProducts); // assuming your backend returns { products: [...] }
       } catch (error) {
         console.error("❌ Error loading menu:", error);
       }
@@ -20,9 +24,7 @@ const Menu = () => {
   }, []);
 
   const renderSection = (title, categories, isWeighted = false) => {
-    const filtered = products.filter(
-      (p) => p.isActive && (Array.isArray(categories) ? categories.includes(p.category) : p.category === categories)
-    );
+    const filtered = products.filter((p) => (Array.isArray(categories) ? categories.includes(p.category) : p.category === categories));
     if (filtered.length === 0) return null;
 
     return (
@@ -38,6 +40,7 @@ const Menu = () => {
               price={item.price}
               category={item.category}
               isWeighted={item.isWeighted}
+              isActive={item.isActive}
               toggleOptions
               modalType={item.category === "Meat" ? "weighted" : undefined}
             />

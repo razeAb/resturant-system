@@ -10,6 +10,7 @@ const DishesCard = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false); // State for AlertModal
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
+  const isActive = props.isActive === true;
 
   const handleButtonClick = () => {
     if (props.category === "Premium Meat") {
@@ -56,14 +57,16 @@ const DishesCard = (props) => {
   };
 
   return (
-    <div className="w-full lg:w-1/4 p-5 shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px] rounded-lg">
+    <div className={`w-full lg:w-1/4 p-5 shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px] ${!isActive ? "inactive-card" : ""} `}>
       <img className="rounded-xl" src={props.img} alt={props.title} />
       <div className="space-y-4">
         <h3 className="font-semibold text-center text-xl pt-6">{props.title}</h3>
+        {!isActive && <p className="text-red-600 text-center text-sm font-semibold">❌ אזל מהמלאי</p>}
+
         <div className="flex flex-row justify-center"></div>
         <div className="flex flex-row items-center justify-center gap-4">
           <h3 className="font-semibold text-lg">{props.price} ILS</h3>
-          <Button title="הוספה לעגלה" onClick={handleButtonClick} />
+          <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
         </div>
       </div>
 

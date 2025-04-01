@@ -15,7 +15,7 @@ router.get("/dashboard", protect, async (req, res) => {
 
     // ✅ Fetch Users, Products, and Orders
     const users = await User.find().select("name email orderCount points");
-    const products = await Product.find().select("name stock price image category");
+    const products = await Product.find().select("name stock price image category isActive");
     const orders = await Order.find().populate("items.product", "name price");
 
     // ✅ Get Most Frequent Customers (Top 5)

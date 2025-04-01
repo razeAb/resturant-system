@@ -145,3 +145,24 @@
 .toggle-button.inactive {
   background-color: #9ca3af; /* gray */
 }
+
+/* gray out product card */
+.inactive-card {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+/* Unavailable label */
+.inactive-card {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: none; /* Keep this to disable most interactions */
+}
+
+/* Make only the toggle button clearly interactive */
+.inactive-card .toggle-button {
+  pointer-events: auto; /* Override to allow clicking */
+  opacity: 1; /* Make button fully visible */
+  filter: none; /* Remove grayscale filter */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2); /* Add a subtle glow to make it stand out */
+}

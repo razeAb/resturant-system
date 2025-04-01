@@ -16,7 +16,9 @@ const AdminProducts = () => {
         const response = await axios.get("http://localhost:5001/api/admin/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setProducts(response.data.products); // Only use products from dashboard
+        console.log("Raw product data from API:", response.data.products);
+        const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
+        setProducts(normalized);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError("Failed to load products.");
@@ -83,14 +85,22 @@ const AdminProducts = () => {
             <div className="products-grid">
               {groupedByCategory[category].map((product) => {
                 return (
-                  <div key={product._id} className="product-card">
+                  <div
+                    key={product._id}
+                    className={`product-card ${!product.isActive ? "inactive-card" : ""}`} // ✅ gray out inactive
+                  >
                     <img src={product.image} alt={product.name} className="product-image" />
                     <div className="product-content">
                       <h3 className="product-name">{product.name}</h3>
+
+                      {/* ✅ Show unavailable label if product is not active */}
+                      {!product.isActive && <span className="inactive-label">❌ Unavailable</span>}
+
                       <div className="product-details">
                         <span className="product-price">₪{product.price}</span>
                         <span className="product-stock">Stock: {product.stock ?? "N/A"}</span>
                       </div>
+
                       <div className="product-actions">
                         <button className="edit-button" onClick={() => handleEdit(product._id)}>
                           Edit
