@@ -1,15 +1,19 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "./AddProductModal.css";
 
-const AddProductModal = ({ onClose, onProductAdded }) => {
+const AddProductModal = ({ onClose, onAdd }) => {
   const [form, setForm] = useState({
     name: "",
-    price: "",
-    stock: "",
     image: "",
     category: "",
-    isWeighted: false,
+    stock: "",
+    price: "",
+    isActive: true,
   });
+
+  const [imageFile, setImageFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -20,48 +24,120 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError("");
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5001/api/products", form, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      let imageUrl = form.image;
+
+      // ⬆️ Upload image file if selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        const uploadRes = await axios.post("http://localhost:5001/api/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        imageUrl = uploadRes.data.imageUrl;
+      }
+
+      const response = await axios.post(
+        "http://localhost:5001/api/products",
+        {
+          ...form,
+          image: imageUrl,
+          stock: Number(form.stock),
+          price: Number(form.price),
         },
-      });
-      onProductAdded();
-      onClose();
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      onAdd(response.data); // update products in state
+      onClose(); // close modal
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add product");
+      console.error("Error adding product:", err);
+      setError("Failed to add product.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">➕ Add New Product</h2>
-        {error && <p className="text-red-500 mb-2">{error}</p>}
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Add New Product</h2>
+        {error && <div className="error">{error}</div>}
 
-        <input name="name" placeholder="Name" className="input" value={form.name} onChange={handleChange} required />
-        <input name="price" placeholder="Price" type="number" className="input" value={form.price} onChange={handleChange} required />
-        <input name="stock" placeholder="Stock in Kg" type="number" className="input" value={form.stock} onChange={handleChange} required />
-        <input name="image" placeholder="Image URL or path" className="input" value={form.image} onChange={handleChange} />
-        <input name="category" placeholder="Category" className="input" value={form.category} onChange={handleChange} />
+        <input name="name" placeholder="Name" onChange={handleChange} value={form.name} />
+        <input name="category" placeholder="Category" onChange={handleChange} value={form.category} />
+        <input name="stock" type="number" placeholder="Stock" onChange={handleChange} value={form.stock} />
+        <input name="price" type="number" placeholder="Price (₪)" onChange={handleChange} value={form.price} />
 
-        <label className="flex items-center gap-2 mt-2">
-          <input type="checkbox" name="isWeighted" checked={form.isWeighted} onChange={handleChange} />
-          Weighted item?
+        {/* Image Upload Section */}
+        <label>Upload Product Image:</label>
+        <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
+
+        {imageFile && (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem("token");
+                const formData = new FormData();
+                formData.append("image", imageFile);
+
+                const uploadRes = await axios.post("http://localhost:5001/api/upload", formData, {
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+
+                const uploadedUrl = uploadRes.data.imageUrl;
+                setForm((prev) => ({ ...prev, image: uploadedUrl }));
+                alert("✅ Image uploaded successfully!");
+              } catch (err) {
+                alert("❌ Failed to upload image.");
+                console.error(err);
+              }
+            }}
+            style={{ marginTop: "0.5rem" }}
+          >
+            Upload Image
+          </button>
+        )}
+
+        {/* Show preview only if uploaded */}
+        {form.image && (
+          <div style={{ marginTop: "1rem" }}>
+            <strong>Image Preview:</strong>
+            <br />
+            <img
+              src={form.image}
+              alt="Uploaded Preview"
+              style={{ width: "100%", maxWidth: "200px", borderRadius: "8px", marginTop: "0.5rem" }}
+            />
+          </div>
+        )}
+        <label>
+          <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
+          Active
         </label>
 
-        <div className="mt-4 flex justify-between">
-          <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
-            Add
+        <div className="modal-buttons">
+          <button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Adding..." : "Add Product"}
           </button>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:underline">
-            Cancel
-          </button>
+          <button onClick={onClose}>Cancel</button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import SideMenu from "./SideMenu";
+import AddProductModal from "./AddProductMoadl";
 import "./AdminProducts.css";
 
 const AdminProducts = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
+  const [showMoadl, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -16,7 +18,6 @@ const AdminProducts = () => {
         const response = await axios.get("http://localhost:5001/api/admin/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Raw product data from API:", response.data.products);
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
         setProducts(normalized);
       } catch (err) {
@@ -71,10 +72,13 @@ const AdminProducts = () => {
 
   return (
     <>
+      {showMoadl && (
+        <AddProductModal onClose={() => setShowModal(false)} onAdd={(newProduct) => setProducts((prev) => [...prev, newProduct])} />
+      )}
       <SideMenu />
       <div className="admin-dashboard">
         <div className="center-btn">
-          <button onClick={() => navigate("/add-product")} className="primary-button">
+          <button onClick={() => setShowModal(true)} className="primary-button">
             ➕ Add New Product
           </button>
         </div>
