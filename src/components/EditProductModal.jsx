@@ -6,13 +6,18 @@ const EditProductModal = ({ isOpen, onClose, product, onUpdate }) => {
     name: "",
     price: "",
     stock: "",
-    description: "",
     image: "",
     category: "",
     isWeighted: false,
   });
 
   useEffect(() => {
+    if(isOpen && productId){
+      axios.get(`/api/products/${productId}`)
+      .then((res) => setProduct(res.data))
+      .catch((err) => console.error("Failed to fetch product", err));
+    }
+    
     if (product) {
       setFormData({
         name: product.name || "",
