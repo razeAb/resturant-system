@@ -92,6 +92,15 @@ router.post("/", async (req, res) => {
   }
 });
 
+//Get active orders that are not marked by done
+// router.get("/active", async (req, res) => {
+//   try{
+//     const activeOrders = await Order.find({ status: { $ne: "done" } })
+//     .populate("user", "name email")
+//     .populate
+//   }
+// })
+
 // ✅ Get All Orders (Admin Only)
 router.get("/", async (req, res) => {
   try {

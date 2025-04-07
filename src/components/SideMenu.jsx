@@ -34,7 +34,7 @@ const SideMenu = ({ children }) => {
               </Link>
             </li>
             <li>
-              <Link to="/admin/orders" className="hover:text-yellow-400">
+              <Link to="/admin/activeOrders" className="hover:text-yellow-400">
                 Active orders
               </Link>
             </li>
