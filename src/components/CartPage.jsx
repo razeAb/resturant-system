@@ -2,6 +2,8 @@ import React, { useContext, useState } from "react";
 import CartContext from "../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "./ClosedModal";
+import axios from "axios";
+import { comment } from "postcss";
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
@@ -21,6 +23,44 @@ const CartPage = () => {
     setShowConfirmationModal(false);
   };
 
+  //submitting order to backend
+  const submitOrderToBackend = async (deliveryOption) => {
+    const groupedItems = groupCartItems();
+
+    const itemsForBackend = groupedItems.map((item) => ({
+      product: item._id || item.id,
+      title: item.title,
+      price: item.price,
+      img: item.img,
+      quantity: item.quantity,
+      isWeighted: item.isWeighted,
+      vegetables: item.selectedOptions?.vegetables || [],
+      additions: item.selectedOptions?.additions || [],
+      comment: item.comment || "",
+    }));
+    const loggedInUserId = localStorage.getItem("userId"); // or useContext(AuthContext)
+
+    const payload = {
+      ...(loggedInUserId && { user: loggedInUserId }), // ✅ add only if exists
+      items: itemsForBackend,
+      totalPrice: parseFloat(calculateCartTotal()),
+      deliveryOption,
+      status: "pending",
+      createdAt: new Date(),
+    };
+
+    console.log("📦 Submitting order:", payload);
+
+    try {
+      const response = await axios.post("http://localhost:5001/api/orders", payload);
+      console.log("✅ Order submitted:", response.data);
+      alert("ההזמנה נשלחה בהצלחה!");
+      setShowConfirmationModal(false);
+    } catch (error) {
+      console.error("❌ Failed to submit order:", error.response?.data || error.message);
+      alert("שגיאה בשליחת ההזמנה");
+    }
+  };
   // Group items by id and calculate the quantity for identical items
   const groupCartItems = () => {
     const groupedItems = {};
@@ -200,7 +240,7 @@ const CartPage = () => {
                 <button
                   onClick={() => {
                     setDeliveryOption("Pickup");
-                    sendWhatsAppOrder("Pickup");
+                    submitOrderToBackend("Pickup");
                   }}
                   style={{
                     display: "flex",
@@ -218,7 +258,7 @@ const CartPage = () => {
                 <button
                   onClick={() => {
                     setDeliveryOption("Delivery");
-                    sendWhatsAppOrder("Delivery");
+                    submitOrderToBackend("Delivery");
                   }}
                   style={{
                     display: "flex",
@@ -236,7 +276,7 @@ const CartPage = () => {
                 <button
                   onClick={() => {
                     setDeliveryOption("EatIn");
-                    sendWhatsAppOrder("EatIn");
+                    submitOrderToBackend("EatIn");
                   }}
                   style={{
                     display: "flex",

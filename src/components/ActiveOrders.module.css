@@ -1,0 +1,168 @@
+/* ========== Layout ========== */
+.orderListLayout {
+  display: flex;
+  height: 100vh;
+  direction: ltr; /* force sidebar to left */
+  background-color: #2a2a2a;
+}
+
+.sidebarContainer {
+  width: 240px;
+  background-color: #2c2c2e;
+  flex-shrink: 0;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  direction: rtl; /* keep content right-aligned */
+}
+
+.contentWrapper {
+  max-width: 100%;
+}
+
+/* ========== Table Styles ========== */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.orderTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #2a2a2a;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.orderTable th {
+  text-align: right;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.orderTable td {
+  padding: 16px;
+  font-size: 14px;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ========== Status Badge ========== */
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.preparing {
+  background-color: #bf5af2;
+  color: white;
+}
+
+.done {
+  background-color: #30d158;
+  color: white;
+}
+
+/* ========== Order Details ========== */
+.orderDetailsRow td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.orderDetails {
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.orderDetails ul {
+  padding-right: 16px;
+  line-height: 1.8;
+}
+
+/* ========== Select Preparation Time ========== */
+.selectTime {
+  margin-top: 12px;
+}
+
+.selectTime select {
+  padding: 6px;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ========== Buttons ========== */
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.green {
+  background-color: #30d158;
+  color: white;
+}
+
+.red {
+  background-color: #ff3b30;
+  color: white;
+}
+
+.actionBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========== Empty Orders Message ========== */
+.noOrders {
+  color: rgba(255, 255, 255, 0.6);
+  padding: 16px;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .sidebarContainer {
+    display: none;
+  }
+
+  .mainContent {
+    padding: 10px;
+  }
+
+  .orderTable th,
+  .orderTable td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .btn,
+  .actionBtn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}

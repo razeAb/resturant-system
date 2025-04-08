@@ -85,6 +85,13 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
 
     console.log("Adding to cart:", itemToAdd); // Debug log
     addToCart(itemToAdd); // Add to cart via context
+
+    //reset modal state
+    setQuantity(1);
+    setSelectedOptions({
+      vegetables: [],
+      additions: [],
+    });
     setComment(""); // Clear the comment
     onClose(); // Close the modal
   };
