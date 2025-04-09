@@ -27,17 +27,29 @@ const CartPage = () => {
   const submitOrderToBackend = async (deliveryOption) => {
     const groupedItems = groupCartItems();
 
-    const itemsForBackend = groupedItems.map((item) => ({
-      product: item._id || item.id,
-      title: item.title,
-      price: item.price,
-      img: item.img,
-      quantity: item.quantity,
-      isWeighted: item.isWeighted,
-      vegetables: item.selectedOptions?.vegetables || [],
-      additions: item.selectedOptions?.additions || [],
-      comment: item.comment || "",
-    }));
+    const itemsForBackend = groupedItems
+      .map((item) => ({
+        product: item._id || item.id,
+        title: item.title,
+        price: item.price,
+        img: item.img,
+        quantity: item.quantity,
+        isWeighted: item.isWeighted,
+        vegetables: item.selectedOptions?.vegetables || [],
+        additions: item.selectedOptions?.additions || [],
+        comment: item.comment || "",
+      }))
+      .filter(
+        (item) =>
+          typeof item.product === "string" && item.product.match(/^[a-f\d]{24}$/i) && typeof item.quantity === "number" && item.quantity > 0
+      );
+
+    console.log("✅ items:", itemsForBackend);
+    console.log("✅ totalPrice (type):", typeof parseFloat(calculateCartTotal()));
+    console.log("✅ deliveryOption:", deliveryOption);
+
+    // ✅ only now you can use it
+    console.log("🟢 Cleaned itemsForBackend:", itemsForBackend);
     const loggedInUserId = localStorage.getItem("userId"); // or useContext(AuthContext)
 
     const payload = {

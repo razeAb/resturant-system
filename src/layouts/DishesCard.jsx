@@ -75,6 +75,7 @@ const DishesCard = (props) => {
         <>
           {props.category === "Meat" ? (
             <WeightedModal
+              _id={props.id} // ⬅️ חשוב
               img={props.img}
               title={props.title}
               price={props.price}
@@ -85,6 +86,7 @@ const DishesCard = (props) => {
             />
           ) : props.category === "Sandwiches" ? (
             <Modal
+              _id={props.id} // ⬅️ חשוב
               img={props.img}
               title={props.title}
               price={props.price}

@@ -3,7 +3,7 @@ import CartContext from "../context/CartContext"; // Import the CartContext
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
 import Button from "../layouts/Button";
 
-const Modal = ({ img, title, price, description, isOpen, onClose }) => {
+const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -62,15 +62,16 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
 
     // Add the item to the cart
     const itemToAdd = {
-      id: `${title}-${Math.random().toString(36).substring(7)}`, // Generate a unique ID
+      _id, // מזהה אמיתי שנשלח לבקנד
+      id: `${title}-${Math.random().toString(36).substring(7)}`, // מזהה ייחודי פנימי לעגלה
       img,
       title,
-      price: parseFloat(price), // Base price per 100 grams
-      quantity: selectedGrams / 100, // Quantity in kilograms (to match your calculation)
-      isWeighted: true, // Flag to indicate this is a weighted item
+      price: parseFloat(price),
+      quantity,
+      isWeighted: true,
       selectedOptions,
       comment,
-      totalPrice: parseFloat(totalPrice), // Total price calculated based on grams and additions
+      totalPrice: parseFloat(totalPrice),
     };
 
     addToCart(itemToAdd); // Add the item to the cart via context

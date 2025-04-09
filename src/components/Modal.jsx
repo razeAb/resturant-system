@@ -3,7 +3,7 @@ import CartContext from "../context/CartContext"; // Import the CartContext
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
 import Button from "../layouts/Button";
 
-const Modal = ({ img, title, price, description, isOpen, onClose }) => {
+const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -73,16 +73,17 @@ const Modal = ({ img, title, price, description, isOpen, onClose }) => {
     const totalPrice = calculateTotalPrice();
 
     const itemToAdd = {
-      id: `${title}-${Math.random().toString(36).substring(7)}`, // Generate a unique ID
+      _id, // מזהה אמיתי שנשלח לבקנד
+      id: `${title}-${Math.random().toString(36).substring(7)}`, // מזהה ייחודי פנימי לעגלה
       img,
       title,
-      price: parseFloat(price), // Base price of the item (not multiplied by quantity)
-      quantity, // The quantity of the meal
-      selectedOptions, // Includes additions
+      price: parseFloat(price),
+      quantity,
+      isWeighted: true,
+      selectedOptions,
       comment,
-      totalPrice: parseFloat(totalPrice), // Total price of one unit (without multiplying by quantity)
+      totalPrice: parseFloat(totalPrice),
     };
-
     console.log("Adding to cart:", itemToAdd); // Debug log
     addToCart(itemToAdd); // Add to cart via context
 

@@ -40,6 +40,20 @@ router.post("/", async (req, res) => {
   }
 });
 
+//update order status
+router.put("/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 //Delete order By id
 router.delete("/:id", async (req, res) => {
   try {
