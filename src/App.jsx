@@ -13,7 +13,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import AdminProducts from "./components/AdminProducts";
 import ActiveOrders from "./components/ActiveOrders";
-
+import OrderHistory from "./components/OrderHistory";
 const App = () => {
   return (
     <CartProvider>
@@ -45,6 +45,7 @@ const App = () => {
             <Route path="/admin/products" element={<AdminProducts />} />
             {/* <Route path="/admin/add-product" element={<AddProduct />} />  */}
             <Route path="/admin/activeOrders" element={<ActiveOrders />} />
+            <Route path="/admin/orderHistory" element={<OrderHistory />} />
           </Routes>
 
           {/* CartIcon should be placed here to appear on all pages */}

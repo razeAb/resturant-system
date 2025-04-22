@@ -2,9 +2,8 @@ import React from "react";
 
 const Button = ({ title, href, onClick }) => {
   const classes =
-    "px-6 py-1 border-2 border-brightColor text-brightColor hover:bg-brightColor hover:text-white transition-all rounded-full";
+    "px-6 py-2 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold";
 
-  // If href is provided, render <a> (for links)
   if (href) {
     return (
       <a href={href} className={classes}>
@@ -13,7 +12,6 @@ const Button = ({ title, href, onClick }) => {
     );
   }
 
-  // Otherwise, render a regular button (for actions)
   return (
     <button onClick={onClick} className={classes}>
       {title}

@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import SideMenu from "./SideMenu";
 import AddProductModal from "./AddProductMoadl";
-import "./AdminProducts.css";
+import styles from "./ActiveOrders.module.css"; // Shared layout
+import "./AdminProducts.css"; // Custom styling
+import Button from "../layouts/Button"; // Adjust path if needed
+import EditProductModal from "./EditProductModal";
 
 const AdminProducts = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
-  const [showMoadl, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,7 +26,7 @@ const AdminProducts = () => {
         setProducts(normalized);
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError("Failed to load products.");
+        setError("שגיאה בטעינת מוצרים");
       }
     };
     fetchProducts();
@@ -32,11 +36,9 @@ const AdminProducts = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localHost:5001/api/products/${productId}/toggle-active`,
+        `http://localhost:5001/api/products/${productId}/toggle-active`,
         { isActive: !currentStatus },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setProducts((prev) => prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p)));
     } catch (error) {
@@ -60,74 +62,82 @@ const AdminProducts = () => {
     }
   };
 
-  if (error) return <div className="error">{error}</div>;
-  if (!products.length) return <div className="loading">Loading...</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+  if (!products.length) return <div className={styles.loading}>טוען מוצרים...</div>;
 
   const groupedByCategory = products.reduce((acc, product) => {
-    const cat = product.category || "Uncategorized";
+    const cat = product.category || "לא מקוטלג";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(product);
     return acc;
   }, {});
 
   return (
-    <>
-      {showMoadl && (
-        <AddProductModal onClose={() => setShowModal(false)} onAdd={(newProduct) => setProducts((prev) => [...prev, newProduct])} />
-      )}
-      <SideMenu />
-      <div className="admin-dashboard">
-        <div className="center-btn">
-          <button onClick={() => setShowModal(true)} className="primary-button">
-            ➕ Add New Product
-          </button>
-        </div>
+    <div className={styles.orderListLayout}>
+      <div className={styles.sidebarContainer}>
+        <SideMenu />
+      </div>
 
-        {Object.keys(groupedByCategory).map((category) => (
-          <div key={category} style={{ marginBottom: "3rem" }}>
-            <h2 className="section-title">{category}</h2>
-            <div className="products-grid">
-              {groupedByCategory[category].map((product) => {
-                return (
-                  <div
-                    key={product._id}
-                    className={`product-card ${!product.isActive ? "inactive-card" : ""}`} // ✅ gray out inactive
-                  >
+      <div className={styles.mainContent}>
+        <div className={styles.contentWrapper}>
+          <div className="center-btn">
+            <Button title="הוסף מוצר חדש" onClick={() => setShowModal(true)} />
+          </div>
+
+          {/* Add Product Modal */}
+          {showModal && !selectedProduct && (
+            <AddProductModal onClose={() => setShowModal(false)} onAdd={(newProduct) => setProducts((prev) => [...prev, newProduct])} />
+          )}
+
+          {/* Edit Product Modal */}
+          {selectedProduct && (
+            <EditProductModal
+              product={selectedProduct}
+              onClose={() => setSelectedProduct(null)}
+              onUpdate={(updated) => setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)))}
+            />
+          )}
+          {Object.keys(groupedByCategory).map((category) => (
+            <div key={category} style={{ marginBottom: "3rem" }}>
+              <h2 className={styles.sectionTitle}>{category}</h2>
+              <div className="products-grid">
+                {groupedByCategory[category].map((product) => (
+                  <div key={product._id} className={`product-card ${!product.isActive ? "inactive-card" : ""}`}>
                     <img src={product.image} alt={product.name} className="product-image" />
                     <div className="product-content">
                       <h3 className="product-name">{product.name}</h3>
 
-                      {/* ✅ Show unavailable label if product is not active */}
-                      {!product.isActive && <span className="inactive-label">❌ Unavailable</span>}
+                      {!product.isActive && <span className="inactive-label">❌ לא זמין</span>}
 
                       <div className="product-details">
                         <span className="product-price">₪{product.price}</span>
-                        <span className="product-stock">Stock: {product.stock ?? "N/A"}</span>
+                        <span className="product-stock">מלאי: {product.stock ?? "N/A"}</span>
                       </div>
 
                       <div className="product-actions">
-                        <button className="edit-button" onClick={() => handleEdit(product._id)}>
-                          Edit
+                        <button className="edit-button" onClick={() => setSelectedProduct(product)}>
+                          עריכה
                         </button>
+
                         <button className="delete-button" onClick={() => handleDelete(product._id)}>
-                          Delete
+                          מחיקה
                         </button>
                         <button
                           className={`toggle-button ${product.isActive ? "active" : "inactive"}`}
                           onClick={() => handleToggleActive(product._id, product.isActive)}
                         >
-                          {product.isActive ? "Deactivate" : "Activate"}
+                          {product.isActive ? "השבתה" : "הפעלה"}
                         </button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

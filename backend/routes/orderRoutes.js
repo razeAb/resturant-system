@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
+const { protect } = require("../middleware/authMiddleware");
 
 // ✅ Create a New Order
 router.post("/", async (req, res) => {
@@ -78,6 +79,22 @@ router.get("/active", async (req, res) => {
     res.status(200).json(activeOrders);
   } catch (error) {
     console.error("❌ Error fetching active orders:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+//Get order history
+router.get("/history", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({
+      user: req.user._id,
+      status: "done",
+    })
+      .populate("items.product", "name") // just in case
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });

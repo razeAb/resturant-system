@@ -13,7 +13,10 @@ const formatTime = (timestamp) => {
   if (diffMinutes < 1) return "רגע עכשיו";
   if (diffMinutes < 60) return `${diffMinutes} דקות`;
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} שעות`;
-  return date.toLocaleDateString();
+  return date.toLocaleTimeString("he-IL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const ActiveOrdersPage = () => {
@@ -30,6 +33,7 @@ const ActiveOrdersPage = () => {
       setOrders(res.data);
     } catch (err) {
       console.error("Error fetching orders:", err);
+      setOrders([]);
     }
   };
 
@@ -85,7 +89,7 @@ const ActiveOrdersPage = () => {
                     <th>מספר הזמנה</th>
                     <th>משתמש</th>
                     <th>סטטוס</th>
-                    <th>זמן הכנה</th>
+                    <th>סוג הזמנה </th>
                     <th>זמן הזמנה</th>
                     <th>פעולות</th>
                   </tr>

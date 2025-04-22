@@ -53,10 +53,13 @@ router.get("/dashboard", protect, async (req, res) => {
       orders: item.orderCount,
     }));
 
-    const coldProducts = sortedProducts.slice(-5).map((item) => ({
-      name: item.product.name,
-      orders: item.orderCount,
-    }));
+    const coldProducts = sortedProducts
+      .slice(-5)
+      .reverse()
+      .map((item) => ({
+        name: item.product.name,
+        orders: item.orderCount,
+      }));
 
     // ✅ Return Admin Dashboard Data
     res.status(200).json({

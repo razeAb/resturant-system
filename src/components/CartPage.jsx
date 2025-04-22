@@ -10,6 +10,7 @@ const CartPage = () => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState(null);
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -57,6 +58,7 @@ const CartPage = () => {
       items: itemsForBackend,
       totalPrice: parseFloat(calculateCartTotal()),
       deliveryOption,
+      paymentMethod,
       status: "pending",
       createdAt: new Date(),
     };
@@ -248,12 +250,67 @@ const CartPage = () => {
                 {" "}
                 אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
               </p>{" "}
+              <div style={{ marginTop: "30px" }}>
+                <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => setPaymentMethod("Cash")}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px 20px",
+                      backgroundColor: "#f97316",
+                      color: "#fff",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <img src="public/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
+                    מזומן
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setPaymentMethod("Visa");
+                      alert("🔒 תשלום בויזה הוא הדגמה בלבד (Demo). לא מתבצע חיוב בפועל.");
+                    }}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px 20px",
+                      backgroundColor: "#2563eb",
+                      color: "#fff",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <img src="public/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
+                    ויזה
+                  </button>
+
+                  <button
+                    onClick={() => setPaymentMethod("Bit")}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px 20px",
+                      backgroundColor: "#6b21a8",
+                      color: "#fff",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <img src="public/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
+                    ביט
+                  </button>
+                </div>
+              </div>
               <div className="modal-buttons" style={{ display: "flex", justifyContent: "space-between" }}>
                 <button
-                  onClick={() => {
-                    setDeliveryOption("Pickup");
-                    submitOrderToBackend("Pickup");
-                  }}
+                  onClick={() => setDeliveryOption("Pickup")}
                   style={{
                     display: "flex",
                     alignItems: "center",
