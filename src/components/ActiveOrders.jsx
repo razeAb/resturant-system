@@ -137,6 +137,21 @@ const ActiveOrdersPage = () => {
                                   </li>
                                 ))}
                               </ul>
+                              {/* 🔥 New - Payment method and phone number */}
+                              <div style={{ marginTop: "15px", textAlign: "right" }}>
+                                <p>
+                                  <strong>אמצעי תשלום:</strong> {order.paymentDetails?.method || "לא ידוע"}
+                                </p>
+                                {order.user ? (
+                                  <p>
+                                    <strong>טלפון משתמש:</strong> {order.user.phone || "אין טלפון"}
+                                  </p> 
+                                ) : order.phone ? (
+                                  <p>
+                                    <strong>טלפון אורח:</strong> {order.phone}
+                                  </p>
+                                ) : null}
+                              </div>
 
                               <div className={styles.selectTime}>
                                 <label>בחר זמן הכנה:</label>

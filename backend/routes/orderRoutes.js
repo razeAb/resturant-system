@@ -6,22 +6,31 @@ const { protect } = require("../middleware/authMiddleware");
 // ✅ Create a New Order
 router.post("/", async (req, res) => {
   try {
-    const { items, totalPrice, deliveryOption, status, createdAt } = req.body;
+    const { user, items, totalPrice, deliveryOption, status, createdAt, phone, paymentDetails } = req.body;
 
-    // Validate request body
     if (!items || items.length === 0 || !deliveryOption || !totalPrice) {
       return res.status(400).json({ message: "❌ Missing required fields." });
     }
 
-    // Optional: Validate each item
     for (let item of items) {
       if (!item.product || item.quantity === undefined) {
         return res.status(400).json({ message: "❌ Invalid item format. Missing product or quantity." });
       }
     }
 
-    // Create and save new order
+    let userIdToSave = undefined;
+
+    if (user) {
+      // check if user exists
+      const foundUser = await require("../models/User").findById(user);
+      if (foundUser) {
+        userIdToSave = foundUser._id;
+      }
+    }
     const newOrder = new Order({
+      user: userIdToSave || undefined, // 🧠 ADD THIS
+      phone: phone || undefined, // ✅ save guest phone
+      paymentDetails: paymentDetails || {}, // ✅ save payment method
       items,
       totalPrice: parseFloat(totalPrice),
       deliveryOption,

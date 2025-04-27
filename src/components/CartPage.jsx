@@ -11,6 +11,16 @@ const CartPage = () => {
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [visaDetails, setVisaDetails] = useState({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardholderName: "",
+  });
+
+  //state to track in the order is ready to got to backend
+  const [isOrderReady, setIsOrderReady] = useState(false);
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -22,6 +32,81 @@ const CartPage = () => {
 
   const closeModal = () => {
     setShowConfirmationModal(false);
+
+    setPaymentMethod(null);
+    setDeliveryOption(null);
+    setVisaDetails({
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
+      cardholderName: "",
+    });
+    setIsOrderReady(false);
+  };
+
+  // Handle visa input changes
+  const handleVisaInputChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "expiryDate") {
+      // Handle expiry date formatting: MM/YY
+      let cleaned = value.replace(/\D/g, "");
+
+      if (cleaned.length >= 3) {
+        cleaned = cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4);
+      }
+
+      if (cleaned.length > 5) {
+        cleaned = cleaned.slice(0, 5);
+      }
+
+      setVisaDetails((prevDetails) => ({
+        ...prevDetails,
+        [name]: cleaned,
+      }));
+    } else if (name === "cardNumber") {
+      // Allow only digits, limit to 16 digits
+      const cleaned = value.replace(/\D/g, "").slice(0, 16);
+
+      setVisaDetails((prevDetails) => ({
+        ...prevDetails,
+        [name]: cleaned,
+      }));
+    } else if (name === "cvv") {
+      // Allow only digits, limit to 3 digits
+      const cleaned = value.replace(/\D/g, "").slice(0, 3);
+
+      setVisaDetails((prevDetails) => ({
+        ...prevDetails,
+        [name]: cleaned,
+      }));
+    } else {
+      // Normal text input (like cardholder name)
+      setVisaDetails((prevDetails) => ({
+        ...prevDetails,
+        [name]: value,
+      }));
+    }
+  };
+
+  //check if payment and delivery options are selected
+  const checkOrderReadiness = () => {
+    if (paymentMethod === "Visa") {
+      const { cardNumber, expiryDate, cvv, cardholderName } = visaDetails;
+      return cardNumber && expiryDate && cvv && cardholderName && deliveryOption;
+    }
+
+    return paymentMethod && deliveryOption;
+  };
+
+  //Final submission handler
+  const handleFinalSubmit = () => {
+    if (!checkOrderReadiness()) {
+      alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
+      return;
+    }
+
+    submitOrderToBackend(deliveryOption);
   };
 
   //submitting order to backend
@@ -39,6 +124,7 @@ const CartPage = () => {
         vegetables: item.selectedOptions?.vegetables || [],
         additions: item.selectedOptions?.additions || [],
         comment: item.comment || "",
+        paymentMethod: paymentMethod,
       }))
       .filter(
         (item) =>
@@ -48,17 +134,31 @@ const CartPage = () => {
     console.log("✅ items:", itemsForBackend);
     console.log("✅ totalPrice (type):", typeof parseFloat(calculateCartTotal()));
     console.log("✅ deliveryOption:", deliveryOption);
+    console.log("✅ paymentMethod:", paymentMethod);
 
     // ✅ only now you can use it
     console.log("🟢 Cleaned itemsForBackend:", itemsForBackend);
     const loggedInUserId = localStorage.getItem("userId"); // or useContext(AuthContext)
 
+    let paymentDetails = {};
+    if (paymentMethod === "Visa") {
+      paymentDetails = {
+        method: "Visa",
+
+        cardLastFour: visaDetails.cardNumber.slice(-4),
+        cardholderName: visaDetails.cardholderName,
+      };
+    } else {
+      paymentDetails = { method: paymentMethod };
+    }
+
     const payload = {
       ...(loggedInUserId && { user: loggedInUserId }), // ✅ add only if exists
+      ...(phoneNumber && !loggedInUserId && {phone: phoneNumber}),
       items: itemsForBackend,
       totalPrice: parseFloat(calculateCartTotal()),
       deliveryOption,
-      paymentMethod,
+      paymentDetails,
       status: "pending",
       createdAt: new Date(),
     };
@@ -250,7 +350,20 @@ const CartPage = () => {
                 {" "}
                 אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
               </p>{" "}
-              <div style={{ marginTop: "30px" }}>
+              {!localStorage.getItem("userId") && (
+                <div style={{ marginBottom: "5px" }}>
+                  <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
+                  <input
+                    type="text"
+                    placeholder="הכנס מספר טלפון"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  />
+                </div>
+              )}
+              <div style={{ marginTop: "5px" }}>
                 <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
                   <button
@@ -261,19 +374,20 @@ const CartPage = () => {
                       alignItems: "center",
                       gap: "10px",
                       padding: "10px 20px",
-                      backgroundColor: "#f97316",
+                      backgroundColor: paymentMethod === "Cash" ? "#16a34a" : "#22c55e", // ✅ green/dark green
+                      border: paymentMethod === "Cash" ? "3px solid black" : "1px solid transparent", // Black border if selected
+
                       color: "#fff",
                       borderRadius: "5px",
                     }}
                   >
-                    <img src="public/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
+                    <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
                     מזומן
                   </button>
 
                   <button
                     onClick={() => {
                       setPaymentMethod("Visa");
-                      alert("🔒 תשלום בויזה הוא הדגמה בלבד (Demo). לא מתבצע חיוב בפועל.");
                     }}
                     style={{
                       flex: "1",
@@ -281,12 +395,14 @@ const CartPage = () => {
                       alignItems: "center",
                       gap: "10px",
                       padding: "10px 20px",
-                      backgroundColor: "#2563eb",
+                      backgroundColor: paymentMethod === "Visa" ? "#1d4ed8" : "#2563eb", // ✅ blue/darker blue
+                      border: paymentMethod === "Visa" ? "3px solid black" : "1px solid transparent", // Black border if selected
+
                       color: "#fff",
                       borderRadius: "5px",
                     }}
                   >
-                    <img src="public/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
+                    <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
                     ויזה
                   </button>
 
@@ -298,78 +414,162 @@ const CartPage = () => {
                       alignItems: "center",
                       gap: "10px",
                       padding: "10px 20px",
-                      backgroundColor: "#6b21a8",
+                      backgroundColor: paymentMethod === "Bit" ? "#581c87" : "#6b21a8", // ✅ purple/darker purple
+                      border: paymentMethod === "Bit" ? "3px solid black" : "1px solid transparent", // Black border if selected
+
                       color: "#fff",
                       borderRadius: "5px",
                     }}
                   >
-                    <img src="public/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
+                    <img src="/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
                     ביט
                   </button>
                 </div>
               </div>
-              <div className="modal-buttons" style={{ display: "flex", justifyContent: "space-between" }}>
+              {/* ✅ Delivery buttons */}
+              <div
+                className="modal-delivery-buttons"
+                style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
+              >
                 <button
                   onClick={() => setDeliveryOption("Pickup")}
                   style={{
+                    flex: "1",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "10px",
-                    padding: "10px 20px",
-                    backgroundColor: "#25D366",
-                    color: "#fff",
-                    borderRadius: "5px",
+                    padding: "12px 24px",
+                    border: "2px solid #f97316",
+                    color: deliveryOption === "Pickup" ? "#ffffff" : "#f97316",
+                    backgroundColor: deliveryOption === "Pickup" ? "#f97316" : "transparent",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
                   איסוף עצמי
                 </button>
+
                 <button
-                  onClick={() => {
-                    setDeliveryOption("Delivery");
-                    submitOrderToBackend("Delivery");
-                  }}
+                  onClick={() => setDeliveryOption("Delivery")}
                   style={{
+                    flex: "1",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "10px",
-                    padding: "10px 20px",
-                    backgroundColor: "#25D366",
-                    color: "#fff",
-                    borderRadius: "5px",
+                    padding: "12px 24px",
+                    border: "2px solid #f97316",
+                    color: deliveryOption === "Delivery" ? "#ffffff" : "#f97316",
+                    backgroundColor: deliveryOption === "Delivery" ? "#f97316" : "transparent",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
                   משלוח
                 </button>
+
                 <button
-                  onClick={() => {
-                    setDeliveryOption("EatIn");
-                    submitOrderToBackend("EatIn");
-                  }}
+                  onClick={() => setDeliveryOption("EatIn")}
                   style={{
+                    flex: "1",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "10px",
-                    padding: "10px 20px",
-                    backgroundColor: "#25D366",
-                    color: "#fff",
-                    borderRadius: "5px",
+                    padding: "12px 24px",
+                    border: "2px solid #f97316",
+                    color: deliveryOption === "EatIn" ? "#ffffff" : "#f97316",
+                    backgroundColor: deliveryOption === "EatIn" ? "#f97316" : "transparent",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    fontSize: "16px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  <img
-                    src="/photos/dish.svg" // Correct path to the public folder
-                    alt="EatIn Icon"
-                    style={{ width: "20px", height: "20px" }}
-                  />
+                  <img src="/photos/dish.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
                   אכילה במסעדה
                 </button>
+              </div>
+              {paymentMethod === "Visa" && (
+                <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    placeholder="מספר כרטיס"
+                    value={visaDetails.cardNumber}
+                    onChange={handleVisaInputChange}
+                    required
+                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  />
+                  <input
+                    type="text"
+                    name="expiryDate"
+                    placeholder="תוקף (MM/YY)"
+                    value={visaDetails.expiryDate}
+                    onChange={handleVisaInputChange}
+                    required
+                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  />
+                  <input
+                    type="text"
+                    name="cvv"
+                    placeholder="CVV"
+                    value={visaDetails.cvv}
+                    onChange={handleVisaInputChange}
+                    required
+                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  />
+                  <input
+                    type="text"
+                    name="cardholderName"
+                    placeholder="שם בעל הכרטיס"
+                    value={visaDetails.cardholderName}
+                    onChange={handleVisaInputChange}
+                    required
+                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  />
+                </div>
+              )}
+              {/* ✅ Send and Cancel buttons */}
+              <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
+                <button
+                  onClick={handleFinalSubmit}
+                  disabled={!paymentMethod || !deliveryOption}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: !paymentMethod || !deliveryOption ? "gray" : "green",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                    cursor: !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
+                    border: "none",
+                  }}
+                >
+                  שלח הזמנה
+                </button>
+
                 <button
                   onClick={closeModal}
                   style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#050000",
-                    borderRadius: "5px",
+                    padding: "12px 24px",
+                    backgroundColor: "black",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    border: "none",
                   }}
                 >
                   בטל
@@ -560,6 +760,73 @@ const CartPage = () => {
 
           .modal-content p {
             font-size: 14px;
+          }
+          @media (max-width: 460px) {
+            .cart-table {
+              display: block;
+              width: 100%;
+              overflow-x: auto;
+              position: relative;
+            }
+
+            thead {
+              display: none;
+            }
+
+            tbody {
+              display: block;
+            }
+
+            tr {
+              display: block;
+              border-bottom: 1px solid #ccc;
+              padding: 10px 0;
+              margin-bottom: 10px;
+            }
+
+            td {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 10px 0;
+              border: none;
+            }
+
+            td:after {
+              content: attr(data-label);
+              flex: 0 0 100px;
+              font-weight: bold;
+              color: #555;
+            }
+
+            .cart-table td img {
+              width: 80px;
+              margin-bottom: 10px;
+            }
+
+            .modal-content {
+              padding: 20px;
+              width: 95%;
+            }
+
+            /* 💥 Add this */
+            .modal-buttons {
+              flex-direction: column;
+              gap: 10px;
+            }
+
+            .modal-buttons button {
+              width: 100%;
+            }
+              @media (max-width: 460px) {
+  .modal-delivery-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .modal-delivery-buttons button {
+    width: 100%;
+  }
           }
         }
       `}</style>

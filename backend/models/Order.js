@@ -24,6 +24,9 @@ const OrderSchema = new mongoose.Schema({
       comment: String,
     },
   ],
+  phone: {
+    type: String,
+  },
   totalPrice: {
     type: Number,
     required: true,
@@ -32,6 +35,11 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: ["Pickup", "Delivery", "EatIn"],
+  },
+  paymentDetails: {
+    method: { type: String },
+    cardLastFour: { type: String },
+    cardholderName: { type: String },
   },
   status: {
     type: String,
