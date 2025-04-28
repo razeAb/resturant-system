@@ -89,7 +89,7 @@ const ActiveOrdersPage = () => {
                     <th>מספר הזמנה</th>
                     <th>משתמש</th>
                     <th>סטטוס</th>
-                    <th>סוג הזמנה </th>
+                    <th>סוג הזמנה</th>
                     <th>זמן הזמנה</th>
                     <th>פעולות</th>
                   </tr>
@@ -99,7 +99,10 @@ const ActiveOrdersPage = () => {
                     <React.Fragment key={order._id}>
                       <tr>
                         <td>{order._id.slice(-6)}</td>
+
+                        {/* ✅ FIX: show only the user name here */}
                         <td>{order.user?.name || "אורח"}</td>
+
                         <td>
                           <span className={`${styles.statusBadge} ${styles[order.status.toLowerCase()]}`}>{order.status}</span>
                         </td>
@@ -119,6 +122,16 @@ const ActiveOrdersPage = () => {
                         <tr className={styles.orderDetailsRow}>
                           <td colSpan="6">
                             <div className={styles.orderDetails}>
+                              {/* 🆕 Show user name and phone here */}
+                              <div style={{ textAlign: "right", marginBottom: "10px" }}>
+                                <p>
+                                  <strong>משתמש:</strong> {order.user ? order.user.name : "אורח"}
+                                </p>
+                                <p>
+                                  <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone}
+                                </p>
+                              </div>
+
                               <h4>פרטי ההזמנה</h4>
                               <ul>
                                 {order.items.map((item, idx) => (
@@ -137,20 +150,11 @@ const ActiveOrdersPage = () => {
                                   </li>
                                 ))}
                               </ul>
-                              {/* 🔥 New - Payment method and phone number */}
+
                               <div style={{ marginTop: "15px", textAlign: "right" }}>
                                 <p>
                                   <strong>אמצעי תשלום:</strong> {order.paymentDetails?.method || "לא ידוע"}
                                 </p>
-                                {order.user ? (
-                                  <p>
-                                    <strong>טלפון משתמש:</strong> {order.user.phone || "אין טלפון"}
-                                  </p> 
-                                ) : order.phone ? (
-                                  <p>
-                                    <strong>טלפון אורח:</strong> {order.phone}
-                                  </p>
-                                ) : null}
                               </div>
 
                               <div className={styles.selectTime}>

@@ -4,6 +4,7 @@ import CartNavbar from "./CartNavbar";
 import ClosedModal from "./ClosedModal";
 import axios from "axios";
 import { comment } from "postcss";
+import { AuthContext } from "./AuthContext"; // ✅ Also make sure you import AuthContext
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
@@ -21,6 +22,7 @@ const CartPage = () => {
 
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
+  const { user } = useContext(AuthContext); // ✅ get user
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -43,6 +45,9 @@ const CartPage = () => {
     });
     setIsOrderReady(false);
   };
+
+  //isguest component
+  const isGuest = () => !user;
 
   // Handle visa input changes
   const handleVisaInputChange = (e) => {
@@ -138,7 +143,7 @@ const CartPage = () => {
 
     // ✅ only now you can use it
     console.log("🟢 Cleaned itemsForBackend:", itemsForBackend);
-    const loggedInUserId = localStorage.getItem("userId"); // or useContext(AuthContext)
+    const loggedInUserId = user?._id; // or useContext(AuthContext)
 
     let paymentDetails = {};
     if (paymentMethod === "Visa") {
@@ -154,7 +159,7 @@ const CartPage = () => {
 
     const payload = {
       ...(loggedInUserId && { user: loggedInUserId }), // ✅ add only if exists
-      ...(phoneNumber && !loggedInUserId && {phone: phoneNumber}),
+      ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       items: itemsForBackend,
       totalPrice: parseFloat(calculateCartTotal()),
       deliveryOption,
@@ -171,8 +176,15 @@ const CartPage = () => {
       alert("ההזמנה נשלחה בהצלחה!");
       setShowConfirmationModal(false);
     } catch (error) {
-      console.error("❌ Failed to submit order:", error.response?.data || error.message);
-      alert("שגיאה בשליחת ההזמנה");
+      if (error.response?.status === 401) {
+        // Session expired or not authorized
+        localStorage.removeItem("userId");
+        alert("החיבור שלך פג תוקף. אנא התחבר מחדש");
+        window.location.reload(); // or redirect to login page
+      } else {
+        console.error("❌ Failed to submit order:", error.response?.data || error.message);
+        alert("שגיאה בשליחת ההזמנה");
+      }
     }
   };
   // Group items by id and calculate the quantity for identical items
@@ -350,7 +362,7 @@ const CartPage = () => {
                 {" "}
                 אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
               </p>{" "}
-              {!localStorage.getItem("userId") && (
+              {isGuest() && (
                 <div style={{ marginBottom: "5px" }}>
                   <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
                   <input

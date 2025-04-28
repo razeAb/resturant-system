@@ -1,30 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react"; // ✅ fixed
 import axios from "axios";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { auth, googleProvider } from "../firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider, linkWithCredential } from "firebase/auth";
+import { AuthContext } from "./AuthContext"; // ✅ Also make sure you import AuthContext
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { user, token } = useContext(AuthContext);
 
-  // ✅ Google Sign In
   const handleGoogleLogin = async () => {
     try {
-      // First, sign in with Google
+      // 1. Sign in with Google
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
 
-      // Single, consistent Axios request
+      // 2. Check if user already has a phone number
+      if (!user.phoneNumber) {
+        // 3. If not, start phone verification
+
+        const phoneNumber = prompt("אנא הזן מספר טלפון כולל קידומת מדינה (למשל, +972...)");
+        if (!phoneNumber) {
+          setError("חובה להזין מספר טלפון כדי להשלים את ההתחברות.");
+          return;
+        }
+
+        // Setup invisible Recaptcha
+        window.recaptchaVerifier = new RecaptchaVerifier(
+          "recaptcha-container",
+          {
+            size: "invisible",
+            callback: (response) => {
+              console.log("reCAPTCHA נפתר בהצלחה");
+            },
+          },
+          auth
+        );
+
+        const appVerifier = window.recaptchaVerifier;
+
+        // Send verification SMS
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+
+        const verificationCode = prompt("אנא הזן את קוד האימות (6 ספרות) שנשלח אליך בהודעת SMS:");
+        if (!verificationCode) {
+          setError("חובה להזין קוד אימות.");
+          return;
+        }
+
+        // Link the phone number to the Google account
+        const credential = PhoneAuthProvider.credential(confirmationResult.verificationId, verificationCode);
+        await linkWithCredential(user, credential);
+
+        console.log("✅ קישור בין חשבון גוגל למספר טלפון בוצע בהצלחה!");
+      }
+
+      // 4. Send user data to the backend
       const response = await axios.post(
         "/api/auth/firebase-login",
         {
           name: user.displayName,
           email: user.email,
           photo: user.photoURL,
+          phone: user.phoneNumber, // Include phone number
         },
         {
           headers: {
@@ -33,15 +75,18 @@ const Login = () => {
         }
       );
 
+      // 5. Save token and user in localStorage
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
+      // 6. Redirect based on user role
       navigate(response.data.user.isAdmin ? "/admin/dashboard" : "/");
     } catch (error) {
-      console.error("❌ Google Sign-In Error:", error);
-      setError("Google login failed.");
+      console.error("❌ שגיאה בהתחברות עם גוגל:", error);
+      setError(error.message || "התחברות עם גוגל נכשלה.");
     }
   };
+
   // ✅ Email/Password Login
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -116,6 +161,7 @@ const Login = () => {
           </button>
         </div>
       </form>
+      <div id="recaptcha-container"></div>
     </div>
   );
 };

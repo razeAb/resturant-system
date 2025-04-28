@@ -14,45 +14,48 @@ import Register from "./components/Register";
 import AdminProducts from "./components/AdminProducts";
 import ActiveOrders from "./components/ActiveOrders";
 import OrderHistory from "./components/OrderHistory";
+import { AuthProvider } from "./components/AuthContext"; // ✅
+
 const App = () => {
   return (
-    <CartProvider>
-      <Router>
-        <div>
-          {/* Main pages with Scroll Navbar */}
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Navbar />
-                  <div id="home">
-                    <Home />
-                  </div>
-                  <div id="menu">
-                    <Menu />
-                  </div>
-                  <Footer />
-                </>
-              }
-            />
-            {/* Cart page with regular CartNavbar */}
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            {/* <Route path="/admin/add-product" element={<AddProduct />} />  */}
-            <Route path="/admin/activeOrders" element={<ActiveOrders />} />
-            <Route path="/admin/orderHistory" element={<OrderHistory />} />
-          </Routes>
+    <AuthProvider>
+      <CartProvider>
+        <Router>
+          <div>
+            {/* Main pages with Scroll Navbar */}
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Navbar />
+                    <div id="home">
+                      <Home />
+                    </div>
+                    <div id="menu">
+                      <Menu />
+                    </div>
+                    <Footer />
+                  </>
+                }
+              />
+              {/* Cart page with regular CartNavbar */}
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/activeOrders" element={<ActiveOrders />} />
+              <Route path="/admin/orderHistory" element={<OrderHistory />} />
+            </Routes>
 
-          {/* CartIcon should be placed here to appear on all pages */}
-          <CartIcon />
-        </div>
-      </Router>
-    </CartProvider>
+            {/* CartIcon should be placed here to appear on all pages */}
+            <CartIcon />
+          </div>
+        </Router>
+      </CartProvider>
+    </AuthProvider>
   );
 };
 

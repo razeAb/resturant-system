@@ -104,17 +104,14 @@ router.post("/register", async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "❌ User with this email already exists." });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const isAdmin = adminKey === process.env.Admin_SECRET_KEY;
 
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password,
       phone,
-      isAdmin,
+      isAdmin: false,
       orderCount: 0,
       points: 0,
     });

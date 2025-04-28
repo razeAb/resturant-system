@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
+const User = require("../models/User"); // ✅ ADD THIS
 const { protect } = require("../middleware/authMiddleware");
 
 // ✅ Create a New Order
@@ -21,16 +22,16 @@ router.post("/", async (req, res) => {
     let userIdToSave = undefined;
 
     if (user) {
-      // check if user exists
-      const foundUser = await require("../models/User").findById(user);
+      const foundUser = await User.findById(user); // 🧠 Using imported User model
       if (foundUser) {
         userIdToSave = foundUser._id;
       }
     }
+
     const newOrder = new Order({
-      user: userIdToSave || undefined, // 🧠 ADD THIS
-      phone: phone || undefined, // ✅ save guest phone
-      paymentDetails: paymentDetails || {}, // ✅ save payment method
+      user: userIdToSave || undefined,
+      phone: phone || undefined,
+      paymentDetails: paymentDetails || {},
       items,
       totalPrice: parseFloat(totalPrice),
       deliveryOption,
@@ -39,6 +40,11 @@ router.post("/", async (req, res) => {
     });
 
     await newOrder.save();
+
+    // ✅ Update user order count
+    if (userIdToSave) {
+      await User.findByIdAndUpdate(userIdToSave, { $inc: { orderCount: 1 } });
+    }
 
     res.status(201).json({
       message: "✅ Order created successfully.",
@@ -50,7 +56,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-//update order status
+// ✅ Update order status
 router.put("/:id/status", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -64,7 +70,7 @@ router.put("/:id/status", async (req, res) => {
   }
 });
 
-//Delete order By id
+// ✅ Delete order by ID
 router.delete("/:id", async (req, res) => {
   try {
     const deleted = await Order.findByIdAndDelete(req.params.id);
@@ -72,17 +78,22 @@ router.delete("/:id", async (req, res) => {
     res.status(200).json({ message: "✅ Order deleted successfully" });
   } catch (err) {
     console.error("❌ Failed to delete order:", err);
-    res.status(500).json({ messgae: err.message });
+    res.status(500).json({ message: err.message }); // 🛠 fixed typo
   }
 });
 
 // ✅ Get Active Orders (not marked as done)
 router.get("/active", async (req, res) => {
   try {
-    const activeOrders = await Order.find({ status: { $ne: "done" } })
-      .populate("user", "name phone") // כדי שנקבל שם ומספר
-      .populate("items.product", "name") // כדי שנקבל את שם המוצר
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+    // 🧠 Step 1: Auto mark old orders as "done"
+    await Order.updateMany({ createdAt: { $lte: twentyFourHoursAgo }, status: { $ne: "done" } }, { $set: { status: "done" } });
+
+    // 🧠 Step 2: Fetch still active
+    const activeOrders = await Order.find({ status: { $ne: "done" } })
+      .populate("user", "name phone")
+      .populate("items.product", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json(activeOrders);
@@ -92,15 +103,16 @@ router.get("/active", async (req, res) => {
   }
 });
 
-//Get order history
+// ✅ Get Order History
 router.get("/history", protect, async (req, res) => {
   try {
-    const orders = await Order.find({
-      user: req.user._id,
-      status: "done",
-    })
-      .populate("items.product", "name") // just in case
-      .sort({ createdAt: -1 });
+    let query = { status: "done" };
+
+    if (!req.user.isAdmin) {
+      query.user = req.user._id;
+    }
+
+    const orders = await Order.find(query).populate("user", "name phone").populate("items.product", "name").sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (error) {

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link as ScrollLink } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
 import Button from "../layouts/Button.jsx";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "./AuthContext.jsx";
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);
@@ -11,7 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-
+  const { logout } = useContext(AuthContext);
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -35,11 +36,11 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    logout(); // <-- This will remove from localStorage + set user to null
     setIsLoggedIn(false);
     setUserName("");
     navigate("/");
+    window.location.reload();
   };
 
   return (
