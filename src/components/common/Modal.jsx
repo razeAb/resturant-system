@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
-import CartContext from "../context/CartContext"; // Import the CartContext
+import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
-import Button from "../layouts/Button";
+import Button from "../common/Button"; // ✅ correct
 
 const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);

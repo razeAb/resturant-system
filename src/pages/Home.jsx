@@ -1,5 +1,5 @@
 import React from "react";
-import Button from "../layouts/Button.jsx";
+import Button from "../components/common/Button.jsx";
 
 const Home = () => {
   const backgroundImageStyle = {

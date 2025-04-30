@@ -1,5 +1,5 @@
 import React from "react";
-import "./AlertModal.css"; // Import styling from your previous modal CSS
+import "../common/AlertModal.css";
 
 const ClosedModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

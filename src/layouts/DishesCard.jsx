@@ -1,8 +1,8 @@
 import React, { useState, useContext } from "react";
-import Button from "./Button";
-import Modal from "../components/Modal"; // Default modal
-import WeightedModal from "../components/WeightModal"; // Import WeightedModal
-import AlertModal from "../components/AlertModal"; // Import AlertModal
+import Button from "../components/common/Button";
+import Modal from "../components/common/Modal";
+import WeightedModal from "../components/modals/WeightModal";
+import AlertModal from "../components/common/AlertModal"; // Import AlertModal
 import "../layouts/DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
 

@@ -1,10 +1,10 @@
 import React, { useContext, useState } from "react";
-import CartContext from "../context/CartContext";
+import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
-import ClosedModal from "./ClosedModal";
+import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
 import { comment } from "postcss";
-import { AuthContext } from "./AuthContext"; // ✅ Also make sure you import AuthContext
+import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
@@ -117,7 +117,7 @@ const CartPage = () => {
   //submitting order to backend
   const submitOrderToBackend = async (deliveryOption) => {
     const groupedItems = groupCartItems();
-
+  
     const itemsForBackend = groupedItems
       .map((item) => ({
         product: item._id || item.id,
@@ -129,47 +129,43 @@ const CartPage = () => {
         vegetables: item.selectedOptions?.vegetables || [],
         additions: item.selectedOptions?.additions || [],
         comment: item.comment || "",
-        paymentMethod: paymentMethod,
       }))
       .filter(
         (item) =>
-          typeof item.product === "string" && item.product.match(/^[a-f\d]{24}$/i) && typeof item.quantity === "number" && item.quantity > 0
+          typeof item.product === "string" &&
+          item.product.match(/^[a-f\d]{24}$/i) &&
+          typeof item.quantity === "number" &&
+          item.quantity > 0
       );
-
-    console.log("✅ items:", itemsForBackend);
-    console.log("✅ totalPrice (type):", typeof parseFloat(calculateCartTotal()));
-    console.log("✅ deliveryOption:", deliveryOption);
-    console.log("✅ paymentMethod:", paymentMethod);
-
-    // ✅ only now you can use it
-    console.log("🟢 Cleaned itemsForBackend:", itemsForBackend);
-    const loggedInUserId = user?._id; // or useContext(AuthContext)
-
+  
+    const loggedInUserId = user?._id;
+  
     let paymentDetails = {};
     if (paymentMethod === "Visa") {
       paymentDetails = {
         method: "Visa",
-
         cardLastFour: visaDetails.cardNumber.slice(-4),
         cardholderName: visaDetails.cardholderName,
       };
     } else {
       paymentDetails = { method: paymentMethod };
     }
-
+  
+    const totalPrice = parseFloat(calculateCartTotal());
+  
     const payload = {
-      ...(loggedInUserId && { user: loggedInUserId }), // ✅ add only if exists
+      ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       items: itemsForBackend,
-      totalPrice: parseFloat(calculateCartTotal()),
+      totalPrice,
       deliveryOption,
       paymentDetails,
       status: "pending",
       createdAt: new Date(),
     };
-
-    console.log("📦 Submitting order:", payload);
-
+  
+    console.log("📦 Submitting order payload:", payload); // ✅ Important log
+  
     try {
       const response = await axios.post("http://localhost:5001/api/orders", payload);
       console.log("✅ Order submitted:", response.data);
@@ -177,10 +173,9 @@ const CartPage = () => {
       setShowConfirmationModal(false);
     } catch (error) {
       if (error.response?.status === 401) {
-        // Session expired or not authorized
         localStorage.removeItem("userId");
         alert("החיבור שלך פג תוקף. אנא התחבר מחדש");
-        window.location.reload(); // or redirect to login page
+        window.location.reload();
       } else {
         console.error("❌ Failed to submit order:", error.response?.data || error.message);
         alert("שגיאה בשליחת ההזמנה");
@@ -222,8 +217,10 @@ const CartPage = () => {
 
   // Function to calculate the total for the entire cart
   const calculateCartTotal = () => {
-    return cartItems.reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0).toFixed(2);
+    const groupedItems = groupCartItems();
+    return groupedItems.reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0).toFixed(2);
   };
+  console.log("Final total price sent:", calculateCartTotal());
 
   const sendWhatsAppOrder = (deliveryOption) => {
     const currentDay = new Date().getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 3 = Wednesday)

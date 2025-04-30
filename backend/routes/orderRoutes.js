@@ -9,27 +9,10 @@ router.post("/", async (req, res) => {
   try {
     const { user, items, totalPrice, deliveryOption, status, createdAt, phone, paymentDetails } = req.body;
 
-    if (!items || items.length === 0 || !deliveryOption || !totalPrice) {
-      return res.status(400).json({ message: "❌ Missing required fields." });
-    }
-
-    for (let item of items) {
-      if (!item.product || item.quantity === undefined) {
-        return res.status(400).json({ message: "❌ Invalid item format. Missing product or quantity." });
-      }
-    }
-
-    let userIdToSave = undefined;
-
-    if (user) {
-      const foundUser = await User.findById(user); // 🧠 Using imported User model
-      if (foundUser) {
-        userIdToSave = foundUser._id;
-      }
-    }
+    console.log("🟢 totalPrice received at backend:", totalPrice); // Critical debug
 
     const newOrder = new Order({
-      user: userIdToSave || undefined,
+      user: user || undefined,
       phone: phone || undefined,
       paymentDetails: paymentDetails || {},
       items,
@@ -40,11 +23,7 @@ router.post("/", async (req, res) => {
     });
 
     await newOrder.save();
-
-    // ✅ Update user order count
-    if (userIdToSave) {
-      await User.findByIdAndUpdate(userIdToSave, { $inc: { orderCount: 1 } });
-    }
+    console.log("✅ Order saved:", newOrder);
 
     res.status(201).json({
       message: "✅ Order created successfully.",
@@ -55,7 +34,6 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 // ✅ Update order status
 router.put("/:id/status", async (req, res) => {
   const { id } = req.params;

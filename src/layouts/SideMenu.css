@@ -61,13 +61,14 @@
 @media (max-width: 768px) {
   .custom-sidebar {
     width: 100%;
-    height: auto;
-    flex-direction: row;
-    overflow-x: auto;
+    height: 100vh;
+    padding: 16px;
+    flex-direction: column; /* ✅ Keep vertical */
+    overflow-y: auto;
   }
 
   .menu-items {
-    flex-direction: row;
-    gap: 16px;
+    flex-direction: column; /* ✅ Keep vertical */
+    gap: 12px;
   }
 }

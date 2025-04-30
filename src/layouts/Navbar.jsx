@@ -2,9 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import { Link as ScrollLink } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
-import Button from "../layouts/Button.jsx";
+import Button from "../components/common/Button.jsx";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "./AuthContext.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);

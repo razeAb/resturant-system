@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
-import CartContext from "../context/CartContext";
-import "../components/CartIcon.css";
+import CartContext from "../../context/CartContext.jsx";
+import "./CartIcon.css";
 
 const CartIcon = () => {
   const { totalItems } = useContext(CartContext);

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
-import Button from "../layouts/Button.jsx"; // Assuming Button is being used elsewhere
+import Button from "../common/Button.jsx";
 
 const CartNavbar = () => {
   const [menu, setMenu] = useState(false);

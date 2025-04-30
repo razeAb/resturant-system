@@ -1,20 +1,21 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar"; // For main pages with scroll
-import Home from "./components/Home";
-import Menu from "./components/Menu";
-import About from "./components/About";
-import Footer from "./components/Footer";
-import CartPage from "./components/CartPage";
+import Navbar from "./layouts/Navbar"; // For main pages with scroll
+import Home from "./pages/Home";
+import Menu from "./pages/Menu";
+import About from "./pages/About";
+import Footer from "./layouts/Footer";
+import CartPage from "./components/cart/CartPage";
 import { CartProvider } from "./context/CartContext"; // Cart context
-import CartIcon from "./components/CartIcon"; // Import CartIcon
-import AdminDashboard from "./components/AdminDashboard";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import AdminProducts from "./components/AdminProducts";
-import ActiveOrders from "./components/ActiveOrders";
-import OrderHistory from "./components/OrderHistory";
-import { AuthProvider } from "./components/AuthContext"; // ✅
+import CartIcon from "./components/cart/CartIcon"; // Import CartIcon
+import AdminDashboard from "./admin/AdminDashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AdminProducts from "./admin/AdminProducts";
+import ActiveOrders from "./admin/ActiveOrders";
+import OrderHistory from "./admin/OrderHistory";
+import ResetPassword from "./pages/resetPassword";
+import { AuthProvider } from "./context/AuthContext"; // ✅
 
 const App = () => {
   return (
@@ -45,6 +46,8 @@ const App = () => {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/resetPassword" element={<ResetPassword />} />
+
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
               <Route path="/admin/orderHistory" element={<OrderHistory />} />

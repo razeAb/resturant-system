@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
-import CartContext from "../context/CartContext"; // Import the CartContext
-import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
-import Button from "../layouts/Button";
+import CartContext from "../../context/CartContext";
+import "../common/Modal.css";
+import Button from "../common/Button"; // ✅
 
 const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
