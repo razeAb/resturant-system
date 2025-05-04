@@ -117,7 +117,7 @@ const CartPage = () => {
   //submitting order to backend
   const submitOrderToBackend = async (deliveryOption) => {
     const groupedItems = groupCartItems();
-  
+
     const itemsForBackend = groupedItems
       .map((item) => ({
         product: item._id || item.id,
@@ -132,14 +132,11 @@ const CartPage = () => {
       }))
       .filter(
         (item) =>
-          typeof item.product === "string" &&
-          item.product.match(/^[a-f\d]{24}$/i) &&
-          typeof item.quantity === "number" &&
-          item.quantity > 0
+          typeof item.product === "string" && item.product.match(/^[a-f\d]{24}$/i) && typeof item.quantity === "number" && item.quantity > 0
       );
-  
+
     const loggedInUserId = user?._id;
-  
+
     let paymentDetails = {};
     if (paymentMethod === "Visa") {
       paymentDetails = {
@@ -150,9 +147,9 @@ const CartPage = () => {
     } else {
       paymentDetails = { method: paymentMethod };
     }
-  
+
     const totalPrice = parseFloat(calculateCartTotal());
-  
+
     const payload = {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
@@ -163,9 +160,9 @@ const CartPage = () => {
       status: "pending",
       createdAt: new Date(),
     };
-  
+
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
-  
+
     try {
       const response = await axios.post("http://localhost:5001/api/orders", payload);
       console.log("✅ Order submitted:", response.data);
@@ -206,10 +203,13 @@ const CartPage = () => {
     const additionsTotal = hasAdditions ? item.selectedOptions.additions.reduce((total, add) => total + add.price, 0) : 0;
 
     // Calculate the total price as (base price + additionsTotal) * quantity
-    let itemTotal = (item.price + additionsTotal) * item.quantity;
 
-    if (item.id > 8) {
-      itemTotal /= 10;
+    let itemTotal;
+    if (item.isWeighted) {
+      // If price is per 100g and quantity is in grams
+      itemTotal = (item.price / 100) * item.quantity + additionsTotal;
+    } else {
+      itemTotal = (item.price + additionsTotal) * item.quantity;
     }
 
     return itemTotal; // Return the total price, formatted to 2 decimal places
@@ -247,7 +247,8 @@ const CartPage = () => {
         if (item.id >= 10 && item.id <= 17) {
           return `
             מוצר: ${item.title}
-            כמות: ${item.isWeighted ? item.quantity + " גרם" : item.quantity}
+            כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
+
             מחיר ליחידה: ${item.price} ILS
                         ${comment}
             מחיר סופי: ${itemTotalPrice} ILS
@@ -256,7 +257,8 @@ const CartPage = () => {
 
         return `
           מוצר: ${item.title}
-          כמות: ${item.isWeighted ? item.quantity + " גרם" : item.quantity}
+          כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
+
           ירקות: ${vegetables}
           תוספות: ${additions}
           מחיר ליחידה: ${item.price} ILS
@@ -317,7 +319,7 @@ const CartPage = () => {
                       <img src={item.img} alt={item.title} style={{ width: "100px", borderRadius: "8px" }} />
                     </td>
                     <td data-label="שם מוצר">{item.title}</td>
-                    <td data-label="כמות">{item.isWeighted ? item.quantity + " גרם" : item.quantity}</td>
+                    <td data-label="כמות">{item.isWeighted ? `${item.quantity} גרם` : item.quantity}</td>
 
                     {/* Show vegetables and additions for all items */}
                     <td data-label="ירקות">{item.selectedOptions?.vegetables?.join(", ") || "אין"}</td>

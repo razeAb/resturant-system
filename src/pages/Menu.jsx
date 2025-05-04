@@ -41,6 +41,7 @@ const Menu = () => {
               category={item.category}
               isWeighted={item.isWeighted}
               isActive={item.isActive}
+              isOrder={item.isOrder}
               toggleOptions
               modalType={item.category === "Meat" ? "weighted" : undefined}
             />

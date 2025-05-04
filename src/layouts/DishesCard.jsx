@@ -13,7 +13,8 @@ const DishesCard = (props) => {
   const isActive = props.isActive === true;
 
   const handleButtonClick = () => {
-    if (props.category === "Premium Meat") {
+    console.log("isOrder:", props.isOrder);
+    if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
     } else if (props.category === "Meat") {
       setIsModalOpen(true); // Weighted modal
@@ -56,6 +57,7 @@ const DishesCard = (props) => {
     setIsModalOpen(false); // Close the modal
   };
 
+  
   return (
     <div className={`w-full lg:w-1/4 p-5 shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px] ${!isActive ? "inactive-card" : ""} `}>
       <img className="rounded-xl" src={props.img} alt={props.title} />

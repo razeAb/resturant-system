@@ -60,14 +60,10 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   };
 
   const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce((total, item) => {
-      return total + item.price; // Fixed price addition
-    }, 0);
-
-    const totalPrice = (parseFloat(price) + additionsTotal) * quantity;
-    return Number.isInteger(totalPrice) ? totalPrice : totalPrice.toFixed(2);
+    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
+    const totalPrice = parseFloat(price) * quantity + additionsTotal;
+    return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
   };
-
   const handleAddToCart = () => {
     // Calculate the total price for one unit of the item (including additions)
     const totalPrice = calculateTotalPrice();
@@ -79,7 +75,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       title,
       price: parseFloat(price),
       quantity,
-      isWeighted: true,
+      isWeighted: false,
       selectedOptions,
       comment,
       totalPrice: parseFloat(totalPrice),
