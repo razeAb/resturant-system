@@ -105,7 +105,7 @@ const CartPage = () => {
     const { orderCount } = user;
 
     if (orderCount >= 5 && orderCount < 10) {
-      const hasDrink = cartItems.some((item) => item.category.toLowerCase() === "drinks");
+      const hasDrink = cartItems.some((item) => item?.category?.toLowerCase() === "drinks");
       console.log("🛒 cartItems:", cartItems);
       console.log(
         "🧃 drink categories in cart:",

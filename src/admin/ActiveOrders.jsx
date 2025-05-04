@@ -3,6 +3,14 @@ import axios from "axios";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 
+const formatPhoneNumberForWhatsApp = (phone) => {
+  if (!phone) return "";
+  if (phone.startsWith("05")) {
+    return "+972" + phone.slice(1);
+  }
+  return phone;
+};
+
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
@@ -59,13 +67,16 @@ const ActiveOrdersPage = () => {
   const handleTimeChange = async (orderId, time) => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
+    const formattedPhone = formatPhoneNumberForWhatsApp(phone);
 
+    if (!formattedPhone) {
+      alert("לא נמצא מספר טלפון תקין לשליחת הודעה");
+      return;
+    }
     await updateOrderStatus(orderId, { status: "preparing", estimatedTime: time });
 
     const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
-
-    // open WhatsApp in new tab (works only on user device)
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");
 
     alert(`הלקוח יקבל הודעה בוואטסאפ`);

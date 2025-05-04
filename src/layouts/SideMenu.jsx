@@ -5,21 +5,21 @@ import "./SideMenu.css";
 const SideMenu = () => {
   return (
     <aside className="custom-sidebar always-open">
-      <div className="menu-items">
+      <div className="menu-items rtl text-right">
         <Link to="/admin/dashboard" className="menu-link">
-          Dashboard
+          לוח בקרה
         </Link>
         <Link to="/admin/products" className="menu-link">
-          Products
+          מוצרים
         </Link>
         <Link to="/admin/activeOrders" className="menu-link">
-          Active Orders
+          הזמנות פעילות
         </Link>
         <Link to="/admin/orderHistory" className="menu-link">
-          Order History
+          היסטוריית הזמנות
         </Link>
         <Link to="/" className="menu-link">
-          Go Back Home
+          חזרה לדף הראשי
         </Link>
       </div>
     </aside>
