@@ -25,6 +25,17 @@ router.post("/", async (req, res) => {
     await newOrder.save();
     console.log("✅ Order saved:", newOrder);
 
+    if (user) {
+      const foundUser = await User.findById(user);
+      if (foundUser) {
+        foundUser.orderCount += 1;
+        if (foundUser.orderCount >= 10) {
+          foundUser.orderCount = 0; // reset to 0
+        }
+        await foundUser.save();
+      }
+    }
+
     res.status(201).json({
       message: "✅ Order created successfully.",
       order: newOrder,

@@ -57,13 +57,36 @@ const ActiveOrdersPage = () => {
   };
 
   const handleTimeChange = async (orderId, time) => {
+    const order = orders.find((o) => o._id === orderId);
+    const phone = order?.user?.phone || order?.phone;
+
     await updateOrderStatus(orderId, { status: "preparing", estimatedTime: time });
-    alert(`ההזמנה שלך בהכנה - מוכנה בעוד ${time} דקות`);
+
+    const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+
+    // open WhatsApp in new tab (works only on user device)
+    window.open(whatsappUrl, "_blank");
+
+    alert(`הלקוח יקבל הודעה בוואטסאפ`);
   };
 
   const markAsDone = async (orderId) => {
+    const order = orders.find((o) => o._id === orderId);
+    const phone = order?.user?.phone || order?.phone;
+
     await updateOrderStatus(orderId, { status: "done" });
     alert("ההזמנה מוכנה!");
+
+    if (phone) {
+      const lastSixDigits = orderId.slice(-6); // Shorter ID for easier reading
+      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה! ניתן להגיע לאסוף אותה. תודה שהזמנת מאיתנו ❤️`;
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+      window.open(whatsappUrl, "_blank");
+    } else {
+      alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
+    }
   };
 
   return (
@@ -122,10 +145,10 @@ const ActiveOrdersPage = () => {
                       <td className="p-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            order.status === "preparing" ? "bg-purple-500" : "bg-green-500"
+                            order.status === "preparing" ? "bg-purple-500" : "bg-orange-500"
                           }`}
                         >
-                          {order.status === "preparing" ? "בהכנה" : "הושלם"}
+                          {order.status === "preparing" ? "בהכנה" : "מחכה אישור"}
                         </span>
                       </td>
                       <td className="p-3">{order.deliveryOption}</td>

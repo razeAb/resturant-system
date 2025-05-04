@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
@@ -6,10 +6,16 @@ import axios from "axios";
 import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 
+const isValidPhoneNumber = (phone) => {
+  return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
+};
+
 const CartPage = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [eligibleReward, setEligibleReward] = useState(null); // 'drink' or 'side'
   const [deliveryOption, setDeliveryOption] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -93,6 +99,26 @@ const CartPage = () => {
       }));
     }
   };
+  useEffect(() => {
+    if (!user || couponApplied || cartItems.length === 0) return;
+
+    const { orderCount } = user;
+
+    if (orderCount >= 5 && orderCount < 10) {
+      const hasDrink = cartItems.some((item) => item.category.toLowerCase() === "drinks");
+      console.log("🛒 cartItems:", cartItems);
+      console.log(
+        "🧃 drink categories in cart:",
+        cartItems.filter((item) => item.category === "drinks")
+      );
+      if (hasDrink) setEligibleReward("drink");
+      console.log("✅ Eligible for drink coupon");
+    } else if (orderCount >= 10) {
+      const hasSide = cartItems.some((item) => item.category === "side");
+      if (hasSide) setEligibleReward("side");
+      console.log("✅ Eligible for side coupon");
+    }
+  }, [cartItems, user, couponApplied]);
 
   //check if payment and delivery options are selected
   const checkOrderReadiness = () => {
@@ -108,6 +134,12 @@ const CartPage = () => {
   const handleFinalSubmit = () => {
     if (!checkOrderReadiness()) {
       alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
+      return;
+    }
+
+    // ✅ Guest phone validation
+    if (isGuest() && !isValidPhoneNumber(phoneNumber)) {
+      alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
       return;
     }
 
@@ -159,6 +191,7 @@ const CartPage = () => {
       paymentDetails,
       status: "pending",
       createdAt: new Date(),
+      ...(couponApplied && { couponUsed: eligibleReward }),
     };
 
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
@@ -194,31 +227,71 @@ const CartPage = () => {
     return Object.values(groupedItems);
   };
 
-  // Updated calculateItemTotal to apply the division by 10 if the id is greater than 10
-  const calculateItemTotal = (item) => {
-    // Check if the item has selected options and additions (i.e., if it has a modal)
-    const hasAdditions = item.selectedOptions && item.selectedOptions.additions;
+  // This function is only used to display individual row prices
+  const calculateItemTotal = (item, index = 0) => {
+    const hasAdditions = item.selectedOptions?.additions || [];
+    const additionsTotal = hasAdditions.reduce((sum, add) => sum + add.price, 0);
 
-    // If the item has additions, calculate the additionsTotal, otherwise set it to 0
-    const additionsTotal = hasAdditions ? item.selectedOptions.additions.reduce((total, add) => total + add.price, 0) : 0;
+    let basePrice = item.price;
 
-    // Calculate the total price as (base price + additionsTotal) * quantity
+    // ❗️Avoid applying coupon here completely – it’s handled in calculateCartTotal
+    // But if you insist on showing discounted price per item visually, you can:
+    const grouped = groupCartItems();
+    let drinkCouponApplied = false;
+    let sideCouponApplied = false;
 
-    let itemTotal;
-    if (item.isWeighted) {
-      // If price is per 100g and quantity is in grams
-      itemTotal = (item.price / 100) * item.quantity + additionsTotal;
-    } else {
-      itemTotal = (item.price + additionsTotal) * item.quantity;
+    if (couponApplied) {
+      for (let i = 0; i <= index; i++) {
+        const currentItem = grouped[i];
+        if (eligibleReward === "drink" && currentItem.category.toLowerCase() === "drinks" && !drinkCouponApplied) {
+          if (currentItem.id === item.id) {
+            basePrice = 0;
+            drinkCouponApplied = true;
+          }
+        } else if (eligibleReward === "side" && currentItem.category.toLowerCase() === "side" && !sideCouponApplied) {
+          if (currentItem.id === item.id) {
+            basePrice = 0;
+            sideCouponApplied = true;
+          }
+        }
+      }
     }
 
-    return itemTotal; // Return the total price, formatted to 2 decimal places
+    return item.isWeighted ? (basePrice / 100) * item.quantity + additionsTotal : (basePrice + additionsTotal) * item.quantity;
   };
 
   // Function to calculate the total for the entire cart
   const calculateCartTotal = () => {
     const groupedItems = groupCartItems();
-    return groupedItems.reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0).toFixed(2);
+    let drinkCouponApplied = false;
+    let sideCouponApplied = false;
+
+    return groupedItems
+      .reduce((total, item) => {
+        let basePrice = item.price;
+        const hasAdditions = item.selectedOptions?.additions || [];
+        const additionsTotal = hasAdditions.reduce((sum, add) => sum + add.price, 0);
+
+        // 💥 Apply coupon to ONE eligible item only
+        if (couponApplied) {
+          if (eligibleReward === "drink" && item.category.toLowerCase() === "drinks" && !drinkCouponApplied) {
+            basePrice = 0;
+            drinkCouponApplied = true;
+          }
+
+          if (eligibleReward === "side" && item.category.toLowerCase() === "side" && !sideCouponApplied) {
+            basePrice = 0;
+            sideCouponApplied = true;
+          }
+        }
+
+        const itemTotal = item.isWeighted
+          ? (basePrice / 100) * item.quantity + additionsTotal
+          : (basePrice + additionsTotal) * item.quantity;
+
+        return total + itemTotal;
+      }, 0)
+      .toFixed(2);
   };
   console.log("Final total price sent:", calculateCartTotal());
 
@@ -311,8 +384,7 @@ const CartPage = () => {
             </thead>
             <tbody>
               {groupCartItems().map((item, index) => {
-                const itemTotalPrice = calculateItemTotal(item);
-
+                const itemTotalPrice = calculateItemTotal(item, index);
                 return (
                   <tr key={index}>
                     <td data-label="תמונה">
@@ -350,7 +422,36 @@ const CartPage = () => {
         </div>
         <div className="cart-total">סה"כ: {calculateCartTotal()} ILS</div>
         <div style={{ marginTop: "20px" }}>
-          <button onClick={handleOrderNow}>הזמן עכשיו</button>
+          <button
+            onClick={handleOrderNow}
+            style={{
+              backgroundColor: "#22c55e", // Tailwind green-500
+              color: "#fff",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              fontWeight: "bold",
+              fontSize: "16px",
+              marginTop: "10px",
+              cursor: "pointer",
+            }}
+          >
+            הזמן עכשיו
+          </button>{" "}
+          {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
+          {eligibleReward && !couponApplied && (
+            <button
+              onClick={() => setCouponApplied(true)}
+              style={{
+                backgroundColor: "#3b82f6",
+                padding: "10px",
+                borderRadius: "5px",
+                fontWeight: "bold",
+                marginTop: "10px",
+              }}
+            >
+              {eligibleReward === "drink" ? "השתמש בקופון לשתייה חינם" : "השתמש בקופון לתוספת חינם"}
+            </button>
+          )}
         </div>
 
         {showConfirmationModal && !isClosedModalOpen && (
@@ -365,12 +466,19 @@ const CartPage = () => {
                 <div style={{ marginBottom: "5px" }}>
                   <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
                   <input
-                    type="text"
+                    type="tel"
                     placeholder="הכנס מספר טלפון"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
-                    style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                    pattern="^05\d{8}$"
+                    title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "5px",
+                      border: "1px solid #ccc",
+                    }}
                   />
                 </div>
               )}
@@ -591,7 +699,7 @@ const CartPage = () => {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .modal-overlay {
           position: fixed;
           top: 0;
