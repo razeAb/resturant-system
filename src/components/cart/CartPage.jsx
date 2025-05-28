@@ -11,7 +11,7 @@ const isValidPhoneNumber = (phone) => {
 };
 
 const CartPage = () => {
-  const { cartItems, removeFromCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
@@ -100,23 +100,49 @@ const CartPage = () => {
     }
   };
   useEffect(() => {
+    if (user) {
+      clearCart();
+      localStorage.removeItem("cartItems");
+      // Reset cart state when user logs in
+      setPaymentMethod(null);
+      setDeliveryOption(null);
+      setVisaDetails({
+        cardNumber: "",
+        expiryDate: "",
+        cvv: "",
+        cardholderName: "",
+      });
+      setPhoneNumber("");
+      setCouponApplied(false);
+      setEligibleReward(null);
+      setShowConfirmationModal(false);
+      setIsClosedModalOpen(false);
+      setIsOrderReady(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
 
-    const { orderCount } = user;
+    const { orderCount, _id, usedDrinkCoupon } = user;
 
-    if (orderCount >= 5 && orderCount < 10) {
+    if (orderCount >= 5 && orderCount < 10 && !usedDrinkCoupon) {
       const hasDrink = cartItems.some((item) => item.category.toLowerCase() === "drinks");
-      console.log("🛒 cartItems:", cartItems);
-      console.log(
-        "🧃 drink categories in cart:",
-        cartItems.filter((item) => item.category === "drinks")
-      );
       if (hasDrink) setEligibleReward("drink");
-      console.log("✅ Eligible for drink coupon");
     } else if (orderCount >= 10) {
       const hasSide = cartItems.some((item) => item.category === "side");
-      if (hasSide) setEligibleReward("side");
-      console.log("✅ Eligible for side coupon");
+      if (hasSide) {
+        setEligibleReward("side");
+
+        // ✅ Reset order count to 0 and reset drink coupon usage
+        axios
+          .patch(`http://localhost:5001/api/users/${_id}`, {
+            orderCount: 0,
+            usedDrinkCoupon: false,
+          })
+          .then(() => console.log("✅ Order count and drink coupon reset"))
+          .catch((err) => console.error("❌ Reset error:", err.response?.data || err.message));
+      }
     }
   }, [cartItems, user, couponApplied]);
 
@@ -347,6 +373,10 @@ const CartPage = () => {
     const whatsappUrl = `https://wa.me/+972507203099?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
+
+  if (user === undefined) {
+    return null; // Wait for AuthContext to resolve
+  }
 
   if (cartItems.length === 0) {
     return (

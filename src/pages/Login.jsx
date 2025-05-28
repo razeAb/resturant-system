@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { auth, googleProvider } from "../firebase";
-import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider, linkWithCredential } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { AuthContext } from "../context/AuthContext";
+import CartContext from "../context/CartContext";
 
 // 📞 Format phone number to international format
 const formatPhoneNumber = (number) => {
@@ -15,44 +16,13 @@ const formatPhoneNumber = (number) => {
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const { clearCart } = useContext(CartContext); // ✅ get clearCart
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const [showPhoneModal, setShowPhoneModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState(null);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [googleUser, setGoogleUser] = useState(null);
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // ✅ Set up RecaptchaVerifier when modal opens
-  useEffect(() => {
-    if (showPhoneModal && !window.recaptchaVerifier) {
-      try {
-        const authInstance = auth; // already imported correctly from firebase.js
-
-        window.recaptchaVerifier = new RecaptchaVerifier(
-          authInstance, // ✅ FIRST param must be auth
-          "recaptcha-container", // ✅ SECOND param is container id
-          {
-            size: "invisible",
-            callback: (response) => {
-              console.log("✅ reCAPTCHA solved successfully");
-            },
-          }
-        );
-
-        setRecaptchaReady(true);
-      } catch (error) {
-        console.error("❌ Recaptcha creation error:", error);
-        setError("בעיה ביצירת אימות אנושי. נסה לרענן את הדף.");
-      }
-    }
-  }, [showPhoneModal]);
 
   // ✅ Email and password login
   const handleLogin = async (e) => {
@@ -62,11 +32,15 @@ const Login = () => {
       const response = await axios.post("http://localhost:5001/api/auth/login", { email, password });
 
       const user = response.data.user;
+
+      clearCart(); // ✅ clear cart from context
+      localStorage.removeItem("cartItems"); // ✅ remove local cart
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(user));
 
       navigate(user.isAdmin ? "/admin/dashboard" : "/");
     } catch (error) {
+      console.error("Login Error:", error.response || error.message || error);
       setError(error.response?.data?.message || "משהו השתבש בהתחברות");
     } finally {
       setLoading(false);
@@ -80,12 +54,6 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
-
-      if (!user.phoneNumber) {
-        setGoogleUser(user);
-        setShowPhoneModal(true);
-        return;
-      }
 
       await sendUserToBackend(user, token);
     } catch (error) {
@@ -114,51 +82,6 @@ const Login = () => {
     localStorage.setItem("token", response.data.token);
     localStorage.setItem("user", JSON.stringify(response.data.user));
     navigate(response.data.user.isAdmin ? "/admin/dashboard" : "/");
-  };
-
-  // ✅ Send verification SMS
-  const sendVerificationCode = async () => {
-    try {
-      if (!recaptchaReady) {
-        setError("המערכת לא מוכנה לשלוח קוד עדיין.");
-        return;
-      }
-
-      setLoading(true);
-
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
-
-      setConfirmationResult(confirmation);
-      console.log("✅ Verification code sent!");
-    } catch (error) {
-      console.error("❌ שגיאה בשליחת קוד:", error);
-      setError(error.message || "שליחת קוד נכשלה");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ Confirm verification code
-  const verifyCodeAndLink = async () => {
-    try {
-      setLoading(true);
-
-      const credential = PhoneAuthProvider.credential(confirmationResult.verificationId, verificationCode);
-      await linkWithCredential(googleUser, credential);
-
-      console.log("✅ Phone linked successfully!");
-
-      const token = await googleUser.getIdToken();
-      await sendUserToBackend(googleUser, token);
-
-      setShowPhoneModal(false);
-    } catch (error) {
-      console.error("❌ שגיאה באימות קוד:", error);
-      setError(error.message || "אימות קוד נכשל");
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -195,21 +118,18 @@ const Login = () => {
           {loading ? "Processing..." : "Login"}
         </button>
 
-        {/* Register */}
         <button type="button" onClick={() => navigate("/register")} className="text-sm text-blue-500 mt-4 hover:underline">
           Don't have an account? Register
         </button>
-        <br></br>
-        {/* Forgot Password link */}
-        <button type="button" onClick={() => navigate("/resetPassword")} className="text-sm text-blue-500 mt-4 hover:underline">
+
+        <button type="button" onClick={() => navigate("/resetPassword")} className="text-sm text-blue-500 mt-2 hover:underline">
           Forgot Password?
         </button>
-        {/* Divider */}
+
         <div className="my-6 border-t border-gray-300 relative">
           <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-2 text-gray-500 text-sm">or</span>
         </div>
 
-        {/* Google Sign-In Button */}
         <div className="flex justify-center gap-4">
           <button
             type="button"
@@ -222,54 +142,6 @@ const Login = () => {
           </button>
         </div>
       </form>
-
-      {/* 🔥 Invisible Recaptcha */}
-      <div id="recaptcha-container"></div>
-
-      {/* 📱 Phone Modal */}
-      {showPhoneModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
-            {!confirmationResult ? (
-              <>
-                <h2 className="text-xl font-semibold mb-4">הזן מספר טלפון</h2>
-                <input
-                  type="text"
-                  placeholder="למשל 0521234567"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded mb-4"
-                />
-                <button
-                  className="bg-black text-white w-full py-2 rounded hover:bg-gray-800"
-                  onClick={sendVerificationCode}
-                  disabled={loading}
-                >
-                  {loading ? "שולח..." : "שלח קוד אימות"}
-                </button>
-              </>
-            ) : (
-              <>
-                <h2 className="text-xl font-semibold mb-4">הזן קוד אימות</h2>
-                <input
-                  type="text"
-                  placeholder="קוד בן 6 ספרות"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded mb-4"
-                />
-                <button
-                  className="bg-black text-white w-full py-2 rounded hover:bg-gray-800"
-                  onClick={verifyCodeAndLink}
-                  disabled={loading}
-                >
-                  {loading ? "מאמת..." : "אשר והמשך"}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
