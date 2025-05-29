@@ -73,13 +73,26 @@ const ActiveOrdersPage = () => {
       alert("לא נמצא מספר טלפון תקין לשליחת הודעה");
       return;
     }
-    await updateOrderStatus(orderId, { status: "preparing", estimatedTime: time });
 
-    const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
+    // ✅ Compute estimated ready time in the future
+    const estimatedReadyTime = new Date(Date.now() + time * 60000);
 
-    alert(`הלקוח יקבל הודעה בוואטסאפ`);
+    try {
+      await axios.patch(`http://localhost:5001/api/orders/${orderId}/estimated-time`, {
+        estimatedReadyTime,
+      });
+
+      // ✅ Notify via WhatsApp
+      const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+      window.open(whatsappUrl, "_blank");
+
+      alert("הלקוח יקבל הודעה בוואטסאפ");
+      fetchOrders(); // refresh UI
+    } catch (err) {
+      console.error(err);
+      alert("שגיאה בעדכון זמן ההכנה");
+    }
   };
 
   const markAsDone = async (orderId) => {
@@ -212,11 +225,19 @@ const ActiveOrdersPage = () => {
                             <p>
                               <strong>סכום לתשלום:</strong> {order.totalPrice ? `${order.totalPrice} ₪` : "לא זמין"}
                             </p>
-
+                            {order.estimatedReadyTime && (
+                              <p>
+                                <strong>זמן מוערך לסיום:</strong>{" "}
+                                {new Date(order.estimatedReadyTime).toLocaleTimeString("he-IL", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            )}
                             <div>
                               <label className="block mb-1">בחר זמן הכנה:</label>
                               <select
-                                value={order.estimatedTime || ""}
+                                defaultValue=""
                                 onChange={(e) => handleTimeChange(order._id, e.target.value)}
                                 className="bg-[#2a2a2a] border border-white/20 text-white rounded px-3 py-2"
                               >

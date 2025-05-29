@@ -3,6 +3,7 @@ import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 
@@ -29,6 +30,7 @@ const CartPage = () => {
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
   const { user } = useContext(AuthContext); // ✅ get user
+  const navigate = useNavigate();
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -220,13 +222,18 @@ const CartPage = () => {
       ...(couponApplied && { couponUsed: eligibleReward }),
     };
 
-    console.log("📦 Submitting order payload:", payload); // ✅ Important log
+    console.log("📦 Submitting order payload:", payload);
 
     try {
       const response = await axios.post("http://localhost:5001/api/orders", payload);
       console.log("✅ Order submitted:", response.data);
       alert("ההזמנה נשלחה בהצלחה!");
       setShowConfirmationModal(false);
+      clearCart(); // ✅ Reset cart context
+      localStorage.removeItem("cartItems"); // ✅ Clear localStorage
+      setShowConfirmationModal(false);
+      // ✅ Redirect after successful order
+      navigate("/order-preparing");
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
@@ -238,6 +245,7 @@ const CartPage = () => {
       }
     }
   };
+
   // Group items by id and calculate the quantity for identical items
   const groupCartItems = () => {
     const groupedItems = {};

@@ -46,9 +46,13 @@ const OrderSchema = new mongoose.Schema({
     enum: ["pending", "preparing", "ready", "completed", "cancelled"],
     default: "pending",
   },
+  estimatedReadyTime: {
+    type: Date, // ⏱️ Admin sets this to control frontend countdown
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
 module.exports = mongoose.model("Order", OrderSchema);
