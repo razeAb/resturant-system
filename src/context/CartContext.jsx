@@ -4,10 +4,12 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
+
   const clearCart = () => {
     setCartItems([]);
+    localStorage.removeItem("cartItems"); // optional: if you're storing in localStorage
   };
-  
+
   // Add item to cart
   const addToCart = (item) => {
     setCartItems((prevItems) => {
@@ -33,7 +35,7 @@ export const CartProvider = ({ children }) => {
   // Calculate total number of items
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  return <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, totalItems }}>{children}</CartContext.Provider>;
+  return <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, totalItems }}>{children}</CartContext.Provider>;
 };
 
 export default CartContext;

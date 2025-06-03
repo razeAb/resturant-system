@@ -4,6 +4,7 @@ import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 
@@ -12,6 +13,7 @@ const isValidPhoneNumber = (phone) => {
 };
 
 const CartPage = () => {
+  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
@@ -32,6 +34,7 @@ const CartPage = () => {
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
   const { user } = useContext(AuthContext); // ✅ get user
+  const navigate = useNavigate();
 
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -116,23 +119,49 @@ const CartPage = () => {
   };
 
   useEffect(() => {
+    if (user) {
+      clearCart();
+      localStorage.removeItem("cartItems");
+      // Reset cart state when user logs in
+      setPaymentMethod(null);
+      setDeliveryOption(null);
+      setVisaDetails({
+        cardNumber: "",
+        expiryDate: "",
+        cvv: "",
+        cardholderName: "",
+      });
+      setPhoneNumber("");
+      setCouponApplied(false);
+      setEligibleReward(null);
+      setShowConfirmationModal(false);
+      setIsClosedModalOpen(false);
+      setIsOrderReady(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
 
-    const { orderCount } = user;
+    const { orderCount, _id, usedDrinkCoupon } = user;
 
-    if (orderCount >= 5 && orderCount < 10) {
-      const hasDrink = cartItems.some((item) => item?.category?.toLowerCase() === "drinks");
-      console.log("🛒 cartItems:", cartItems);
-      console.log(
-        "🧃 drink categories in cart:",
-        cartItems.filter((item) => item.category === "drinks")
-      );
+    if (orderCount >= 5 && orderCount < 10 && !usedDrinkCoupon) {
+      const hasDrink = cartItems.some((item) => item.category.toLowerCase() === "drinks");
       if (hasDrink) setEligibleReward("drink");
-      console.log("✅ Eligible for drink coupon");
     } else if (orderCount >= 10) {
       const hasSide = cartItems.some((item) => item.category === "side");
-      if (hasSide) setEligibleReward("side");
-      console.log("✅ Eligible for side coupon");
+      if (hasSide) {
+        setEligibleReward("side");
+
+        // ✅ Reset order count to 0 and reset drink coupon usage
+        axios
+          .patch(`http://localhost:5001/api/users/${_id}`, {
+            orderCount: 0,
+            usedDrinkCoupon: false,
+          })
+          .then(() => console.log("✅ Order count and drink coupon reset"))
+          .catch((err) => console.error("❌ Reset error:", err.response?.data || err.message));
+      }
     }
   }, [cartItems, user, couponApplied]);
 
@@ -210,14 +239,22 @@ const CartPage = () => {
       ...(couponApplied && { couponUsed: eligibleReward }),
     };
 
-    console.log("📦 Submitting order payload:", payload); // ✅ Important log
+    console.log("📦 Submitting order payload:", payload);
 
     try {
       const response = await axios.post("http://localhost:5001/api/orders", payload);
       console.log("✅ Order submitted:", response.data);
       alert("ההזמנה נשלחה בהצלחה!");
       setShowConfirmationModal(false);
+<<<<<<< HEAD
       clearCart();
+=======
+      clearCart(); // ✅ Reset cart context
+      localStorage.removeItem("cartItems"); // ✅ Clear localStorage
+      setShowConfirmationModal(false);
+      // ✅ Redirect after successful order
+      navigate("/order-preparing");
+>>>>>>> c4e9f21ff83a1f81da6ef6ae7ed85c70d3811a81
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
@@ -229,6 +266,7 @@ const CartPage = () => {
       }
     }
   };
+
   // Group items by id and calculate the quantity for identical items
   const groupCartItems = () => {
     const groupedItems = {};
@@ -351,6 +389,10 @@ const CartPage = () => {
     const whatsappUrl = `https://wa.me/+972507203099?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
+
+  if (user === undefined) {
+    return null; // Wait for AuthContext to resolve
+  }
 
   if (cartItems.length === 0) {
     return (

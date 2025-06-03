@@ -10,6 +10,9 @@ import { CartProvider } from "./context/CartContext"; // Cart context
 import CartIcon from "./components/cart/CartIcon"; // Import CartIcon
 import AdminDashboard from "./admin/AdminDashboard";
 import Login from "./pages/Login";
+import OrderPreparingPage from "./pages/orderPreparingPage";
+import PreparingOrderWidget from "../components/preparingOrderWidget.jsx";
+
 import Register from "./pages/Register";
 import AdminProducts from "./admin/AdminProducts";
 import ActiveOrders from "./admin/ActiveOrders";
@@ -47,6 +50,7 @@ const App = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/resetPassword" element={<ResetPassword />} />
+              <Route path="/order-preparing" element={<OrderPreparingPage />} />
 
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
