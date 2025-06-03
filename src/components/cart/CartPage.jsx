@@ -246,15 +246,11 @@ const CartPage = () => {
       console.log("✅ Order submitted:", response.data);
       alert("ההזמנה נשלחה בהצלחה!");
       setShowConfirmationModal(false);
-<<<<<<< HEAD
-      clearCart();
-=======
       clearCart(); // ✅ Reset cart context
       localStorage.removeItem("cartItems"); // ✅ Clear localStorage
       setShowConfirmationModal(false);
       // ✅ Redirect after successful order
       navigate("/order-preparing");
->>>>>>> c4e9f21ff83a1f81da6ef6ae7ed85c70d3811a81
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
