@@ -1,5 +1,4 @@
-/* DishesCard.css */
-
+/* 🧾 Modal Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -13,6 +12,7 @@
   z-index: 1000;
 }
 
+/* 🧾 Modal Content */
 .modal-content {
   background-color: #fff;
   padding: 20px;
@@ -22,6 +22,7 @@
   text-align: center;
 }
 
+/* 🧾 Textarea for comments */
 textarea {
   width: 100%;
   height: 100px;
@@ -29,7 +30,25 @@ textarea {
   margin: 10px 0;
 }
 
-/* Checkbox styling */
+/* ✅ Dish Card Image */
+.dish-img {
+  width: 100%;
+  height: 250px; /* Fixed height for all cards */
+  object-fit: contain; /* Keep full image inside */
+  background-color: white;
+  padding: 10px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ✅ Inactive state */
+.inactive-card {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: none;
+}
+
+/* 🧾 Checkbox styling (if used in modals) */
 .checkbox-wrapper-30 .checkbox {
   --bg: #fff;
   --brdr: #d1d6ee;
@@ -55,15 +74,11 @@ textarea {
 .checkbox-wrapper-30 .checkbox input {
   -webkit-appearance: none;
   -moz-appearance: none;
-  -webkit-tap-highlight-color: transparent;
   cursor: pointer;
   background-color: var(--bg);
   border-radius: calc(var(--size, 1) * 4px);
   border: calc(var(--newBrdr, var(--size, 1)) * 1px) solid;
   color: var(--newBrdrClr, var(--brdr));
-  outline: none;
-  margin: 0;
-  padding: 0;
   transition: all calc(var(--dur) / 3) linear;
 }
 
@@ -88,7 +103,6 @@ textarea {
 
 .checkbox-wrapper-30 .checkbox svg {
   fill: none;
-  left: 0;
   pointer-events: none;
   stroke: var(--stroke, var(--border-active));
   stroke-dasharray: var(--dashArray, 93);
@@ -96,7 +110,6 @@ textarea {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2px;
-  top: 0;
   transition: stroke-dasharray var(--dur), stroke-dashoffset var(--dur);
 }
 
@@ -107,46 +120,38 @@ textarea {
   width: 100%;
 }
 
+/* 🧾 Container alignment (if needed) */
 .checkbox-container {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  flex-direction: row-reverse; /* To align checkboxes from right to left */
+  flex-direction: row-reverse;
 }
 
-/* Container styling */
+/* ✅ Dishes Card layout */
 .dishes-card-container {
   position: relative;
-  min-height: 300px; /* Ensure a minimum height for the card */
-  margin-bottom: 20px; /* Add space between cards */
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 12px;
+  background-color: #fff;
+  margin-bottom: 20px;
 }
 
-/* Options menu styling */
+/* ✅ Optional: Options menu logic */
 .options-menu {
-  display: none; /* Initially hidden */
-  padding-top: 10px; /* Space between content and options */
+  display: none;
+  padding-top: 10px;
 }
 
-/* Show the options menu when the parent has the show-options class */
 .dishes-card-container.show-options .options-menu {
   display: block;
 }
 
-/* Dynamic styling based on ID */
-#dish-1.show-options .options-menu {
-  display: block;
-}
-
-#dish-2.show-options .options-menu {
-  display: block;
-}
-
+#dish-1.show-options .options-menu,
+#dish-2.show-options .options-menu,
 #dish-3.show-options .options-menu {
   display: block;
 }
-.inactive-card {
-  opacity: 0.5;
-  filter: grayscale(100%);
-  pointer-events: none;
-}
-/* Add more IDs as necessary */

@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import CartContext from "../../context/CartContext";
+
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
@@ -11,11 +12,11 @@ const isValidPhoneNumber = (phone) => {
 };
 
 const CartPage = () => {
-  const { cartItems, removeFromCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
   const [eligibleReward, setEligibleReward] = useState(null); // 'drink' or 'side'
+  const [couponUsedForItemId, setCouponUsedForItemId] = useState(null);
   const [deliveryOption, setDeliveryOption] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -25,6 +26,8 @@ const CartPage = () => {
     cvv: "",
     cardholderName: "",
   });
+
+  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
 
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
@@ -99,6 +102,19 @@ const CartPage = () => {
       }));
     }
   };
+
+  const applyCouponOnce = () => {
+    const groupedItems = groupCartItems();
+    const eligibleItem = groupedItems.find((item) => {
+      return eligibleReward === "drink" ? item.category.toLowerCase() === "drinks" : item.category.toLowerCase() === "side";
+    });
+
+    if (eligibleItem) {
+      setCouponUsedForItemId(eligibleItem.id);
+      setCouponApplied(true);
+    }
+  };
+
   useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
 
@@ -201,6 +217,7 @@ const CartPage = () => {
       console.log("✅ Order submitted:", response.data);
       alert("ההזמנה נשלחה בהצלחה!");
       setShowConfirmationModal(false);
+      clearCart();
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
@@ -240,21 +257,8 @@ const CartPage = () => {
     let drinkCouponApplied = false;
     let sideCouponApplied = false;
 
-    if (couponApplied) {
-      for (let i = 0; i <= index; i++) {
-        const currentItem = grouped[i];
-        if (eligibleReward === "drink" && currentItem.category.toLowerCase() === "drinks" && !drinkCouponApplied) {
-          if (currentItem.id === item.id) {
-            basePrice = 0;
-            drinkCouponApplied = true;
-          }
-        } else if (eligibleReward === "side" && currentItem.category.toLowerCase() === "side" && !sideCouponApplied) {
-          if (currentItem.id === item.id) {
-            basePrice = 0;
-            sideCouponApplied = true;
-          }
-        }
-      }
+    if (couponApplied && item.id === couponUsedForItemId) {
+      basePrice = 0;
     }
 
     return item.isWeighted ? (basePrice / 100) * item.quantity + additionsTotal : (basePrice + additionsTotal) * item.quantity;
@@ -440,7 +444,7 @@ const CartPage = () => {
           {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
           {eligibleReward && !couponApplied && (
             <button
-              onClick={() => setCouponApplied(true)}
+              onClick={applyCouponOnce}
               style={{
                 backgroundColor: "#3b82f6",
                 padding: "10px",

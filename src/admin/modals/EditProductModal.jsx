@@ -31,10 +31,10 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
-      <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white">
-        <h2 className="text-2xl font-bold mb-4 text-center">✏️ עריכת מוצר</h2>
-        <form onSubmit={handleSubmit} className="space-y-4 text-right">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+      <div className="bg-neutral-900 rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-white/10 text-white">
+        <h2 className="text-xl md:text-2xl font-semibold mb-6 text-center">✏️ עריכת מוצר</h2>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 text-right">
           <input
             type="text"
             name="name"
@@ -42,7 +42,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             onChange={handleChange}
             placeholder="שם מוצר"
             required
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 focus:outline-none"
+            className="bg-neutral-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <input
             type="number"
@@ -51,7 +51,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             onChange={handleChange}
             placeholder="מחיר"
             required
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+            className="bg-neutral-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <input
             type="number"
@@ -59,7 +59,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             value={form.stock}
             onChange={handleChange}
             placeholder="מלאי"
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+            className="bg-neutral-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none"
           />
           <input
             type="text"
@@ -67,7 +67,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             value={form.image}
             onChange={handleChange}
             placeholder="קישור לתמונה"
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+            className="bg-neutral-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none"
           />
           <input
             type="text"
@@ -75,14 +75,21 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             value={form.category}
             onChange={handleChange}
             placeholder="קטגוריה"
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+            className="bg-neutral-800 border border-white/10 rounded-xl px-4 py-3 focus:outline-none"
           />
 
-          <div className="flex justify-between pt-4">
-            <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded font-bold">
+          <div className="flex justify-between pt-4 gap-4">
+            <button
+              type="submit"
+              className="flex-1 bg-green-600 hover:bg-green-700 transition text-white px-4 py-3 rounded-xl font-semibold shadow-md"
+            >
               💾 שמור
             </button>
-            <button type="button" onClick={onClose} className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded font-bold">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-red-600 hover:bg-red-700 transition text-white px-4 py-3 rounded-xl font-semibold shadow-md"
+            >
               ❌ ביטול
             </button>
           </div>
