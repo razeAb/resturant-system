@@ -109,6 +109,32 @@ router.get("/history", protect, async (req, res) => {
   }
 });
 
+// Get latest order by phone number
+router.get("/phone/:phone", async (req, res) => {
+  const { phone } = req.params;
+  try {
+    // Try to find an order directly by phone
+    let order = await Order.findOne({ phone }).sort({ created: -1 });
+
+    // If no direct order found, look up user and fetch their last order
+    if (!order) {
+      const user = await User.findOne({ phone });
+      if (user) {
+        order = await Order.findOne({ user: user._id }).sort({ created: -1 });
+      }
+    }
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error("❌ Error fetching order by phone:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ✅ Get All Orders (Admin)
 router.get("/", async (req, res) => {
   try {

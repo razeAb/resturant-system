@@ -72,6 +72,9 @@ const Navbar = () => {
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
             עגלה
           </RouterLink>
+          <RouterLink to="/order-status" className="hover:text-brightColor transition-all cursor-pointer">
+            בדיקת הזמנה
+          </RouterLink>
           {isAdmin && (
             <RouterLink to="/admin/dashboard" className="hover:text-brightColor transition-all cursor-pointer">
               Admin Dashboard
@@ -129,6 +132,9 @@ const Navbar = () => {
         </ScrollLink>
         <RouterLink to="/cart" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
           עגלה
+        </RouterLink>
+        <RouterLink to="/order-status" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
+          בדיקת הזמנה
         </RouterLink>
         {isAdmin && (
           <RouterLink to="/admin/dashboard">

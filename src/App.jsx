@@ -15,6 +15,8 @@ import AdminProducts from "./admin/AdminProducts";
 import ActiveOrders from "./admin/ActiveOrders";
 import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
+import OrderStatus from "./pages/OrderStatus";
+
 import { AuthProvider } from "./context/AuthContext"; // ✅
 
 const App = () => {
@@ -47,6 +49,7 @@ const App = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/resetPassword" element={<ResetPassword />} />
+              <Route path="/order-status" element={<OrderStatus />} />
 
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
