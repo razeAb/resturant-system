@@ -89,6 +89,23 @@ const ActiveOrdersPage = () => {
     }
   };
 
+  const markAsDelivering = async (orderId) => {
+    const order = orders.find((o) => o._id === orderId);
+    const phone = order?.user?.phone || order?.phone;
+
+    await updateOrderStatus(orderId, { status: "delivering" });
+    alert("המשלוח יצא לדרך!");
+    if (phone) {
+      const lastSixDigits = orderId.slice(-6);
+      const message = `ההזמנה שלך (${lastSixDigits}) בדרך אליך!`;
+      const encoded = encodeURIComponent(message);
+      const url = `https://wa.me/${phone}?text=${encoded}`;
+      window.open(url, "_blank");
+    } else {
+      alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative overflow-x-hidden">
       {/* כפתור תפריט מובייל */}
@@ -145,10 +162,10 @@ const ActiveOrdersPage = () => {
                       <td className="p-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            order.status === "preparing" ? "bg-purple-500" : "bg-orange-500"
+                            order.status === "preparing" ? "bg-purple-500" : order.status === "delivering" ? "bg-blue-500" : "bg-orange-500"
                           }`}
                         >
-                          {order.status === "preparing" ? "בהכנה" : "מחכה אישור"}
+                          {order.status === "preparing" ? "בהכנה" : order.status === "delivering" ? "במשלוח" : "מחכה אישור"}
                         </span>
                       </td>
                       <td className="p-3">{order.deliveryOption}</td>
@@ -219,9 +236,21 @@ const ActiveOrdersPage = () => {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                              <button className="bg-green-500 text-white font-bold rounded px-4 py-2" onClick={() => markAsDone(order._id)}>
-                                סמן כהושלם
-                              </button>
+                              {order.deliveryOption === "Delivery" && order.status === "preparing" ? (
+                                <button
+                                  className="bg-blue-600 text-white font-bold rounded px-4 py-2"
+                                  onClick={() => markAsDelivering(order._id)}
+                                >
+                                  במשלוח
+                                </button>
+                              ) : (
+                                <button
+                                  className="bg-green-500 text-white font-bold rounded px-4 py-2"
+                                  onClick={() => markAsDone(order._id)}
+                                >
+                                  סמן כהושלם
+                                </button>
+                              )}
                               <button className="bg-red-500 text-white font-bold rounded px-4 py-2" onClick={() => deleteOrder(order._id)}>
                                 מחק הזמנה
                               </button>
