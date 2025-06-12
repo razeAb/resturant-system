@@ -43,7 +43,14 @@ const OrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "preparing", "ready", "completed", "cancelled"],
+    // include delivery workflow states
+    enum: [
+      "pending",
+      "preparing",
+      "delivering",
+      "done",
+      "cancelled",
+    ],
     default: "pending",
   },
   createdAt: {
