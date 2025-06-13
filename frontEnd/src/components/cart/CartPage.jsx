@@ -26,6 +26,10 @@ const CartPage = () => {
     cvv: "",
     cardholderName: "",
   });
+  // detect device type for payment options
+  const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+  const deliveryFee = 20;
 
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
@@ -322,6 +326,12 @@ const CartPage = () => {
   };
   console.log("Final total price sent:", calculateCartTotal());
 
+  // calculate final total including delivery fee if selected
+  const calculateFinalTotal = () => {
+    const base = parseFloat(calculateCartTotal());
+    return (base + (deliveryOption === "Delivery" ? deliveryFee : 0)).toFixed(2);
+  };
+
   const sendWhatsAppOrder = (deliveryOption) => {
     const currentDay = new Date().getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 3 = Wednesday)
 
@@ -451,7 +461,10 @@ const CartPage = () => {
             </tbody>
           </table>
         </div>
-        <div className="cart-total">סה"כ: {calculateCartTotal()} ILS</div>
+        <div className="cart-total">
+          סה"כ: {calculateFinalTotal()} ILS
+          {deliveryOption === "Delivery" && " (כולל משלוח)"}
+        </div>{" "}
         <div style={{ marginTop: "20px" }}>
           <button
             onClick={handleOrderNow}
@@ -484,7 +497,6 @@ const CartPage = () => {
             </button>
           )}
         </div>
-
         {showConfirmationModal && !isClosedModalOpen && (
           <div className="modal-overlay">
             <div className="modal-content">
@@ -513,6 +525,18 @@ const CartPage = () => {
                   />
                 </div>
               )}
+              <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
+                <h4>סיכום הזמנה:</h4>
+                <ul style={{ listStyleType: "none", padding: 0 }}>
+                  {groupCartItems().map((item, idx) => (
+                    <li key={idx}>
+                      {item.title} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
+                    </li>
+                  ))}
+                </ul>
+                {deliveryOption === "Delivery" && <p>דמי משלוח: {deliveryFee} ILS</p>}
+                <p>סה"כ לתשלום: {calculateFinalTotal()} ILS</p>
+              </div>
               <div style={{ marginTop: "5px" }}>
                 <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
@@ -574,6 +598,45 @@ const CartPage = () => {
                     <img src="/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
                     ביט
                   </button>
+                  {isIOS && (
+                    <button
+                      onClick={() => setPaymentMethod("ApplePay")}
+                      style={{
+                        flex: "1",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "10px 20px",
+                        backgroundColor: paymentMethod === "ApplePay" ? "#374151" : "#4b5563",
+                        border: paymentMethod === "ApplePay" ? "3px solid black" : "1px solid transparent",
+                        color: "#fff",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      <img src="/svg/applewhite.svg" alt="Apple Pay" style={{ width: "20px", height: "20px" }} />
+                      אפל פיי
+                    </button>
+                  )}
+
+                  {isAndroid && (
+                    <button
+                      onClick={() => setPaymentMethod("GooglePay")}
+                      style={{
+                        flex: "1",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "10px 20px",
+                        backgroundColor: paymentMethod === "GooglePay" ? "#ca8a04" : "#eab308",
+                        border: paymentMethod === "GooglePay" ? "3px solid black" : "1px solid transparent",
+                        color: "#fff",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
+                      גוגל פיי
+                    </button>
+                  )}
                 </div>
               </div>
               {/* ✅ Delivery buttons */}
