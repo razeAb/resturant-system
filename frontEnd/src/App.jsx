@@ -16,6 +16,7 @@ import ActiveOrders from "./admin/ActiveOrders";
 import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
 import OrderStatus from "./pages/OrderStatus";
+import CollectionsReport from "./admin/CollectionsReport";
 
 import { AuthProvider } from "./context/AuthContext"; // ✅
 
@@ -54,6 +55,7 @@ const App = () => {
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
               <Route path="/admin/orderHistory" element={<OrderHistory />} />
+              <Route path="/admin/collections" element={<CollectionsReport />} />
             </Routes>
 
             {/* CartIcon should be placed here to appear on all pages */}

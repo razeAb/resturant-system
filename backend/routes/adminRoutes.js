@@ -8,26 +8,21 @@ const Order = require("../models/Order");
 // ✅ Get Admin Dashboard Data
 router.get("/dashboard", protect, async (req, res) => {
   try {
-    // ✅ Ensure the user is an admin
     if (!req.user.isAdmin) {
       return res.status(403).json({ message: "❌ Unauthorized access." });
     }
 
-    // ✅ Fetch Users, Products, and Orders
     const users = await User.find().select("name email orderCount points");
     const products = await Product.find().select("name stock price image category isActive");
     const orders = await Order.find().populate("items.product", "name price");
 
-    // ✅ Get Most Frequent Customers (Top 5)
     const topCustomers = users
       .filter((user) => user.orderCount > 0)
       .sort((a, b) => b.orderCount - a.orderCount)
       .slice(0, 5);
 
-    // ✅ Calculate Total Sales Revenue
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
 
-    // ✅ Count how many times each product has been ordered
     const productOrderCounts = {};
     orders.forEach((order) => {
       order.items.forEach((item) => {
@@ -38,7 +33,6 @@ router.get("/dashboard", protect, async (req, res) => {
       });
     });
 
-    // ✅ Convert product order count to an array and sort
     const sortedProducts = Object.entries(productOrderCounts)
       .map(([productId, orderCount]) => {
         const product = products.find((p) => p._id.toString() === productId);
@@ -47,7 +41,6 @@ router.get("/dashboard", protect, async (req, res) => {
       .filter(Boolean)
       .sort((a, b) => b.orderCount - a.orderCount);
 
-    // ✅ Get Hot & Cold Products
     const hotProducts = sortedProducts.slice(0, 5).map((item) => ({
       name: item.product.name,
       orders: item.orderCount,
@@ -61,7 +54,6 @@ router.get("/dashboard", protect, async (req, res) => {
         orders: item.orderCount,
       }));
 
-    // ✅ Return Admin Dashboard Data
     res.status(200).json({
       message: "✅ Admin dashboard data retrieved successfully.",
       users,
@@ -75,6 +67,45 @@ router.get("/dashboard", protect, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error retrieving dashboard data:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+});
+
+// ✅ Calculate collection totals for a date range
+router.get("/collections", protect, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "❌ Unauthorized access." });
+    }
+
+    let { startDate, endDate } = req.query;
+    const now = new Date();
+    if (!startDate) {
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate = first.toISOString().split("T")[0];
+    }
+    if (!endDate) {
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      endDate = last.toISOString().split("T")[0];
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const orders = await Order.find({
+      createdAt: { $gte: start, $lte: end },
+    });
+
+    let totalCommission = 0;
+    orders.forEach((order) => {
+      const rate = order.deliveryOption === "Delivery" ? 0.08 : 0.05;
+      totalCommission += order.totalPrice * rate;
+    });
+
+    res.json({ startDate, endDate, totalCommission });
+  } catch (error) {
+    console.error("❌ Error calculating collections:", error);
     res.status(500).json({ message: "❌ Server error." });
   }
 });

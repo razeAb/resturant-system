@@ -18,6 +18,9 @@ const SideMenu = () => {
         <Link to="/admin/orderHistory" className="menu-link">
           Order History
         </Link>
+        <Link to="/admin/collections" className="menu-link">
+          Collections
+        </Link>
         <Link to="/" className="menu-link">
           Go Back Home
         </Link>
