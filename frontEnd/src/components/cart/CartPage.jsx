@@ -5,6 +5,7 @@ import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
 import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
+import { ORDER_STATUS } from "../../../constants/orderStatus";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -215,7 +216,7 @@ const CartPage = () => {
       totalPrice,
       deliveryOption,
       paymentDetails,
-      status: "pending",
+      status: ORDER_STATUS.PENDING,
       createdAt: new Date(),
       ...(couponApplied && { couponUsed: eligibleReward }),
     };

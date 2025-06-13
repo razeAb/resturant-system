@@ -1,11 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
 import CartNavbar from "../components/cart/CartNavbar";
+import hourglassGif from "../assets/hourglass.gif";
+import chefGif from "../assets/chef.gif";
+import scooterGif from "../assets/delivery-scooter.gif";
+import doneGif from "../assets/verified.gif";
+import { ORDER_STATUS } from "../../constants/orderStatus";
 
 const OrderStatus = () => {
   const [phone, setPhone] = useState("");
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
+
+  const isDelivery = order?.deliveryOption === "Delivery";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,32 +33,36 @@ const OrderStatus = () => {
 
   const translateStatus = (status) => {
     switch (status) {
-      case "preparing":
+      case ORDER_STATUS.PREPARING:
         return "בהכנה";
-      case "delivering":
+      case ORDER_STATUS.DELIVERING:
         return "במשלוח";
-      case "done":
+      case ORDER_STATUS.DONE:
         return "הושלם";
-      case "pending":
+      case ORDER_STATUS.PENDING:
       default:
         return "ממתין לאישור";
     }
   };
 
   const getStatusStep = (status) => {
-    switch (status) {
-      case "pending":
-        return 1;
-      case "preparing":
-        return 2;
-      case "delivering":
-        return 3;
-      case "done":
-        return 4;
-      default:
-        return 0;
-    }
+    const orderStages = isDelivery ? ["pending", "preparing", "delivering", "done"] : ["pending", "preparing", "done"];
+    const idx = orderStages.indexOf(status);
+    return idx === -1 ? 0 : idx + 1;
   };
+
+  const steps = [
+    { label: "ממתין", gif: hourglassGif },
+    { label: "בהכנה", gif: chefGif },
+  ];
+
+  if (isDelivery) {
+    steps.push({ label: "במשלוח", gif: scooterGif });
+  }
+
+  steps.push({ label: "הושלם", gif: doneGif });
+
+  const finalPrice = order && order.totalPrice ? order.totalPrice + (isDelivery ? 20 : 0) : 0;
 
   return (
     <>
@@ -91,17 +102,54 @@ const OrderStatus = () => {
                   <div
                     className="h-full bg-green-500 transition-all duration-700 ease-in-out"
                     style={{
-                      width: `${(getStatusStep(order.status) / 4) * 100}%`,
+                      width: `${(getStatusStep(order.status) / steps.length) * 100}%`,
                     }}
                   ></div>
                 </div>
 
-                <div className="flex justify-between text-sm mt-1 text-gray-600">
-                  <span>ממתין</span>
-                  <span>בהכנה</span>
-                  <span>במשלוח</span>
-                  <span>הושלם</span>
+                <div className="flex justify-between text-sm mt-3 text-gray-600">
+                  {steps.map((step, index) => {
+                    const currentStep = getStatusStep(order.status);
+                    const isCurrentStep = currentStep === index + 1;
+
+                    return (
+                      <div
+                        key={step.label}
+                        className={`flex-1 flex flex-col items-center ${isCurrentStep ? "text-green-700 font-semibold" : ""}`}
+                      >
+                        {isCurrentStep ? (
+                          <img src={step.gif} alt={step.label} className="w-8 h-8 mb-1" />
+                        ) : (
+                          <div className="w-8 h-8 mb-1 rounded-full bg-gray-300 border border-gray-400" />
+                        )}
+                        <span>{step.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Order Details */}
+              <div className="mt-6">
+                <h4 className="text-lg font-bold">פרטי הזמנה</h4>
+                <ul className="text-sm space-y-2">
+                  {order.items.map((item, idx) => (
+                    <li key={idx}>
+                      <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}{" "}
+                      {item.isWeighted ? "גרם" : ""}
+                      <br />
+                      ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                      <br />
+                      תוספות:{" "}
+                      {Array.isArray(item.additions) && item.additions.length ? item.additions.map((a) => a.addition).join(", ") : "אין"}
+                      <br />
+                      הערות: {item.comment || "אין הערות"}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4">
+                  <strong>סכום לתשלום:</strong> {finalPrice} ₪
+                </p>
               </div>
             </div>
           )}

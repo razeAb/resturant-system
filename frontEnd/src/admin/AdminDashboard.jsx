@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import SideMenu from "../layouts/SideMenu";
+import { ORDER_STATUS } from "../../constants/orderStatus";
 
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -25,7 +26,7 @@ const AdminDashboard = () => {
         setDashboardData(data);
 
         const total = data.orders
-          .filter((order) => order.status === "done" && order.createdAt.startsWith(selectedDate))
+          .filter((order) => order.status === ORDER_STATUS.DONE && order.createdAt.startsWith(selectedDate))
           .reduce((sum, order) => sum + order.totalPrice, 0);
 
         setDailyRevenue(total);

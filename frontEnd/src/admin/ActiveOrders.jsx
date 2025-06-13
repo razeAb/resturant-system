@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
+import { ORDER_STATUS } from "../../constants/orderStatus";
 
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);
@@ -60,7 +61,7 @@ const ActiveOrdersPage = () => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
 
-    await updateOrderStatus(orderId, { status: "preparing", estimatedTime: time });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS.PREPARING, estimatedTime: time });
 
     const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
@@ -75,7 +76,7 @@ const ActiveOrdersPage = () => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
 
-    await updateOrderStatus(orderId, { status: "done" });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS.DONE });
     alert("ההזמנה מוכנה!");
 
     if (phone) {
@@ -93,7 +94,7 @@ const ActiveOrdersPage = () => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
 
-    await updateOrderStatus(orderId, { status: "delivering" });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS.DELIVERING });
     alert("המשלוח יצא לדרך!");
     if (phone) {
       const lastSixDigits = orderId.slice(-6);
@@ -162,10 +163,18 @@ const ActiveOrdersPage = () => {
                       <td className="p-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            order.status === "preparing" ? "bg-purple-500" : order.status === "delivering" ? "bg-blue-500" : "bg-orange-500"
+                            order.status === ORDER_STATUS.PREPARING
+                              ? "bg-purple-500"
+                              : order.status === ORDER_STATUS.DELIVERING
+                              ? "bg-blue-500"
+                              : "bg-orange-500"
                           }`}
                         >
-                          {order.status === "preparing" ? "בהכנה" : order.status === "delivering" ? "במשלוח" : "מחכה אישור"}
+                          {order.status === ORDER_STATUS.PREPARING
+                            ? "בהכנה"
+                            : order.status === ORDER_STATUS.DELIVERING
+                            ? "במשלוח"
+                            : "מחכה אישור"}
                         </span>
                       </td>
                       <td className="p-3">{order.deliveryOption}</td>
@@ -236,7 +245,7 @@ const ActiveOrdersPage = () => {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                              {order.deliveryOption === "Delivery" && order.status === "preparing" ? (
+                              {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.PREPARING ? (
                                 <button
                                   className="bg-blue-600 text-white font-bold rounded px-4 py-2"
                                   onClick={() => markAsDelivering(order._id)}
