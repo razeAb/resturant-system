@@ -114,13 +114,13 @@ router.get("/phone/:phone", async (req, res) => {
   const { phone } = req.params;
   try {
     // Try to find an order directly by phone
-    let order = await Order.findOne({ phone }).sort({ created: -1 });
+    let order = await Order.findOne({ phone }).sort({ createdAt: -1 });
 
     // If no direct order found, look up user and fetch their last order
     if (!order) {
       const user = await User.findOne({ phone });
       if (user) {
-        order = await Order.findOne({ user: user._id }).sort({ created: -1 });
+        order = await Order.findOne({ user: user._id }).sort({ createdAt: -1 });
       }
     }
 

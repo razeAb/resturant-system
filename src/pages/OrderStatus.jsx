@@ -24,6 +24,35 @@ const OrderStatus = () => {
     }
   };
 
+  const translateStatus = (status) => {
+    switch (status) {
+      case "preparing":
+        return "בהכנה";
+      case "delivering":
+        return "במשלוח";
+      case "done":
+        return "הושלם";
+      case "pending":
+      default:
+        return "ממתין לאישור";
+    }
+  };
+
+  const getStatusStep = (status) => {
+    switch (status) {
+      case "pending":
+        return 1;
+      case "preparing":
+        return 2;
+      case "delivering":
+        return 3;
+      case "done":
+        return 4;
+      default:
+        return 0;
+    }
+  };
+
   return (
     <>
       <CartNavbar />
@@ -42,10 +71,38 @@ const OrderStatus = () => {
           <button type="submit" className="bg-black text-white w-full py-2 rounded hover:bg-gray-800">
             בדיקה
           </button>
+
           {order && (
             <div className="mt-6 text-right">
-              <p>סטטוס: {order.status}</p>
-              <p>מספר הזמנה: {order._id.slice(-6)}</p>
+              <p>
+                <strong>:מספר הזמנה</strong> <br />
+                <span dir="ltr" style={{ display: "inline-block" }}>
+                  #{order._id.slice(-6).toUpperCase()}
+                </span>
+              </p>
+
+              <p className="mt-4">
+                <strong>סטטוס:</strong> {translateStatus(order.status)}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="mt-6">
+                <div className="w-full bg-gray-300 h-3 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 transition-all duration-700 ease-in-out"
+                    style={{
+                      width: `${(getStatusStep(order.status) / 4) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+
+                <div className="flex justify-between text-sm mt-1 text-gray-600">
+                  <span>ממתין</span>
+                  <span>בהכנה</span>
+                  <span>במשלוח</span>
+                  <span>הושלם</span>
+                </div>
+              </div>
             </div>
           )}
         </form>
