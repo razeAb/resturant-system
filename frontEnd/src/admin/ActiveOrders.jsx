@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
+import notificationSound from "../assets/notificatinSound.mp3";
 
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);
@@ -23,21 +24,71 @@ const ActiveOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audio = new Audio(notificationSound);
+      audio.play().catch(() => {}); // Try play and ignore error
+      document.removeEventListener("click", unlockAudio);
+    };
 
+    document.addEventListener("click", unlockAudio);
+  }, []);
   useEffect(() => {
     fetchOrders();
+
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const playNotificationSound = () => {
+    let count = 0;
+
+    const play = () => {
+      if (count < 3) {
+        const audio = new Audio(notificationSound);
+        audio.play().catch((e) => console.warn("Audio error:", e));
+        count++;
+
+        // ✅ Wait 1 second after it ends before playing the next one
+        audio.onended = () => {
+          setTimeout(play, 1000);
+        };
+      }
+    };
+
+    play();
+  };
+  const prevOrderIdsRef = useRef([]);
 
   const fetchOrders = async () => {
     try {
       const res = await axios.get("http://localhost:5001/api/orders/active");
-      setOrders(res.data);
+      const newOrderList = res.data;
+
+      const newOrderIds = newOrderList.map((o) => o._id);
+      const newOrderAdded = newOrderIds.some((id) => !prevOrderIdsRef.current.includes(id));
+
+      console.log("🔁 Current Order IDs:", newOrderIds);
+      console.log("🕘 Previous Order IDs:", prevOrderIdsRef.current);
+      console.log("✅ New order detected:", newOrderAdded);
+
+      if (newOrderAdded && prevOrderIdsRef.current.length > 0) {
+        console.log("🔊 Playing notification sound...");
+        playNotificationSound(); // ✅ Repeat 5 times
+      }
+
+      // ✅ Update the ref AFTER checking
+      prevOrderIdsRef.current = newOrderIds;
+
+      setOrders(newOrderList);
     } catch (err) {
-      console.error("שגיאה בקבלת הזמנות:", err);
+      console.error("❌ שגיאה בקבלת הזמנות:", err);
       setOrders([]);
     }
   };
-
   const formatPhoneNumber = (phone) => {
     if (!phone) return null;
     return phone.startsWith("0") ? `+972${phone.slice(1)}` : phone;
