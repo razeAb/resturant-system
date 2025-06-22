@@ -6,6 +6,7 @@ import axios from "axios";
 import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
+import checkGif from "../../assets/check.gif";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -15,6 +16,8 @@ const CartPage = () => {
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const [couponApplied, setCouponApplied] = useState(false);
   const [eligibleReward, setEligibleReward] = useState(null); // 'drink' or 'side'
   const [deliveryOption, setDeliveryOption] = useState(null);
@@ -230,7 +233,9 @@ const CartPage = () => {
     try {
       const response = await axios.post("http://localhost:5001/api/orders", payload);
       console.log("✅ Order submitted:", response.data);
-      alert("ההזמנה נשלחה בהצלחה!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      clearCart();
       setShowConfirmationModal(false);
     } catch (error) {
       if (error.response?.status === 401) {
@@ -393,6 +398,33 @@ const CartPage = () => {
     return (
       <>
         <CartNavbar />
+        {showSuccess && (
+          <div
+            className="order-success"
+            role="alert"
+            aria-live="assertive"
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "#ffffff",
+              padding: "24px",
+              borderRadius: "12px",
+              boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+              zIndex: 9999,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              animation: "fadeOut 3s forwards",
+            }}
+          >
+            <img src={checkGif} alt="Order Confirmed" style={{ width: "120px", marginBottom: "16px" }} />
+            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>ההזמנה נשלחה בהצלחה!</p>
+          </div>
+        )}
+
         <div style={{ padding: "20px" }}>
           <h2>העגלה שלך ריקה</h2>
         </div>
@@ -794,6 +826,19 @@ const CartPage = () => {
       </div>
 
       <style>{`
+
+    @keyframes fadeOut {
+  0%, 80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 3s forwards;
+}
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -1025,8 +1070,26 @@ const CartPage = () => {
             /* 💥 Add this */
             .modal-buttons {
               flex-direction: column;
-              gap: 10px;
-            }
+          gap: 10px;
+        }
+
+        .order-success {
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: #4BB543;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          z-index: 1100;
+          animation: fadeOut 3s forwards;
+        }
+
+        @keyframes fadeOut {
+          0%, 80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
 
             .modal-buttons button {
               width: 100%;
