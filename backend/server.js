@@ -15,7 +15,7 @@ const uploadRoute = require("./routes/upload");
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5177",
-  "https://hunger-resturant.netlify.app", // ✅ add this
+  "https://hungryresturant.netlify.app/", // ✅ add this
 ];
 
 dotenv.config();
