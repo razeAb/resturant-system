@@ -33,7 +33,7 @@ router.post("/", upload.single("image"), (req, res) => {
     return res.status(400).json({ message: "No image uploaded." });
   }
 
-  const imageUrl = `http://localhost:5001/uploads/${req.file.filename}`;
+  const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
   console.log("File saved at:", path.join(uploadPath, req.file.filename));
   res.json({ imageUrl });
 });

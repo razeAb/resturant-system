@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+
 const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware"); // Add isAdmin if needed
+
+
+
 
 // ✅ Get All Products
 router.get("/", async (req, res) => {

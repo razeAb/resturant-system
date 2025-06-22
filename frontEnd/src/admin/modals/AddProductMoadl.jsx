@@ -65,7 +65,9 @@ const AddProductModal = ({ onClose, onAdd }) => {
         },
       });
 
-      const uploadedUrl = uploadRes.data.imageUrl;
+      const uploadedFileName = uploadRes.data.imageUrl;
+      const fullUrl = `${import.meta.env.VITE_API_BASE_URL}${uploadedFileName}`;
+      setForm((prev) => ({ ...prev, image: fullUrl }));
       console.log("✅ Uploaded Image URL:", uploadedUrl); // 👈 Add this
 
       setForm((prev) => ({ ...prev, image: uploadedUrl }));
@@ -80,12 +82,9 @@ const AddProductModal = ({ onClose, onAdd }) => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/categories`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/categories`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         console.log("Fetched categories:", res.data); // 👈 Add this
         setCategories(res.data);
       } catch (err) {
