@@ -12,7 +12,11 @@ const orderRoutes = require("./routes/orderRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const uploadRoute = require("./routes/upload");
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5177"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5177",
+  "https://hunger-resturant.netlify.app", // ✅ add this
+];
 
 dotenv.config();
 const app = express();
