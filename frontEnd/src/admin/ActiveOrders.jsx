@@ -38,6 +38,11 @@ const ActiveOrdersPage = () => {
     }
   };
 
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return null;
+    return phone.startsWith("0") ? `+972${phone.slice(1)}` : phone;
+  };
+
   const updateOrderStatus = async (orderId, data) => {
     try {
       await axios.put(`http://localhost:5001/api/orders/${orderId}/status`, data);
@@ -63,10 +68,12 @@ const ActiveOrdersPage = () => {
 
     await updateOrderStatus(orderId, { status: ORDER_STATUS.PREPARING, estimatedTime: time });
 
-    const encodedMessage = encodeURIComponent(`ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!`);
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+    const formattedPhone = formatPhoneNumber(phone);
+    const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttp://localhost:5173/order-status`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
-    // open WhatsApp in new tab (works only on user device)
+    // open WhatsApp in new tab
     window.open(whatsappUrl, "_blank");
 
     alert(`הלקוח יקבל הודעה בוואטסאפ`);
@@ -83,7 +90,8 @@ const ActiveOrdersPage = () => {
       const lastSixDigits = orderId.slice(-6); // Shorter ID for easier reading
       const message = `ההזמנה שלך (${lastSixDigits}) מוכנה! ניתן להגיע לאסוף אותה. תודה שהזמנת מאיתנו ❤️`;
       const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+      const formattedPhone = formatPhoneNumber(phone);
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
       window.open(whatsappUrl, "_blank");
     } else {
       alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
@@ -100,7 +108,8 @@ const ActiveOrdersPage = () => {
       const lastSixDigits = orderId.slice(-6);
       const message = `ההזמנה שלך (${lastSixDigits}) בדרך אליך!`;
       const encoded = encodeURIComponent(message);
-      const url = `https://wa.me/${phone}?text=${encoded}`;
+      const formattedPhone = formatPhoneNumber(phone);
+      const url = `https://wa.me/${formattedPhone}?text=${encoded}`;
       window.open(url, "_blank");
     } else {
       alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
