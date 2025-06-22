@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./AddProductModal.css";
 
 const AddProductModal = ({ onClose, onAdd }) => {
   const [form, setForm] = useState({
@@ -32,7 +31,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        "http://localhost:5001/api/products",
+        `${import.meta.env.VITE_API_BASE_URL}/api/products`,
         {
           ...form,
           stock: Number(form.stock),
@@ -59,7 +58,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const uploadRes = await axios.post("http://localhost:5001/api/upload", formData, {
+      const uploadRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -81,9 +80,12 @@ const AddProductModal = ({ onClose, onAdd }) => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5001/api/categories", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/categories`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         console.log("Fetched categories:", res.data); // 👈 Add this
         setCategories(res.data);
       } catch (err) {
@@ -95,50 +97,94 @@ const AddProductModal = ({ onClose, onAdd }) => {
   }, []);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Add New Product</h2>
-        {error && <div className="error">{error}</div>}
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
+      <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white overflow-y-auto max-h-[90vh]">
+        <h2 className="text-2xl font-bold mb-4 text-center">➕ הוספת מוצר חדש</h2>
+        {error && <div className="text-red-500 text-center mb-2">{error}</div>}
 
-        <input name="name" placeholder="Name" onChange={handleChange} value={form.name} />
+        <input
+          name="name"
+          placeholder="שם"
+          onChange={handleChange}
+          value={form.name}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3 focus:outline-none"
+        />
 
-        <input name="image" placeholder="Image URL" onChange={handleChange} value={form.image} />
+        <input
+          name="image"
+          placeholder="קישור לתמונה"
+          onChange={handleChange}
+          value={form.image}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+        />
 
-        <label>Upload an image:</label>
-        <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
+        <label className="font-semibold">העלה תמונה:</label>
+        <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} className="w-full mb-2" />
 
         {imageFile && (
-          <button type="button" className="upload-button" onClick={handleImageUpload} style={{ marginTop: "0.5rem" }}>
-            Upload Image
+          <button
+            type="button"
+            onClick={handleImageUpload}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full mb-3"
+          >
+            העלה תמונה
           </button>
         )}
 
         {form.image && (
-          <div className="modal-preview">
-            <img src={form.image} alt="Preview" />
+          <div className="text-center mb-3">
+            <img src={form.image} alt="Preview" className="w-full max-w-[300px] mx-auto rounded border border-white/10" />
           </div>
         )}
 
-        <select name="category" onChange={handleChange} value={form.category}>
-          <option value="">Select category</option>
+        <select
+          name="category"
+          onChange={handleChange}
+          value={form.category}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+        >
+          <option value="">בחר קטגוריה</option>
           {categories.map((cat) => (
             <option key={cat._id || cat.name} value={cat.name}>
               {cat.name}
             </option>
           ))}
         </select>
-        <input name="stock" placeholder="Stock" type="number" onChange={handleChange} value={form.stock} />
-        <input name="price" placeholder="Price" type="number" onChange={handleChange} value={form.price} />
 
-        <label style={{ marginTop: "1rem" }}>
-          <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} /> Active
+        <input
+          name="stock"
+          placeholder="מלאי"
+          type="number"
+          onChange={handleChange}
+          value={form.stock}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+        />
+
+        <input
+          name="price"
+          placeholder="מחיר"
+          type="number"
+          onChange={handleChange}
+          value={form.price}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+        />
+
+        <label className="flex items-center gap-2 mt-2 mb-4">
+          <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
+          <span className="text-sm">פעיל</span>
         </label>
 
-        <div className="modal-buttons">
-          <button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Adding..." : "Add"}
+        <div className="flex justify-between">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-bold w-1/2 mr-2"
+          >
+            {loading ? "מוסיף..." : "הוסף"}
           </button>
-          <button onClick={onClose}>Cancel</button>
+          <button onClick={onClose} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-bold w-1/2 ml-2">
+            ביטול
+          </button>
         </div>
       </div>
     </div>

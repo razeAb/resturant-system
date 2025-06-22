@@ -65,7 +65,7 @@ const ActiveOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/orders/active");
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/active`);
       const newOrderList = res.data;
 
       const newOrderIds = newOrderList.map((o) => o._id);
@@ -96,7 +96,7 @@ const ActiveOrdersPage = () => {
 
   const updateOrderStatus = async (orderId, data) => {
     try {
-      await axios.put(`http://localhost:5001/api/orders/${orderId}/status`, data);
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/status`, data);
       fetchOrders();
     } catch (err) {
       console.error("שגיאה בעדכון סטטוס:", err);
@@ -106,7 +106,7 @@ const ActiveOrdersPage = () => {
   const deleteOrder = async (orderId) => {
     if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
     try {
-      await axios.delete(`http://localhost:5001/api/orders/${orderId}`);
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`);
       fetchOrders();
     } catch (err) {
       alert("שגיאה במחיקת ההזמנה");

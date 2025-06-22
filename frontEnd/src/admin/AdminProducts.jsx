@@ -18,7 +18,7 @@ const AdminProducts = () => {
     const fetchProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5001/api/admin/dashboard", {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
@@ -35,8 +35,7 @@ const AdminProducts = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:5001/api/products/${productId}/toggle-active`,
-        { isActive: !currentStatus },
+`${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}/toggle-active`,        { isActive: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setProducts((prev) => prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p)));
@@ -48,9 +47,12 @@ const AdminProducts = () => {
   const handleDelete = async (productId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5001/api/products/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setProducts((prev) => prev.filter((p) => p._id !== productId));
     } catch (error) {
       console.error("שגיאה במחיקת מוצר:", error);

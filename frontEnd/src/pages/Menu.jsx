@@ -9,8 +9,9 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/products");
-        const normalizedProducts = response.data.products.map((product) => ({
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/products`
+        );        const normalizedProducts = response.data.products.map((product) => ({
           ...product,
           isActive: product.isActive === true,
         }));

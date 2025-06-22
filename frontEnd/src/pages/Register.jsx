@@ -108,7 +108,7 @@ const Register = () => {
       await confirmationResult.confirm(verificationCode);
 
       // After phone verification succeeds, register the user
-      const response = await axios.post("http://localhost:5001/api/auth/register", {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
         ...formData,
         phoneVerified: true,
       });
@@ -173,7 +173,7 @@ const Register = () => {
     setLoading(true);
     try {
       // Register without phone verification for testing
-      const response = await axios.post("http://localhost:5001/api/auth/register", {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
         ...formData,
         phoneVerified: false, // Skip phone verification for now
       });

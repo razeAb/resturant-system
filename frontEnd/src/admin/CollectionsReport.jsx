@@ -23,10 +23,13 @@ const CollectionsReport = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await axios.get("http://localhost:5001/api/admin/collections", {
-        params: { startDate: fromDate, endDate: toDate },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/collections`,
+        {
+          params: { startDate: fromDate, endDate: toDate },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setTotal(res.data.totalCommission || 0);
       setError("");

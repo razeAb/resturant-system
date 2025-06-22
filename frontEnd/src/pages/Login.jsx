@@ -29,8 +29,10 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:5001/api/auth/login", { email, password });
-
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
+        { email, password }
+      );
       const user = response.data.user;
 
       clearCart(); // ✅ clear cart from context

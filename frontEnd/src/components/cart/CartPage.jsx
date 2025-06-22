@@ -144,7 +144,7 @@ const CartPage = () => {
 
         // ✅ Reset order count to 0 and reset drink coupon usage
         axios
-          .patch(`http://localhost:5001/api/users/${_id}`, {
+          .patch(`${import.meta.env.VITE_API_BASE_URL}/api/users/${_id}`, {
             orderCount: 0,
             usedDrinkCoupon: false,
           })
@@ -231,7 +231,7 @@ const CartPage = () => {
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
-      const response = await axios.post("http://localhost:5001/api/orders", payload);
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
