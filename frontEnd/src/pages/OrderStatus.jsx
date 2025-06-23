@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import CartNavbar from "../components/cart/CartNavbar";
 import hourglassGif from "../assets/hourglass.gif";
@@ -12,6 +12,11 @@ const OrderStatus = () => {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
 
+  // Logs for debugging
+  useEffect(() => {
+    console.log("✅ Order updated:", order);
+  }, [order]);
+
   const isDelivery = order?.deliveryOption === "Delivery";
 
   const handleSubmit = async (e) => {
@@ -21,8 +26,10 @@ const OrderStatus = () => {
 
     try {
       const res = await axios.get(`/api/orders/phone/${phone}`);
+      console.log("✅ Order fetched from backend:", res.data);
       setOrder(res.data);
     } catch (err) {
+      console.error("❌ Error fetching order:", err);
       if (err.response && err.response.status === 404) {
         setError("לא נמצאה הזמנה עבור מספר זה.");
       } else {
@@ -32,7 +39,7 @@ const OrderStatus = () => {
   };
 
   const translateStatus = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case ORDER_STATUS.PREPARING:
         return "בהכנה";
       case ORDER_STATUS.DELIVERING:
@@ -46,8 +53,10 @@ const OrderStatus = () => {
   };
 
   const getStatusStep = (status) => {
+    if (!status) return 0;
+    const normalized = status.toLowerCase();
     const orderStages = isDelivery ? ["pending", "preparing", "delivering", "done"] : ["pending", "preparing", "done"];
-    const idx = orderStages.indexOf(status);
+    const idx = orderStages.indexOf(normalized);
     return idx === -1 ? 0 : idx + 1;
   };
 
@@ -56,9 +65,7 @@ const OrderStatus = () => {
     { label: "בהכנה", gif: chefGif },
   ];
 
-  if (isDelivery) {
-    steps.push({ label: "במשלוח", gif: scooterGif });
-  }
+  if (isDelivery) steps.push({ label: "במשלוח", gif: scooterGif });
 
   steps.push({ label: "הושלם", gif: doneGif });
 
@@ -88,7 +95,7 @@ const OrderStatus = () => {
               <p>
                 <strong>:מספר הזמנה</strong> <br />
                 <span dir="ltr" style={{ display: "inline-block" }}>
-                  #{order._id.slice(-6).toUpperCase()}
+                  #{order?._id?.slice(-6)?.toUpperCase?.() || "XXXXXX"}
                 </span>
               </p>
 
@@ -133,19 +140,28 @@ const OrderStatus = () => {
               <div className="mt-6">
                 <h4 className="text-lg font-bold">פרטי הזמנה</h4>
                 <ul className="text-sm space-y-2">
-                  {order.items.map((item, idx) => (
-                    <li key={idx}>
-                      <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}{" "}
-                      {item.isWeighted ? "גרם" : ""}
-                      <br />
-                      ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                      <br />
-                      תוספות:{" "}
-                      {Array.isArray(item.additions) && item.additions.length ? item.additions.map((a) => a.addition).join(", ") : "אין"}
-                      <br />
-                      הערות: {item.comment || "אין הערות"}
-                    </li>
-                  ))}
+                  {Array.isArray(order.items) && order.items.length > 0 ? (
+                    order.items.map((item, idx) => (
+                      <li key={idx}>
+                        <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}{" "}
+                        {item.isWeighted ? "גרם" : ""}
+                        <br />
+                        ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                        <br />
+                        תוספות:{" "}
+                        {Array.isArray(item.additions) && item.additions.length
+                          ? item.additions
+                              .map((a) => (typeof a === "string" ? a : a.addition || ""))
+                              .filter((v) => v)
+                              .join(", ")
+                          : "אין"}
+                        <br />
+                        הערות: {item.comment || "אין הערות"}
+                      </li>
+                    ))
+                  ) : (
+                    <li>לא נמצאו פריטים בהזמנה</li>
+                  )}
                 </ul>
                 <p className="mt-4">
                   <strong>סכום לתשלום:</strong> {finalPrice} ₪

@@ -71,12 +71,7 @@ const ActiveOrdersPage = () => {
       const newOrderIds = newOrderList.map((o) => o._id);
       const newOrderAdded = newOrderIds.some((id) => !prevOrderIdsRef.current.includes(id));
 
-      console.log("🔁 Current Order IDs:", newOrderIds);
-      console.log("🕘 Previous Order IDs:", prevOrderIdsRef.current);
-      console.log("✅ New order detected:", newOrderAdded);
-
       if (newOrderAdded && prevOrderIdsRef.current.length > 0) {
-        console.log("🔊 Playing notification sound...");
         playNotificationSound(); // ✅ Repeat 5 times
       }
 
@@ -120,7 +115,7 @@ const ActiveOrdersPage = () => {
     await updateOrderStatus(orderId, { status: ORDER_STATUS.PREPARING, estimatedTime: time });
 
     const formattedPhone = formatPhoneNumber(phone);
-    const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttp://localhost:5173/order-status`;
+    const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttps://hungryresturant.netlify.app/order-status`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
