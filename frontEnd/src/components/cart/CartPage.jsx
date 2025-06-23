@@ -32,7 +32,7 @@ const CartPage = () => {
   // detect device type for payment options
   const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
-  const deliveryFee = 20;
+  const deliveryFee = 25;
 
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);

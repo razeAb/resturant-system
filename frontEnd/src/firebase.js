@@ -7,32 +7,31 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
   PhoneAuthProvider,
+  signInWithCredential,
 } from "firebase/auth";
 
-// Firebase configuration
+// ✅ Firebase config from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDGtHPJMVCgSw2QIwMMsorusykzlZqCseE",
-  authDomain: "hungeryresturant.firebaseapp.com",
-  projectId: "hungeryresturant",
-  storageBucket: "hungeryresturant.firebasestorage.app",
-  messagingSenderId: "734373548495",
-  appId: "1:734373548495:web:c75a7d4be37bb522a842ba",
-  measurementId: "G-JLMHGN69HK",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firebase Authentication
 const auth = getAuth(app);
-
-// Initialize Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 
-// Optionally disable reCAPTCHA for testing (for development only, remove for production)
-auth.settings.appVerificationDisabledForTesting = true;
+// ✅ Dev-only: Disable reCAPTCHA for testing
+if (import.meta.env.DEV) {
+  auth.settings.appVerificationDisabledForTesting = true;
+}
 
-// 📞 Helper function to format phone numbers to +972
+// 📞 Format phone number to +972
 const formatPhoneNumber = (number) => {
   if (number.startsWith("0")) {
     return "+972" + number.substring(1);
@@ -40,66 +39,79 @@ const formatPhoneNumber = (number) => {
   return number;
 };
 
-// Create reCAPTCHA verifier (only for phone authentication)
+// ✅ reCAPTCHA verifier
 const createRecaptchaVerifier = (elementId) => {
   return new RecaptchaVerifier(
     elementId,
     {
       size: "invisible",
-      callback: (response) => {
-        console.log("reCAPTCHA solved successfully");
-      },
+      callback: () => console.log("✅ reCAPTCHA solved"),
     },
     auth
   );
 };
 
-// Function to handle Google sign-in
+// ✅ Google sign-in
 const handleGoogleSignIn = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
-    console.log("Google user:", user);
+    const token = await user.getIdToken();
+
+    console.log("✅ Google user:", user);
+    console.log("🔑 ID Token:", token);
+
+    return user;
   } catch (error) {
-    console.error("Error signing in with Google:", error);
+    console.error("❌ Google login failed:", error.code, error.message);
+    throw error;
   }
 };
 
-// Function to handle password reset
+// ✅ Password reset
 const handlePasswordReset = async (email) => {
   try {
     await sendPasswordResetEmail(auth, email);
-    console.log("Password reset email sent to", email);
+    console.log("📧 Password reset email sent to", email);
   } catch (error) {
-    console.error("Error sending password reset email:", error);
+    console.error("❌ Failed to send reset email:", error.code, error.message);
+    throw error;
   }
 };
 
-// Function to send verification code via SMS
+// ✅ Send SMS verification code
 const sendVerificationCode = async (phoneNumber, recaptchaElementId) => {
   try {
     const formattedPhone = formatPhoneNumber(phoneNumber);
-
-    // Create reCAPTCHA instance
     const recaptchaVerifier = createRecaptchaVerifier(recaptchaElementId);
 
     const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
-    console.log("Verification code sent!");
-    return confirmationResult; // To use later for verification
+    console.log("📲 Verification code sent to", formattedPhone);
+    return confirmationResult;
   } catch (error) {
-    console.error("Error sending verification code:", error);
+    console.error("❌ Failed to send verification code:", error.code, error.message);
+    throw error;
   }
 };
 
-// Function to verify the entered code
+// ✅ Verify entered code
 const verifyCode = async (confirmationResult, verificationCode) => {
   try {
     const credential = PhoneAuthProvider.credential(confirmationResult.verificationId, verificationCode);
-    await auth.signInWithCredential(credential);
-    console.log("Phone number verified successfully!");
+    const result = await signInWithCredential(auth, credential);
+    console.log("✅ Phone number verified!", result.user);
+    return result.user;
   } catch (error) {
-    console.error("Error verifying phone number:", error);
+    console.error("❌ Failed to verify code:", error.code, error.message);
+    throw error;
   }
 };
 
-export { auth, googleProvider, sendPasswordResetEmail, sendVerificationCode, verifyCode, handleGoogleSignIn, handlePasswordReset };
+export {
+  auth,
+  googleProvider,
+  handleGoogleSignIn,
+  handlePasswordReset,
+  sendVerificationCode,
+  verifyCode,
+};
