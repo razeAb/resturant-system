@@ -24,8 +24,10 @@ const OrderStatus = () => {
     setError("");
     setOrder(null);
 
+    const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
     try {
-      const res = await axios.get(`/api/orders/phone/${phone}`);
+      const res = await axios.get(`${BASE_URL}/api/orders/phone/${phone}`);
       console.log("✅ Order fetched from backend:", res.data);
       setOrder(res.data);
     } catch (err) {
