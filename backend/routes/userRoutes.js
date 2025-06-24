@@ -56,5 +56,28 @@ router.get("/:id", protect, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// ✅ Update user fields (order count, coupon status, etc.)
+router.patch("/:id", protect, async (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.orderCount !== undefined) updates.orderCount = req.body.orderCount;
+    if (req.body.usedDrinkCoupon !== undefined)
+      updates.usedDrinkCoupon = req.body.usedDrinkCoupon;
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "❌ User not found." });
+    }
+
+    res.status(200).json({ message: "✅ User updated.", user });
+  } catch (error) {
+    console.error("❌ Error updating user:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;

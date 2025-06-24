@@ -143,11 +143,17 @@ const CartPage = () => {
         setEligibleReward("side");
 
         // ✅ Reset order count to 0 and reset drink coupon usage
+        const token = localStorage.getItem("token");
+
         axios
-          .patch(`${import.meta.env.VITE_API_BASE_URL}/api/users/${_id}`, {
-            orderCount: 0,
-            usedDrinkCoupon: false,
-          })
+          .patch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/users/${_id}`,
+            {
+              orderCount: 0,
+              usedDrinkCoupon: false,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
           .then(() => console.log("✅ Order count and drink coupon reset"))
           .catch((err) => console.error("❌ Reset error:", err.response?.data || err.message));
       }
