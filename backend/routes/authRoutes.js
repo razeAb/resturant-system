@@ -36,45 +36,55 @@ router.post("/firebase-login", async (req, res) => {
   console.log("Received User Details:", { name, email, photo });
 
   try {
-    // Find existing user
     let user = await User.findOne({ email });
 
     if (!user) {
       console.log("👤 No existing user found. Creating new user...");
 
-      try {
-        user = await User.create({
-          name,
-          email,
-          photo,
-          password: crypto.randomBytes(20).toString("hex"), // Secure random password
-          isAdmin: false,
-          orderCount: 0,
-          points: 0,
-        });
+      user = await User.create({
+        name,
+        email,
+        photo,
+        password: require("crypto").randomBytes(20).toString("hex"), // Secure random password
+        isAdmin: false,
+        orderCount: 0,
+        points: 0,
+      });
 
-        console.log("✅ New Firebase User Created:", user.email);
-      } catch (createError) {
-        console.error("❌ User Creation Error:", createError);
-        return res.status(500).json({
-          message: "Failed to create user",
-          details: createError.message,
-        });
-      }
+      console.log("✅ New Firebase User Created:", user.email);
     } else {
       console.log("👥 Existing user found:", user.email);
 
-      // Optional: Update existing user's details
+      let changed = false;
+
+      // 🖼️ Update photo if changed
       if (photo && user.photo !== photo) {
         user.photo = photo;
-        await user.save();
+        changed = true;
         console.log("🔄 User photo updated");
+      }
+
+      // ✅ Add missing fields if needed
+      if (user.orderCount === undefined) {
+        user.orderCount = 0;
+        changed = true;
+        console.log("🧾 orderCount initialized to 0");
+      }
+
+      if (user.points === undefined) {
+        user.points = 0;
+        changed = true;
+        console.log("⭐ points initialized to 0");
+      }
+
+      if (changed) {
+        await user.save();
+        console.log("💾 User updated with new fields");
       }
     }
 
     const token = generateToken(user._id);
 
-    console.log("🎉 Login Successful for:", email);
     res.status(200).json({
       user: {
         _id: user._id,
