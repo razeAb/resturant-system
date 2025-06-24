@@ -9,9 +9,8 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/products`
-        );        const normalizedProducts = response.data.products.map((product) => ({
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
+        const normalizedProducts = response.data.products.map((product) => ({
           ...product,
           isActive: product.isActive === true,
         }));
@@ -59,6 +58,7 @@ const Menu = () => {
 
       {renderSection("כריכים", "Sandwiches")}
       {renderSection("בשרים במשקל", ["Meat", "premium Meat"], true)}
+      {renderSection("מנות פתיחה", "Starters")}
       {renderSection("תוספות בצד", "Sides")}
       {renderSection("שתיה", "Drinks")}
     </div>

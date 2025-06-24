@@ -138,7 +138,7 @@ const CartPage = () => {
       const hasDrink = cartItems.some((item) => item.category.toLowerCase() === "drinks");
       if (hasDrink) setEligibleReward("drink");
     } else if (orderCount >= 10) {
-      const hasSide = cartItems.some((item) => item.category === "side");
+      const hasSide = cartItems.some((item) => item.category.toLowerCase() === "side" || item.category.toLowerCase() === "starters");
       if (hasSide) {
         setEligibleReward("side");
 
@@ -290,7 +290,7 @@ const CartPage = () => {
             basePrice = 0;
             drinkCouponApplied = true;
           }
-        } else if (eligibleReward === "side" && currentItem.category.toLowerCase() === "side" && !sideCouponApplied) {
+        } else if (eligibleReward === "side" && ["side", "starters"].includes(currentItem.category.toLowerCase()) && !sideCouponApplied) {
           if (currentItem.id === item.id) {
             basePrice = 0;
             sideCouponApplied = true;
@@ -321,7 +321,11 @@ const CartPage = () => {
             drinkCouponApplied = true;
           }
 
-          if (eligibleReward === "side" && item.category.toLowerCase() === "side" && !sideCouponApplied) {
+          if (
+            eligibleReward === "side" &&
+            ["side", "starters"].includes(item.category.toLowerCase()) &&
+            !sideCouponApplied
+          ) {
             basePrice = 0;
             sideCouponApplied = true;
           }

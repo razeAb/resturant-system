@@ -5,7 +5,13 @@ const Category = require("../models/categoryModel");
 router.get("/seed", async (req, res) => {
   try {
     await Category.deleteMany();
-    const sample = await Category.insertMany([{ name: "Sandwiches" }, { name: "Drinks" }, { name: "Sides" }, { name: "Meats" }]);
+    const sample = await Category.insertMany([
+      { name: "Sandwiches" },
+      { name: "Drinks" },
+      { name: "Sides" },
+      { name: "Starters" },
+      { name: "Meats" },
+    ]);
     res.status(201).json(sample);
   } catch (err) {
     res.status(500).json({ message: "Failed to seed categories" });
