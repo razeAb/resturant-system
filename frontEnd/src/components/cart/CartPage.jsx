@@ -321,11 +321,7 @@ const CartPage = () => {
             drinkCouponApplied = true;
           }
 
-          if (
-            eligibleReward === "side" &&
-            ["side", "starters"].includes(item.category.toLowerCase()) &&
-            !sideCouponApplied
-          ) {
+          if (eligibleReward === "side" && ["side", "starters"].includes(item.category.toLowerCase()) && !sideCouponApplied) {
             basePrice = 0;
             sideCouponApplied = true;
           }
@@ -528,14 +524,23 @@ const CartPage = () => {
             <button
               onClick={() => setCouponApplied(true)}
               style={{
-                backgroundColor: "#3b82f6",
-                padding: "10px",
-                borderRadius: "5px",
+                backgroundColor: "#10b981", // Tailwind emerald-500
+                padding: "12px 20px",
+                borderRadius: "10px",
                 fontWeight: "bold",
-                marginTop: "10px",
+                marginTop: "20px",
+                fontSize: "16px",
+                color: "#fff",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                transition: "all 0.3s ease",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")} // darker green
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
             >
-              {eligibleReward === "drink" ? "השתמש בקופון לשתייה חינם" : "השתמש בקופון לתוספת חינם"}
+              🎉 {eligibleReward === "drink" ? "קופון לשתייה חינם" : "קופון לתוספת חינם"}
             </button>
           )}
         </div>
