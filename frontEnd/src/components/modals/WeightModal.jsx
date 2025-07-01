@@ -88,10 +88,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <img src={img} alt={title} className="modal-img" />
         <h2 className="font-semibold text-center text-xl pt-6">{title}</h2>
 
-       
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
 
-       
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות בצד למנה</h3>
@@ -146,25 +144,25 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           </div>
         </div>
 
-        <div className="modal-footer sticky bottom-0 bg-white py-4 px-6 shadow-inner flex items-center justify-between gap-4 z-10">
+        <div className="modal-footer sticky bottom-0 bg-white py-4 px-4 sm:px-6 shadow-inner flex flex-row items-center justify-between gap-4 z-10 flex-wrap">
           {/* Selected grams display */}
-          <div className="flex items-center justify-between px-4 py-2 rounded-full bg-[#1f3a44] text-orange-400 font-bold w-40 shadow-md">
-            <button onClick={() => setSelectedGrams((prev) => Math.max(200, prev - 100))} className="text-xl">
+          <div className="flex items-center justify-between px-4 py-2 rounded-full bg-[#1f3a44] text-orange-400 font-bold w-full sm:w-40 shadow-md text-xl sm:text-base">
+            <button onClick={() => setSelectedGrams((prev) => Math.max(200, prev - 100))} className="text-2xl px-2">
               −
             </button>
-            <span>{selectedGrams}g</span>
-            <button onClick={() => setSelectedGrams((prev) => Math.min(1000, prev + 100))} className="text-xl">
+            <span className="mx-2">{selectedGrams}g</span>
+            <button onClick={() => setSelectedGrams((prev) => Math.min(1000, prev + 100))} className="text-2xl px-2">
               +
             </button>
           </div>
 
-          {/* Add to Cart Button with price inside */}
+          {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
-            className="flex items-center justify-between gap-4 px-6 py-2 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md"
+            className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-base sm:text-base"
           >
             <span>הוספה לעגלה</span>
-            <span className="font-bold">₪{calculateTotalPrice()}</span>
+            <span className="font-bold text-2xl sm:text-base whitespace-nowrap">₪{calculateTotalPrice()}</span>
           </button>
         </div>
 

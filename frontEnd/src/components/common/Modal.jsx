@@ -214,9 +214,13 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           </div>
 
           {/* Add to Cart Button with Price */}
-          <Button title="הוספה לעגלה" onClick={handleAddToCart}>
-            <span className="text-sm font-bold whitespace-nowrap">₪{calculateTotalPrice().toFixed(2)}</span>
-          </Button>
+          <button
+  onClick={handleAddToCart}
+  className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
+>
+  <span>הוספה לעגלה</span>
+  <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
+</button>
         </div>
 
         {/* SVG for checkbox */}
