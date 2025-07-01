@@ -357,7 +357,7 @@ const CartPage = () => {
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables = item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || "אין";
+        const vegetables = item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || "כל הירקות";
         const additions =
           item.id >= 10 && item.id <= 16
             ? ""
@@ -545,8 +545,8 @@ const CartPage = () => {
           )}
         </div>
         {showConfirmationModal && !isClosedModalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content">
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
               <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
                 {" "}

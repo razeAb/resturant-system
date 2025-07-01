@@ -208,7 +208,7 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: #f7f7f7;
-  flex-direction: row-reverse; 
+  flex-direction: row-reverse;
 }
 
 .addition-buttons span {
@@ -235,4 +235,8 @@
 
 .gram-button.selected {
   background-color: #0056b3;
+}
+
+.total-price-text {
+  margin-left: 10px;
 }

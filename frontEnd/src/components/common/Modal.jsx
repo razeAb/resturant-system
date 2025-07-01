@@ -39,21 +39,25 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
       const alreadySelected = prev.additions.some((item) => item.addition === additionName);
 
-      // Toggle the addition
       if (alreadySelected) {
-        // Remove if already selected
+        // Toggle off: remove same selection
         return {
           ...prev,
           additions: prev.additions.filter((item) => item.addition !== additionName),
         };
       } else {
-        // Remove any previous selection of the same addition type (e.g., צלי כתף, אונטרייב)
-        const updatedAdditions = prev.additions.filter((item) => !item.addition.includes(addition.split(" ")[0]));
+        // Remove any other variant of the same meat
+        const updatedAdditions = prev.additions.filter((item) => !item.addition.startsWith(addition));
 
-        // Add new selection
         return {
           ...prev,
-          additions: [...updatedAdditions, { addition: additionName, price: grams === 50 ? 13 : grams === 100 ? 26 : getPrice(addition) }],
+          additions: [
+            ...updatedAdditions,
+            {
+              addition: additionName,
+              price: grams === 50 ? 13 : grams === 100 ? 26 : getPrice(addition),
+            },
+          ],
         };
       }
     });
@@ -94,8 +98,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
@@ -208,7 +212,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           ></textarea>
         </div>
 
-        <div className="modal-add-button-container">
+        <div className="modal-add-button-container" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <span className="total-price-text font-semibold text-xl pb-2">סה"כ: ₪{calculateTotalPrice()} </span>
           <Button title="הוספה לעגלה" className="modal-add-button" onClick={handleAddToCart} />
         </div>
 

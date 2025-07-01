@@ -5,8 +5,8 @@ const ClosedModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="alert-modal-overlay">
-      <div className="alert-modal" style={{ direction: "rtl", textAlign: "right" }}>
+    <div className="alert-modal-overlay" onClick={onClose}>
+      <div className="alert-modal" style={{ direction: "rtl", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
         <h2>המסעדה סגורה היום</h2>
         <p>המסעדה סגורה ביום רביעי. נא לנסות מחר או ביום אחר להזמנה.</p>
         <button className="close-button" onClick={onClose}>

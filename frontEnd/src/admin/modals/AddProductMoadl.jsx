@@ -96,8 +96,11 @@ const AddProductModal = ({ onClose, onAdd }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
-      <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white overflow-y-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center" onClick={onClose}>
+      <div
+        className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white overflow-y-auto max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-4 text-center">➕ הוספת מוצר חדש</h2>
         {error && <div className="text-red-500 text-center mb-2">{error}</div>}
 
