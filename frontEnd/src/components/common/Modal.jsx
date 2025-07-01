@@ -99,17 +99,16 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
+      
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
         <img src={img} alt={title} className="modal-img" />
-        <h2 className="font-semibold text-center text-xl pt-6">{title}</h2>
+        <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
         {/* Dynamically updated price */}
-        <p className="modal-price text-center">
-          {Number.isInteger(calculateTotalPrice()) ? calculateTotalPrice() : calculateTotalPrice().toFixed(2)} ILS
-        </p>
+        
 
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
 
@@ -184,16 +183,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           ))}
         </div>
 
-        <div className="modal-quantity">
-          <button className="quantity-button" onClick={() => handleQuantityChange(-1)}>
-            -
-          </button>
-          <span className="quantity-display">{quantity}</span>
-          <button className="quantity-button" onClick={() => handleQuantityChange(1)}>
-            +
-          </button>
-        </div>
-
         <div className="modal-comment">
           <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
           <textarea
@@ -212,9 +201,22 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           ></textarea>
         </div>
 
-        <div className="modal-add-button-container" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <span className="total-price-text font-semibold text-xl pb-2">סה"כ: ₪{calculateTotalPrice()} </span>
-          <Button title="הוספה לעגלה" className="modal-add-button" onClick={handleAddToCart} />
+        <div className="modal-footer sticky bottom-0 bg-white py-4 px-6 shadow-inner flex items-center justify-between gap-4 z-10">
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-[#1f3a44] text-orange-400 font-bold w-32">
+            <button onClick={() => handleQuantityChange(-1)} className="text-xl">
+              −
+            </button>
+            <span>{quantity}</span>
+            <button onClick={() => handleQuantityChange(1)} className="text-xl">
+              +
+            </button>
+          </div>
+
+          {/* Add to Cart Button with Price */}
+          <Button title="הוספה לעגלה" onClick={handleAddToCart}>
+            <span className="text-sm font-bold whitespace-nowrap">₪{calculateTotalPrice().toFixed(2)}</span>
+          </Button>
         </div>
 
         {/* SVG for checkbox */}

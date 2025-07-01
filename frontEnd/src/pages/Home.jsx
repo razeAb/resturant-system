@@ -18,8 +18,9 @@ const Home = () => {
         </p>
         <div className="mt-5">
           <br />
-          <Button title="תפריט / איסוף עצמי" href="#menu" />
-        </div>
+          <div className="inline-flex">
+    <Button title="תפריט / איסוף עצמי" href="#menu" />
+  </div>        </div>
       </div>
     </div>
   );

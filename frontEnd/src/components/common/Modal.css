@@ -17,7 +17,7 @@
 .modal-content {
   background: white;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh; /* Ensure the modal doesn't exceed the screen height */
@@ -239,4 +239,15 @@
 
 .total-price-text {
   margin-left: 10px;
+}
+.modal-wrapper {
+  width: 45%; /* wider modal */
+  max-width: 800px; /* increase max-width if needed */
+  margin: auto;
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
