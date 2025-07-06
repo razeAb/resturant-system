@@ -29,8 +29,14 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   };
 
   const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/);
-    return priceMatch ? parseFloat(priceMatch[1]) : 0;
+    if (typeof addition === "object" && addition.price) {
+      return parseFloat(addition.price);
+    }
+    if (typeof addition === "string") {
+      const priceMatch = addition.match(/(\d+)/);
+      return priceMatch ? parseFloat(priceMatch[1]) : 0;
+    }
+    return 0;
   };
 
   const handleAdditionChange = (addition, grams = null) => {
@@ -47,7 +53,10 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         };
       } else {
         // Remove any other variant of the same meat
-        const updatedAdditions = prev.additions.filter((item) => !item.addition.startsWith(addition));
+        const updatedAdditions = prev.additions.filter((item) => {
+          const name = typeof item.addition === "string" ? item.addition : item.addition?.split(" (")[0];
+          return !name.startsWith(addition.name ?? addition);
+        });
 
         return {
           ...prev,
@@ -99,7 +108,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
@@ -108,7 +116,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
         {/* Dynamically updated price */}
-        
 
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
 
@@ -134,53 +141,39 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
 
-          {/* Gram-based additions */}
-          {[
-            { name: "צלי כתף", prices: { 50: 13, 100: 26 } },
-            { name: "אונטרייב", prices: { 50: 13, 100: 26 } },
-            { name: "אסאדו", prices: { 50: 15, 100: 30 } },
-            { name: "צוואר טלה", prices: { 50: 15, 100: 30 } },
-          ].map((addition, index) => (
-            <div key={index} className="addition-buttons">
-              <span>{addition.name}</span>
-              <button
-                className={`gram-button ${
-                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (50 גרם)`)) ? "selected" : ""
-                }`}
-                onClick={() => handleAdditionChange(addition.name, 50)}
-              >
-                50 גרם
-              </button>
-              <button
-                className={`gram-button ${
-                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (100 גרם)`)) ? "selected" : ""
-                }`}
-                onClick={() => handleAdditionChange(addition.name, 100)}
-              >
-                100 גרם
-              </button>
-            </div>
-          ))}
-
-          {/* Fixed-price additions */}
-          {["ביקון טלה 10", "רוטב גבינה 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
-            <div key={index} className="checkbox-wrapper-30 checkbox-container">
-              <span className="checkbox">
-                <input
-                  type="checkbox"
-                  id={`addition-option-${index}`}
-                  onChange={() => handleAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) => item.addition === addition)}
-                />
-                <svg>
-                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                </svg>
-              </span>
-              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition}
-              </label>
-            </div>
-          ))}
+          {(options?.additions?.length
+            ? options.additions
+            : [
+                { name: "ביקון טלה", price: 10 },
+                { name: "רוטב גבינה", price: 8 },
+                { name: "פטריות", price: 5 },
+                { name: "ג׳בטה", price: 5 },
+              ]
+          ).map((addition, index) => (
+            {additionsList.map((addition, index) => (
+              <div key={index} className="checkbox-wrapper-30 checkbox-container">
+                <label htmlFor={`addition-option-${index}`} className="checkbox">
+                  <input
+                    type="checkbox"
+                    id={`addition-option-${index}`}
+                    onChange={() => handleAdditionChange(addition)}
+                    checked={selectedOptions.additions.some(
+                      (item) =>
+                        item.name === (typeof addition === "string" ? addition : addition.name)
+                    )}
+                  />
+                  <svg>
+                    <use xlinkHref="#checkbox-30" />
+                  </svg>
+                </label>
+                <span className="checkbox-label pl-2">
+                  {typeof addition === "string"
+                    ? addition
+                    : `${addition.name} ₪${addition.price}`}
+                </span>
+              </div>
+            ))}
+            
         </div>
 
         <div className="modal-comment">
@@ -215,12 +208,12 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
           {/* Add to Cart Button with Price */}
           <button
-  onClick={handleAddToCart}
-  className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
->
-  <span>הוספה לעגלה</span>
-  <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
-</button>
+            onClick={handleAddToCart}
+            className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
+          >
+            <span>הוספה לעגלה</span>
+            <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
+          </button>
         </div>
 
         {/* SVG for checkbox */}

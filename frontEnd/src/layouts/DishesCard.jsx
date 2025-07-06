@@ -68,11 +68,7 @@ const DishesCard = (props) => {
         <div className="flex flex-col items-center justify-center gap-2">
           {" "}
           <h3 className="font-semibold text-lg">{props.price} ILS</h3>
-          <Button
-            disabled={!isActive}
-            title="הוספה לעגלה"
-            onClick={handleButtonClick}
-          />
+          <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
         </div>
       </div>
 
@@ -86,6 +82,7 @@ const DishesCard = (props) => {
               title={props.title}
               price={props.price}
               description={props.description}
+              options={{ additions: props.additions }} // ✅ THIS is what Modal expects
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
@@ -97,7 +94,8 @@ const DishesCard = (props) => {
               title={props.title}
               price={props.price}
               description={props.description}
-              options={props.options}
+              additions={props.additions}
+              options={{ additions: props.additions }} // ✅ THIS is what Modal expects
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}

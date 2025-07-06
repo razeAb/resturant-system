@@ -6,12 +6,18 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, required: true },
   description: { type: String },
   image: { type: String },
-  category: { type: String, required: true }, // ✅ Added required category
-  isActive:{
+  category: { type: String, required: true },
+  additions: [
+    {
+      name: String,
+      price: Number,
+    },
+  ], // ✅ Added required category
+  isActive: {
     type: Boolean,
-    default: true
+    default: true,
   },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Product", productSchema);

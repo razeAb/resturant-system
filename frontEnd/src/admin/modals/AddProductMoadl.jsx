@@ -15,7 +15,23 @@ const AddProductModal = ({ onClose, onAdd }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
+  const [additions, setAdditions] = useState([]);
 
+  const handleAddAddition = () => {
+    setAdditions((prev) => [...prev, { name: "", price: "" }]);
+  };
+
+  const handleAdditionChange = (index, field, value) => {
+    setAdditions((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
+      return updated;
+    });
+  };
+
+  const handleRemoveAddition = (index) => {
+    setAdditions((prev) => prev.filter((_, i) => i !== index));
+  };
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
@@ -36,13 +52,14 @@ const AddProductModal = ({ onClose, onAdd }) => {
           ...form,
           stock: Number(form.stock),
           price: Number(form.price),
+          additions: additions.filter((a) => a.name && a.price !== ""),
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      onAdd(response.data);
+      onAdd(response.data.product);
       onClose();
     } catch (err) {
       setError("Failed to add product.");
@@ -119,7 +136,33 @@ const AddProductModal = ({ onClose, onAdd }) => {
           value={form.image}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
-
+        <div className="space-y-2 mb-4">
+          <p className="font-semibold">תוספות</p>
+          {additions.map((add, idx) => (
+            <div key={idx} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="שם"
+                value={add.name}
+                onChange={(e) => handleAdditionChange(idx, "name", e.target.value)}
+                className="flex-1 px-2 py-1 rounded bg-[#1f1f1f] border border-white/20"
+              />
+              <input
+                type="number"
+                placeholder="מחיר"
+                value={add.price}
+                onChange={(e) => handleAdditionChange(idx, "price", e.target.value)}
+                className="w-24 px-2 py-1 rounded bg-[#1f1f1f] border border-white/20"
+              />
+              <button type="button" onClick={() => handleRemoveAddition(idx)} className="bg-red-600 px-2 rounded">
+                ✕
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={handleAddAddition} className="bg-green-600 text-white px-2 py-1 rounded mt-1">
+            ➕ הוסף תוספת
+          </button>
+        </div>
         <label className="font-semibold">העלה תמונה:</label>
         <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} className="w-full mb-2" />
 

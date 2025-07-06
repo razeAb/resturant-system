@@ -4,7 +4,23 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
   const [form, setForm] = useState({ ...product });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [additions, setAdditions] = useState(product.additions || []);
 
+  const handleAddAddition = () => {
+    setAdditions((prev) => [...prev, { name: "", price: "" }]);
+  };
+
+  const handleAdditionChange = (index, field, value) => {
+    setAdditions((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
+      return updated;
+    });
+  };
+
+  const handleRemoveAddition = (index) => {
+    setAdditions((prev) => prev.filter((_, i) => i !== index));
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -47,12 +63,15 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          additions: additions.filter((a) => a.name && a.price !== ""),
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to update product");
-      const updated = await res.json();
-      onUpdate(updated);
+      const data = await res.json();
+      onUpdate(data.product);
       onClose();
     } catch (err) {
       alert("❌ שגיאה בעדכון מוצר");
@@ -60,14 +79,8 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
   };
 
   return (
-    <div
-    className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center"
-    onClick={onClose}
-  >
-    <div
-      className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center" onClick={onClose}>
+      <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-2xl font-bold mb-4 text-center">✏️ עריכת מוצר</h2>
         <form onSubmit={handleSubmit} className="space-y-4 text-right">
           <input
@@ -88,6 +101,33 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             required
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
+          <div className="space-y-2 mb-2">
+            <p className="font-semibold">תוספות</p>
+            {additions.map((add, idx) => (
+              <div key={idx} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="שם"
+                  value={add.name}
+                  onChange={(e) => handleAdditionChange(idx, "name", e.target.value)}
+                  className="flex-1 px-2 py-1 rounded bg-[#1f1f1f] border border-white/20"
+                />
+                <input
+                  type="number"
+                  placeholder="מחיר"
+                  value={add.price}
+                  onChange={(e) => handleAdditionChange(idx, "price", e.target.value)}
+                  className="w-24 px-2 py-1 rounded bg-[#1f1f1f] border border-white/20"
+                />
+                <button type="button" onClick={() => handleRemoveAddition(idx)} className="bg-red-600 px-2 rounded">
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={handleAddAddition} className="bg-green-600 text-white px-2 py-1 rounded mt-1">
+              ➕ הוסף תוספת
+            </button>
+          </div>
           <input
             type="number"
             name="stock"

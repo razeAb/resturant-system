@@ -3,7 +3,7 @@ import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import Button from "../common/Button"; // ✅
 
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
+const Modal = ({ _id, img, title, price, description, additions = [], options, isOpen, onClose, onAddToCart }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -28,19 +28,25 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   // Extract the numeric price from the addition string
   const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/); // Extract number from string
-    return priceMatch ? parseFloat(priceMatch[1]) : 0; // Return price as float
+    if (typeof addition === "object" && addition.price) {
+      return parseFloat(addition.price);
+    }
+    if (typeof addition === "string") {
+      const priceMatch = addition.match(/(\d+)/);
+      return priceMatch ? parseFloat(priceMatch[1]) : 0;
+    }
+    return 0;
   };
 
   // Handle addition selection
   const handleAdditionChange = (addition) => {
-    const additionPrice = getPrice(addition);
-
+    const label = typeof addition === "string" ? addition : addition.name;
+    const additionPrice = typeof addition === "string" ? getPrice(addition) : Number(addition.price);
     setSelectedOptions((prev) => ({
       ...prev,
-      additions: prev.additions.some((item) => item.addition === addition)
-        ? prev.additions.filter((item) => item.addition !== addition) // Remove if deselected
-        : [...prev.additions, { addition, price: additionPrice }], // Add the new addition
+      additions: prev.additions.some((item) => item.addition === label)
+        ? prev.additions.filter((item) => item.addition !== label)
+        : [...prev.additions, { addition: label, price: additionPrice }],
     }));
   };
 
@@ -111,7 +117,14 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
+          {(additions.length
+            ? additions
+            : [
+                { name: "רוטב גבינה בצד 8", price: 8 },
+                { name: "פטריות 5", price: 5 },
+                { name: "ג׳בטה 5", price: 5 },
+              ]
+          ).map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
@@ -120,7 +133,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
                 </svg>
               </span>
               <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition}
+                {typeof addition === "string" ? addition : `${addition.name} ${addition.price}`}{" "}
               </label>
             </div>
           ))}
