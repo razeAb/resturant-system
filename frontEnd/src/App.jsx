@@ -17,7 +17,6 @@ import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
 import OrderStatus from "./pages/OrderStatus";
 import CollectionsReport from "./admin/CollectionsReport";
-
 import { AuthProvider } from "./context/AuthContext"; // ✅
 
 const App = () => {

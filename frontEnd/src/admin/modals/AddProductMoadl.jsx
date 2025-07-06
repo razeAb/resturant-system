@@ -65,12 +65,9 @@ const AddProductModal = ({ onClose, onAdd }) => {
         },
       });
 
-      const uploadedFileName = uploadRes.data.imageUrl;
-      const fullUrl = `${import.meta.env.VITE_API_BASE_URL}${uploadedFileName}`;
-      setForm((prev) => ({ ...prev, image: fullUrl }));
-      console.log("✅ Uploaded Image URL:", uploadedUrl); // 👈 Add this
+      const cloudinaryUrl = uploadRes.data.imageUrl;
+      setForm((prev) => ({ ...prev, image: cloudinaryUrl }));
 
-      setForm((prev) => ({ ...prev, image: uploadedUrl }));
       alert("✅ Image uploaded successfully!");
     } catch (err) {
       alert("❌ Failed to upload image.");
@@ -110,14 +107,6 @@ const AddProductModal = ({ onClose, onAdd }) => {
           onChange={handleChange}
           value={form.name}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3 focus:outline-none"
-        />
-
-        <input
-          name="image"
-          placeholder="קישור לתמונה"
-          onChange={handleChange}
-          value={form.image}
-          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
 
         <label className="font-semibold">העלה תמונה:</label>

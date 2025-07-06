@@ -4,6 +4,14 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 
+// 📦 Load environment variables
+dotenv.config();
+
+// ✅ Initialize app FIRST before using it
+const app = express();
+const PORT = process.env.PORT || 5001;
+
+// ✅ Import routes
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -12,17 +20,13 @@ const orderRoutes = require("./routes/orderRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const uploadRoute = require("./routes/upload");
 
+// ✅ CORS setup
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5177",
-  "https://hungryresturant.netlify.app" // ✅ no trailing slash
+  "https://hungryresturant.netlify.app",
 ];
 
-dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 5001;
-
-// ✅ Middleware
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -35,30 +39,32 @@ app.use(
     credentials: true,
   })
 );
+
+// ✅ JSON middleware
 app.use(express.json());
 
-// ✅ Serve static files
+// ✅ Serve uploaded files from local folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected..."))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
-
-// ✅ Routes
+// ✅ Register routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/upload", uploadRoute);
+app.use("/api/upload", uploadRoute); // ✅ Now in the correct place
 
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
 });
+
+// ✅ Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected..."))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // ✅ Start server
 app.listen(PORT, () => {
