@@ -24,15 +24,16 @@ const ActiveOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  useEffect(() => {
-    const unlockAudio = () => {
-      const audio = new Audio(notificationSound);
-      audio.play().catch(() => {}); // Try play and ignore error
-      document.removeEventListener("click", unlockAudio);
-    };
+  // play a sound when page loads
+  // useEffect(() => {
+  //   const unlockAudio = () => {
+  //     const audio = new Audio(notificationSound);
+  //     audio.play().catch(() => {}); // Try play and ignore error
+  //     document.removeEventListener("click", unlockAudio);
+  //   };
 
-    document.addEventListener("click", unlockAudio);
-  }, []);
+  //   document.addEventListener("click", unlockAudio);
+  // }, []);
   useEffect(() => {
     fetchOrders();
 
@@ -47,43 +48,49 @@ const ActiveOrdersPage = () => {
     let count = 0;
 
     const play = () => {
-      if (count < 3) {
-        const audio = new Audio(notificationSound);
-        audio.play().catch((e) => console.warn("Audio error:", e));
-        count++;
-
-        // ✅ Wait 1 second after it ends before playing the next one
-        audio.onended = () => {
-          setTimeout(play, 1000);
-        };
-      }
+      if (count >= 3) return;
+      const audio = new Audio(notificationSound);
+      audio.play().catch((e) => console.warn("Audio error:", e));
+      count++;
+      audio.onended = () => setTimeout(play, 1000);
     };
 
     play();
   };
-  const prevOrderIdsRef = useRef([]);
+
+  useEffect(() => {
+    const unlock = () => {
+      const a = new Audio();
+      a.play().catch(() => {});
+      document.removeEventListener("click", unlock);
+    };
+    document.addEventListener("click", unlock);
+  }, []);
+
+  const prevOrderCountRef = useRef(0);
 
   const fetchOrders = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/active`);
       const newOrderList = res.data;
 
-      const newOrderIds = newOrderList.map((o) => o._id);
-      const newOrderAdded = newOrderIds.some((id) => !prevOrderIdsRef.current.includes(id));
+      const currentCount = newOrderList.length;
+      const prevCount = prevOrderCountRef.current;
 
-      if (newOrderAdded && prevOrderIdsRef.current.length > 0) {
-        playNotificationSound(); // ✅ Repeat 5 times
+      // ✅ Play sound if count increased (and not on first load)
+      if (prevCount !== 0 && currentCount > prevCount) {
+        console.log("🔔 New order received — playing sound!");
+        playNotificationSound();
       }
 
-      // ✅ Update the ref AFTER checking
-      prevOrderIdsRef.current = newOrderIds;
-
+      prevOrderCountRef.current = currentCount;
       setOrders(newOrderList);
     } catch (err) {
       console.error("❌ שגיאה בקבלת הזמנות:", err);
       setOrders([]);
     }
   };
+
   const formatPhoneNumber = (phone) => {
     if (!phone) return null;
     return phone.startsWith("0") ? `+972${phone.slice(1)}` : phone;
