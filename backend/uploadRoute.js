@@ -18,7 +18,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // Route for uploading an image
-router.post("/upload", upload.single("image"), async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     // Ensure file exists after upload
     if (!req.file || !req.file.path) {

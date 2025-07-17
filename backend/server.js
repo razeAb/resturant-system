@@ -21,11 +21,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const uploadRoute = require("./routes/upload");
 
 // ✅ CORS setup
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5177",
-  "https://hungryresturant.netlify.app",
-];
+const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
 
 app.use(
   cors({
@@ -53,8 +49,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/upload", uploadRoute); // ✅ Now in the correct place
-
+const uploadRoute = require("./uploadRoute");
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
