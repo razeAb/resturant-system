@@ -18,8 +18,7 @@ const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
-const uploadRoute = require("./routes/upload");
-
+const uploadRoute = require("./uploadRoute");
 // ✅ CORS setup
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
 
@@ -39,7 +38,8 @@ app.use(
 // ✅ JSON middleware
 app.use(express.json());
 
-// ✅ Serve uploaded files from local folder
+// ✅ Serve uploaded files from local folder (for backward compatibility)
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Register routes
@@ -49,7 +49,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
-const uploadRoute = require("./uploadRoute");
+app.use("/api/upload", uploadRoute);
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");

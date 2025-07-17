@@ -1,7 +1,7 @@
 // routes/uploadRoute.js
 const express = require("express");
 const router = express.Router();
-const cloudinary = require("../cloudinary");
+const cloudinary = require("./cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 
