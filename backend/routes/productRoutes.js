@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted } = req.body;
+    const { name, price, stock, description, image,  category, isWeighted } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });

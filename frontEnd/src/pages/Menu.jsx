@@ -59,7 +59,7 @@ const Menu = () => {
       {renderSection("מנות פתיחה", "Starters")}
       {renderSection("כריכים", "Sandwiches")}
       {renderSection("בשרים במשקל", ["Meats", "premium Meat"], true)}
-      {renderSection("תוספות בצד", "Sides")}
+      {renderSection("תוספות בצד", "Side Dishes")}
       {renderSection("שתיה", "Drinks")}
     </div>
   );
