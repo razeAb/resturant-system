@@ -140,8 +140,29 @@ const ActiveOrdersPage = () => {
     alert("ההזמנה מוכנה!");
 
     if (phone) {
-      const lastSixDigits = orderId.slice(-6); // Shorter ID for easier reading
-      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה! ניתן להגיע לאסוף אותה. תודה שהזמנת מאיתנו ❤️`;
+      const lastSixDigits = orderId.slice(-6);
+
+      // 🧾 Generate receipt
+      const receipt = order.items
+        .map((item, i) => {
+          const name = item.product?.name || item.title || "פריט";
+          const qty = item.quantity;
+          const unit = item.isWeighted ? "גרם" : "יח'";
+          const additions =
+            Array.isArray(item.additions) && item.additions.length
+              ? `\n  ➕ תוספות: ${item.additions.map((a) => a.addition).join(", ")}`
+              : "";
+          const veggies = Array.isArray(item.vegetables) && item.vegetables.length ? `\n  🥗 ירקות: ${item.vegetables.join(", ")}` : "";
+          const comment = item.comment ? `\n  📝 הערות: ${item.comment}` : "";
+
+          return `• ${name} - ${qty} ${unit}${additions}${veggies}${comment}`;
+        })
+        .join("\n");
+
+      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה! ניתן להגיע לאסוף אותה.\n\n🧾 פירוט ההזמנה:\n${receipt}\n\n💵 סכום לתשלום: ${
+        order.totalPrice || "לא זמין"
+      } ₪\n\nתודה שהזמנת מאיתנו ❤️`;
+
       const encodedMessage = encodeURIComponent(message);
       const formattedPhone = formatPhoneNumber(phone);
       const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
