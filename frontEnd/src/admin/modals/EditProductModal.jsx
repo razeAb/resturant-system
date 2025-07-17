@@ -61,7 +61,10 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bg-[#2a2a2a] rounded-xl p-6 w-full max-w-md shadow-lg text-white max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-4 text-center">✏️ עריכת מוצר</h2>
         <form onSubmit={handleSubmit} className="space-y-4 text-right">
           <input

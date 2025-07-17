@@ -16,7 +16,7 @@ const DishesCard = (props) => {
     console.log("isOrder:", props.isOrder);
     if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
-    } else if (props.category === "Meat") {
+    } else if (props.category === "Meats") {
       setIsModalOpen(true); // Weighted modal
     } else if (props.category === "Sandwiches") {
       setIsModalOpen(true); // Sandwich modal
@@ -68,18 +68,14 @@ const DishesCard = (props) => {
         <div className="flex flex-col items-center justify-center gap-2">
           {" "}
           <h3 className="font-semibold text-lg">{props.price} ILS</h3>
-          <Button
-            disabled={!isActive}
-            title="הוספה לעגלה"
-            onClick={handleButtonClick}
-          />
+          <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
         </div>
       </div>
 
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meat") && (
+      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats") && (
         <>
-          {props.category === "Meat" ? (
+          {props.category === "Meats" ? (
             <WeightedModal
               _id={props.id} // ⬅️ חשוב
               img={props.img}

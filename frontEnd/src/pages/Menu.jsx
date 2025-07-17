@@ -48,7 +48,7 @@ const Menu = () => {
           ))}
         </div>
         <br />
-        <br /> 
+        <br />
       </>
     );
   };
@@ -56,9 +56,9 @@ const Menu = () => {
     <div className="min-h-screen flex flex-col justify-center items-center lg:px-32 px-5">
       <h1 className="text-4xl font-semibold text-center pt-24 pb-10">תפריט שלנו</h1>
 
-      {renderSection("כריכים", "Sandwiches")}
-      {renderSection("בשרים במשקל", ["Meat", "premium Meat"], true)}
       {renderSection("מנות פתיחה", "Starters")}
+      {renderSection("כריכים", "Sandwiches")}
+      {renderSection("בשרים במשקל", ["Meats", "premium Meat"], true)}
       {renderSection("תוספות בצד", "Sides")}
       {renderSection("שתיה", "Drinks")}
     </div>
