@@ -53,14 +53,36 @@ const Menu = () => {
     );
   };
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center lg:px-32 px-5">
+    <div className="min-h-screen flex flex-col items-center lg:px-32 px-5">
       <h1 className="text-4xl font-semibold text-center pt-24 pb-10">תפריט שלנו</h1>
 
-      {renderSection("מנות פתיחה", "Starters")}
-      {renderSection("כריכים", "Sandwiches")}
-      {renderSection("בשרים במשקל", ["Meats", "premium Meat"], true)}
-      {renderSection("תוספות בצד", "Side Dishes")}
-      {renderSection("שתיה", "Drinks")}
+      {/* ✅ CATEGORY NAVIGATION BAR */}
+      <div className="w-full overflow-x-auto mb-10">
+        <div className="flex gap-3 justify-start px-2 md:justify-center min-w-max">
+          {[
+            { id: "starters", label: "מנות פתיחה" },
+            { id: "sandwiches", label: "כריכים" },
+            { id: "meats", label: "בשרים במשקל" },
+            { id: "sides", label: "תוספות בצד" },
+            { id: "drinks", label: "שתיה" },
+          ].map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="whitespace-nowrap bg-gradient-to-br from-[#444] to-[#1f1f1f] text-white font-bold py-2 px-5 rounded-xl shadow-md hover:scale-105 transition transform duration-200 hover:from-[#666] hover:to-[#2b2b2b]"
+            >
+              {section.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* ✅ RENDER EACH SECTION WITH AN ID */}
+      <div id="starters">{renderSection("מנות פתיחה", "Starters")}</div>
+      <div id="sandwiches">{renderSection("כריכים", "Sandwiches")}</div>
+      <div id="meats">{renderSection("בשרים במשקל", ["Meats", "premium Meat"], true)}</div>
+      <div id="sides">{renderSection("תוספות בצד", "Side Dishes")}</div>
+      <div id="drinks">{renderSection("שתיה", "Drinks")}</div>
     </div>
   );
 };
