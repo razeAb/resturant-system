@@ -2,11 +2,11 @@
   "name": "projects",
   "version": "1.0.0",
   "main": "index.js",
- "scripts": {
-  "start:frontend": "cd frontEnd && npm run dev",
-  "start:backend": "cd backend && npm run dev",
-  "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\""
-},
+  "scripts": {
+    "start:frontend": "cd frontEnd && npm run dev",
+    "start:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

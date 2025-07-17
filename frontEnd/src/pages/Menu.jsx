@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
-import CountableDishesCard from "../layouts/CountableDishesCard";
 import axios from "axios";
+
+
+const categoriesList = [
+  { id: "all", label: "הכל" },
+  { id: "starters", label: "מנות פתיחה", filter: ["Starters"] },
+  { id: "sandwiches", label: "כריכים", filter: ["Sandwiches"] },
+  { id: "meats", label: "בשרים במשקל", filter: ["Meats", "premium Meat"] },
+  { id: "sides", label: "תוספות בצד", filter: ["Side Dishes"] },
+  { id: "drinks", label: "שתיה", filter: ["Drinks"] },
+];
 
 const Menu = () => {
   const [products, setProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -14,7 +24,7 @@ const Menu = () => {
           ...product,
           isActive: product.isActive === true,
         }));
-        setProducts(normalizedProducts); // assuming your backend returns { products: [...] }
+        setProducts(normalizedProducts);
       } catch (error) {
         console.error("❌ Error loading menu:", error);
       }
@@ -23,13 +33,13 @@ const Menu = () => {
     fetchMenu();
   }, []);
 
-  const renderSection = (title, categories, isWeighted = false) => {
-    const filtered = products.filter((p) => (Array.isArray(categories) ? categories.includes(p.category) : p.category === categories));
+  const renderSection = (title, categoryFilter) => {
+    const filtered = products.filter((p) => categoryFilter.includes(p.category));
     if (filtered.length === 0) return null;
 
     return (
-      <>
-        <h1 className="text-4xl font-semibold text-center pb-10">{title}</h1>
+      <div className="mb-10">
+        <h2 className="text-3xl font-semibold text-center pb-6">{title}</h2>
         <div className="flex flex-wrap gap-8 justify-center">
           {filtered.map((item) => (
             <DishesCard
@@ -47,42 +57,49 @@ const Menu = () => {
             />
           ))}
         </div>
-        <br />
-        <br />
-      </>
+      </div>
     );
   };
+
   return (
     <div className="min-h-screen flex flex-col items-center lg:px-32 px-5">
-      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">תפריט שלנו</h1>
+      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">התפריט שלנו</h1>
 
-      {/* ✅ CATEGORY NAVIGATION BAR */}
+      {/* ✅ CATEGORY FILTER BUTTONS */}
       <div className="w-full overflow-x-auto mb-10">
         <div className="flex gap-3 justify-start px-2 md:justify-center min-w-max">
-          {[
-            { id: "starters", label: "מנות פתיחה" },
-            { id: "sandwiches", label: "כריכים" },
-            { id: "meats", label: "בשרים במשקל" },
-            { id: "sides", label: "תוספות בצד" },
-            { id: "drinks", label: "שתיה" },
-          ].map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className="whitespace-nowrap bg-gradient-to-br from-[#444] to-[#1f1f1f] text-white font-bold py-2 px-5 rounded-xl shadow-md hover:scale-105 transition transform duration-200 hover:from-[#666] hover:to-[#2b2b2b]"
+          {categoriesList.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`whitespace-nowrap font-bold py-2 px-5 rounded-xl shadow-md transition transform duration-200 ${
+                selectedCategory === cat.id
+                  ? "bg-gradient-to-br from-[#666] to-[#2b2b2b] text-white scale-105"
+                  : "bg-gradient-to-br from-[#444] to-[#1f1f1f] text-white hover:scale-105 hover:from-[#666] hover:to-[#2b2b2b]"
+              }`}
             >
-              {section.label}
-            </a>
+              {cat.label}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* ✅ RENDER EACH SECTION WITH AN ID */}
-      <div id="starters">{renderSection("מנות פתיחה", "Starters")}</div>
-      <div id="sandwiches">{renderSection("כריכים", "Sandwiches")}</div>
-      <div id="meats">{renderSection("בשרים במשקל", ["Meats", "premium Meat"], true)}</div>
-      <div id="sides">{renderSection("תוספות בצד", "Side Dishes")}</div>
-      <div id="drinks">{renderSection("שתיה", "Drinks")}</div>
+      {/* ✅ RENDER SECTIONS */}
+      {selectedCategory === "all" ? (
+        <>
+          {renderSection("מנות פתיחה", ["Starters"])}
+          {renderSection("כריכים", ["Sandwiches"])}
+          {renderSection("בשרים במשקל", ["Meats", "premium Meat"])}
+          {renderSection("תוספות בצד", ["Side Dishes"])}
+          {renderSection("שתיה", ["Drinks"])}
+        </>
+      ) : (
+        (() => {
+          const selected = categoriesList.find((c) => c.id === selectedCategory);
+          if (!selected?.filter) return null;
+          return renderSection(selected.label, selected.filter);
+        })()
+      )}
     </div>
   );
 };
