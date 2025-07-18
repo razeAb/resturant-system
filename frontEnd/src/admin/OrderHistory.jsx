@@ -152,6 +152,9 @@ export default function OrderHistory() {
                                 <p>
                                   <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone || "אין טלפון"}
                                 </p>
+                                <p>
+                                  <strong>סכום לתשלום:</strong> {order.totalPrice ? `₪${order.totalPrice} ` : "לא זמין"}
+                                </p>
                               </div>
                               <h4 className="text-lg font-bold">פרטי ההזמנה</h4>
                               <ul className="text-sm space-y-2">
