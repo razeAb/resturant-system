@@ -33,8 +33,10 @@ export const CartProvider = ({ children }) => {
   };
 
   // Calculate total number of items
-  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
+  const totalItems = cartItems.reduce((acc, item) => {
+    const qty = item.isWeighted ? 1 : item.quantity || 0;
+    return acc + qty;
+  }, 0);
   return <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, totalItems }}>{children}</CartContext.Provider>;
 };
 

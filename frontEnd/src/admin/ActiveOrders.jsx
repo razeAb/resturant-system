@@ -242,7 +242,7 @@ const ActiveOrdersPage = () => {
                   <React.Fragment key={order._id}>
                     <tr className="border-b border-white/10">
                       <td className="p-3">{order._id.slice(-6)}</td>
-                      <td className="p-3">{order.user?.name || "אורח"}</td>
+                      <td className="p-3">{order.user?.name ? `${order.user.name} - ${order.user.phone}` : `אורח - ${order.phone}`}</td>
                       <td className="p-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-bold ${

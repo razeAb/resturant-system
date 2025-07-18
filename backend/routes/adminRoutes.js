@@ -28,7 +28,8 @@ router.get("/dashboard", protect, async (req, res) => {
       order.items.forEach((item) => {
         const productId = item.product?._id?.toString();
         if (productId) {
-          productOrderCounts[productId] = (productOrderCounts[productId] || 0) + (item.quantity || 0);
+          const qtyToAdd = item.isWeighted ? 1 : item.quantity || 0;
+          productOrderCounts[productId] = (productOrderCounts[productId] || 0) + qtyToAdd;
         }
       });
     });
