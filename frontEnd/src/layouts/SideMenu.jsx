@@ -7,22 +7,22 @@ const SideMenu = () => {
     <aside className="custom-sidebar always-open">
       <div className="menu-items">
         <Link to="/admin/dashboard" className="menu-link">
-          Dashboard
+          לוח בקרה
         </Link>
         <Link to="/admin/products" className="menu-link">
-          Products
+          מוצרים
         </Link>
         <Link to="/admin/activeOrders" className="menu-link">
-          Active Orders
+          הזמנות פעילות
         </Link>
         <Link to="/admin/orderHistory" className="menu-link">
-          Order History
+          היסטוריית הזמנות
         </Link>
         <Link to="/admin/collections" className="menu-link">
-          Collections
+          collections
         </Link>
         <Link to="/" className="menu-link">
-          Go Back Home
+          חזרה לדף הבית
         </Link>
       </div>
     </aside>

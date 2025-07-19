@@ -58,6 +58,19 @@ const ActiveOrdersPage = () => {
     play();
   };
 
+  const translateDeliveryOption = (option) => {
+    switch (option) {
+      case "EatIn":
+        return "אכילה במקום";
+      case "Delivery":
+        return "משלוח";
+      case "Pickup":
+        return "איסוף עצמי";
+      default:
+        return option;
+    }
+  };
+
   useEffect(() => {
     const unlock = () => {
       const a = new Audio();
@@ -266,7 +279,7 @@ const ActiveOrdersPage = () => {
                             : "מחכה אישור"}
                         </span>
                       </td>
-                      <td className="p-3">{order.deliveryOption}</td>
+                      <td className="p-3">{translateDeliveryOption(order.deliveryOption)}</td>
                       <td className="p-3">{formatTime(order.createdAt)}</td>
                       <td className="p-3">
                         <button
