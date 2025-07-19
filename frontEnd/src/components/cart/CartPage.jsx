@@ -23,6 +23,7 @@ const CartPage = () => {
   const [deliveryOption, setDeliveryOption] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [guestName, setGuestName] = useState("");
   const [visaDetails, setVisaDetails] = useState({
     cardNumber: "",
     expiryDate: "",
@@ -121,6 +122,7 @@ const CartPage = () => {
         cardholderName: "",
       });
       setPhoneNumber("");
+      setGuestName("");
       setCouponApplied(false);
       setEligibleReward(null);
       setShowConfirmationModal(false);
@@ -177,10 +179,16 @@ const CartPage = () => {
       return;
     }
 
-    // ✅ Guest phone validation
-    if (isGuest() && !isValidPhoneNumber(phoneNumber)) {
-      alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
-      return;
+    // ✅ Guest validations
+    if (isGuest()) {
+      if (!guestName.trim()) {
+        alert("אנא הזן שם לפני השלמת ההזמנה");
+        return;
+      }
+      if (!isValidPhoneNumber(phoneNumber)) {
+        alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
+        return;
+      }
     }
 
     submitOrderToBackend(deliveryOption);
@@ -225,6 +233,7 @@ const CartPage = () => {
     const payload = {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
+      ...(guestName && !loggedInUserId && { customerName: guestName }),
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
@@ -243,6 +252,7 @@ const CartPage = () => {
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
       setShowConfirmationModal(false);
+      setGuestName("");
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
@@ -553,24 +563,42 @@ const CartPage = () => {
                 אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
               </p>{" "}
               {isGuest() && (
-                <div style={{ marginBottom: "5px" }}>
-                  <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
-                  <input
-                    type="tel"
-                    placeholder="הכנס מספר טלפון"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    pattern="^05\d{8}$"
-                    title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: "1px solid #ccc",
-                    }}
-                  />
-                </div>
+                <>
+                  <div style={{ marginBottom: "10px" }}>
+                    <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>שם לקוח:</h4>
+                    <input
+                      type="text"
+                      placeholder="הכנס שם"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: "5px" }}>
+                    <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
+                    <input
+                      type="tel"
+                      placeholder="הכנס מספר טלפון"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      pattern="^05\d{8}$"
+                      title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                      }}
+                    />
+                  </div>
+                </>
               )}
               <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
                 <h4>סיכום הזמנה:</h4>

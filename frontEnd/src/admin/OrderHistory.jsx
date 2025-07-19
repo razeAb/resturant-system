@@ -147,7 +147,7 @@ export default function OrderHistory() {
                             <div className="text-right space-y-4">
                               <div>
                                 <p>
-                                  <strong>משתמש:</strong> {order.user ? order.user.name : "אורח"}
+                                  <strong>משתמש:</strong> {order.user ? order.user.name : order.customerName || "אורח"}
                                 </p>
                                 <p>
                                   <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone || "אין טלפון"}

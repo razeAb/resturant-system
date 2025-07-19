@@ -7,13 +7,15 @@ const { protect } = require("../middleware/authMiddleware");
 // ✅ Create a New Order
 router.post("/", async (req, res) => {
   try {
-    const { user, items, totalPrice, deliveryOption, status, createdAt, phone, paymentDetails } = req.body;
+    const { user, items, totalPrice, deliveryOption, status, createdAt, phone,
+      customerName, paymentDetails } = req.body;
 
     console.log("🟢 totalPrice received at backend:", totalPrice); // Critical debug
 
     const newOrder = new Order({
       user: user || undefined,
       phone: phone || undefined,
+      customerName: customerName || undefined,
       paymentDetails: paymentDetails || {},
       items,
       totalPrice: parseFloat(totalPrice),
