@@ -37,7 +37,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
           boxSizing: "border-box",
         },
         iframe: {
-          width: "100%",
+          width: "40%",
         },
       },
     });
