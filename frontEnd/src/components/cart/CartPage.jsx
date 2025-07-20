@@ -9,8 +9,7 @@ import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaPayment from "../TranzillaPayment";
 import TranzilaGooglePay from "../TranzillaGooglePay";
-import TranzilaApplePay from "../TranzilaApplePay";
-
+import TranzilaApplePay from "../TranzillaApplePay";
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
@@ -784,12 +783,24 @@ const CartPage = () => {
               )}
               {paymentMethod === "ApplePay" && (
                 <div style={{ marginTop: "20px" }}>
-                  <TranzilaApplePay amount={calculateFinalTotal()} />
+                  <TranzilaApplePay
+                    amount={calculateFinalTotal()}
+                    onSuccess={() => {
+                      console.log("✅ Apple Pay payment successful");
+                      handleFinalSubmit();
+                    }}
+                  />{" "}
                 </div>
               )}
               {paymentMethod === "GooglePay" && (
                 <div style={{ marginTop: "20px" }}>
-                  <TranzilaGooglePay amount={calculateFinalTotal()} />
+                  <TranzilaGooglePay
+                    amount={calculateFinalTotal()}
+                    onSuccess={() => {
+                      console.log("✅ Google Pay payment successful");
+                      handleFinalSubmit();
+                    }}
+                  />{" "}
                 </div>
               )}
               {/* ✅ Send and Cancel buttons */}
