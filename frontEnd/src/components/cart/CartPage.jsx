@@ -8,6 +8,7 @@ import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure y
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaPayment from "../TranzillaPayment";
+import TranzilaGooglePay from "../TranzillaGooglePay";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -778,6 +779,11 @@ const CartPage = () => {
                       handleFinalSubmit(); // only submit to backend if Visa success
                     }}
                   />
+                </div>
+              )}
+              {paymentMethod === "GooglePay" && (
+                <div style={{ marginTop: "20px" }}>
+                  <TranzilaGooglePay amount={calculateFinalTotal()} />
                 </div>
               )}
               {/* ✅ Send and Cancel buttons */}
