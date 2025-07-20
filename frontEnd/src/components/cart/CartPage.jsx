@@ -654,24 +654,6 @@ const CartPage = () => {
                     <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
                     ויזה
                   </button>
-                  <button
-                    onClick={() => setPaymentMethod("Bit")}
-                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 20px",
-                      backgroundColor: paymentMethod === "Bit" ? "#581c87" : "#6b21a8", // ✅ purple/darker purple
-                      border: paymentMethod === "Bit" ? "3px solid black" : "1px solid transparent", // Black border if selected
-
-                      color: "#fff",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    <img src="/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
-                    ביט
-                  </button>
                   {isIOS && (
                     <button
                       onClick={() => setPaymentMethod("ApplePay")}

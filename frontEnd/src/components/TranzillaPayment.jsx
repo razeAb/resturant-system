@@ -9,7 +9,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     initialized.current = true;
 
     window.fields = window.TzlaHostedFields.create({
-      sandbox: false,
+      sandbox: false, // change to true for sandbox testing
       fields: {
         credit_card_number: {
           selector: "#credit_card_number",
@@ -24,7 +24,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
         expiry: {
           selector: "#expiry",
           placeholder: "MM/YY",
-          version: "1",
+          tabindex: 3,
         },
       },
       styles: {
@@ -37,20 +37,23 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
           boxSizing: "border-box",
           width: "100%",
         },
+        iframe: {
+          height: "40px",
+        },
       },
     });
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!window.fields) return;
 
     window.fields.charge(
       {
-        terminal_name: "0054874", // Replace with your terminal name (store in .env later!)
+        terminal_name: "0054874", // secure this in production!
         amount: amount,
         contact: userPhone || "",
-        requested_by_user: "your_api_user", // Optional
       },
       (err, response) => {
         if (err) {
@@ -65,62 +68,45 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
   };
 
   const fieldBoxStyle = {
-    minHeight: "40px",
-    border: "1px solid #ccc",
     borderRadius: "8px",
-    padding: "0 10px",
+    overflow: "hidden",
+    height: "40px",
+    border: "1px solid #ccc",
     marginBottom: "15px",
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const labelStyle = {
-    display: "block",
-    marginBottom: "5px",
-    fontWeight: "bold",
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="credit_card_number" style={labelStyle}>
-          מספר כרטיס:
-        </label>
-        <div style={fieldBoxStyle}>
-          <div id="credit_card_number" className="tranzila-field" style={{ width: "100%" }} />
-        </div>
+    <form onSubmit={handleSubmit} style={{ direction: "rtl" }}>
+      <div style={{ marginBottom: "10px" }}>
+        <label htmlFor="credit_card_number">מספר כרטיס:</label>
+        <div id="credit_card_number" style={fieldBoxStyle} />
+        <div id="errors_for_number" className="error_message"></div>
       </div>
 
-      <div>
-        <label htmlFor="cvv" style={labelStyle}>
-          CVV:
-        </label>
-        <div style={fieldBoxStyle}>
-          <div id="cvv" className="tranzila-field" style={{ width: "100%" }} />
-        </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label htmlFor="cvv">CVV:</label>
+        <div id="cvv" style={fieldBoxStyle} />
+        <div id="errors_for_cvv" className="error_message"></div>
       </div>
 
-      <div>
-        <label htmlFor="expiry" style={labelStyle}>
-          תוקף:
-        </label>
-        <div style={fieldBoxStyle}>
-          <div id="expiry" className="tranzila-field" style={{ width: "100%" }} />
-        </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label htmlFor="expiry">תוקף:</label>
+        <div id="expiry" style={fieldBoxStyle} />
+        <div id="errors_for_expiry" className="error_message"></div>
       </div>
 
       <button
         type="submit"
         style={{
+          marginTop: "20px",
           backgroundColor: "#007bff",
           color: "#fff",
-          border: "none",
           padding: "10px 20px",
-          borderRadius: "8px",
           fontSize: "16px",
-          width: "100%",
-          marginTop: "15px",
+          border: "none",
+          borderRadius: "8px",
           cursor: "pointer",
+          width: "100%",
         }}
       >
         שלם עם כרטיס אשראי
