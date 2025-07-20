@@ -38,6 +38,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
         },
         iframe: {
           width: "40%",
+          border: "none",
         },
       },
     });
