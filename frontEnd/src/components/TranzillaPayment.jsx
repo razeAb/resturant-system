@@ -33,12 +33,11 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
           padding: "10px",
           border: "1px solid #ccc",
           borderRadius: "8px",
-          height: "40px",
-          boxSizing: "border-box",
           width: "100%",
+          boxSizing: "border-box",
         },
         iframe: {
-          height: "40px",
+          width: "100%",
         },
       },
     });
@@ -51,7 +50,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "0054874", // secure this in production!
+        terminal_name: "0054874",
         amount: amount,
         contact: userPhone || "",
       },
@@ -67,32 +66,21 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     );
   };
 
-  const fieldBoxStyle = {
-    borderRadius: "8px",
-    overflow: "hidden",
-    height: "40px",
-    border: "1px solid #ccc",
-    marginBottom: "15px",
-  };
-
   return (
     <form onSubmit={handleSubmit} style={{ direction: "rtl" }}>
-      <div style={{ marginBottom: "10px" }}>
+      <div style={{ marginBottom: "15px" }}>
         <label htmlFor="credit_card_number">מספר כרטיס:</label>
-        <div id="credit_card_number" style={fieldBoxStyle} />
-        <div id="errors_for_number" className="error_message"></div>
+        <div id="credit_card_number" />
       </div>
 
-      <div style={{ marginBottom: "10px" }}>
+      <div style={{ marginBottom: "15px" }}>
         <label htmlFor="cvv">CVV:</label>
-        <div id="cvv" style={fieldBoxStyle} />
-        <div id="errors_for_cvv" className="error_message"></div>
+        <div id="cvv" />
       </div>
 
-      <div style={{ marginBottom: "10px" }}>
+      <div style={{ marginBottom: "15px" }}>
         <label htmlFor="expiry">תוקף:</label>
-        <div id="expiry" style={fieldBoxStyle} />
-        <div id="errors_for_expiry" className="error_message"></div>
+        <div id="expiry" />
       </div>
 
       <button
