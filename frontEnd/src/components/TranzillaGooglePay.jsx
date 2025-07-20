@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 
-const TERMINAL_NAME = "myterminal"; // replace with your Tranzila terminal name
+const TERMINAL_NAME = "0054874"; // replace with your Tranzila terminal name
 
 const TranzilaGooglePay = ({ amount }) => {
   const formRef = useRef(null);
