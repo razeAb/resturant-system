@@ -9,7 +9,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     initialized.current = true;
 
     window.fields = window.TzlaHostedFields.create({
-      sandbox: false, // change to true for sandbox testing
+      sandbox: false, // set true for testing
       fields: {
         credit_card_number: {
           selector: "#credit_card_number",
@@ -30,15 +30,11 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
       styles: {
         input: {
           fontSize: "14px",
-          padding: "10px",
+          padding: "6px",
           border: "1px solid #ccc",
-          borderRadius: "8px",
+          borderRadius: "6px",
           width: "100%",
           boxSizing: "border-box",
-        },
-        iframe: {
-          width: "40%",
-          border: "none",
         },
       },
     });
@@ -51,7 +47,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "0054874",
+        terminal_name: "0054874", // replace with your terminal
         amount: amount,
         contact: userPhone || "",
       },
@@ -71,17 +67,38 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     <form onSubmit={handleSubmit} style={{ direction: "rtl" }}>
       <div style={{ marginBottom: "15px" }}>
         <label htmlFor="credit_card_number">מספר כרטיס:</label>
-        <div id="credit_card_number" />
+        <div
+          id="credit_card_number"
+          style={{
+            height: "45px",
+            borderRadius: "6px",
+            overflow: "hidden",
+          }}
+        />
       </div>
 
       <div style={{ marginBottom: "15px" }}>
         <label htmlFor="cvv">CVV:</label>
-        <div id="cvv" />
+        <div
+          id="cvv"
+          style={{
+            height: "45px",
+            borderRadius: "6px",
+            overflow: "hidden",
+          }}
+        />
       </div>
 
       <div style={{ marginBottom: "15px" }}>
         <label htmlFor="expiry">תוקף:</label>
-        <div id="expiry" />
+        <div
+          id="expiry"
+          style={{
+            height: "45px",
+            borderRadius: "6px",
+            overflow: "hidden",
+          }}
+        />
       </div>
 
       <button
