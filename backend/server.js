@@ -35,6 +35,9 @@ app.use(
   })
 );
 
+// webHook
+app.use(express.urlencoded({ extended: true }));
+
 // ✅ JSON middleware
 app.use(express.json());
 
@@ -50,6 +53,23 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/upload", uploadRoute);
+
+// ✅ Tranzila Webhook Route
+app.post("/api/tranzila-webhook", (req, res) => {
+  const data = req.body;
+
+  console.log("📩 Webhook from Tranzila:", data);
+
+  if (data.Response === "000") {
+    console.log("✅ Payment successful for token:", data.token);
+    // TODO: Save payment, confirm order, etc.
+  } else {
+    console.log("❌ Payment failed. Code:", data.Response);
+  }
+
+  res.send("OK");
+});
+
 // ✅ Health Check
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
