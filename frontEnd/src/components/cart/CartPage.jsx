@@ -7,6 +7,7 @@ import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
+import TranzilaPayment from "../TranzillaPayment";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -634,7 +635,7 @@ const CartPage = () => {
                     מזומן
                   </button>
 
-                  {/* <button
+                  { <button
                     onClick={() => {
                       setPaymentMethod("Visa");
                     }}
@@ -653,9 +654,9 @@ const CartPage = () => {
                   >
                     <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
                     ויזה
-                  </button> */}
+                  </button> }
 
-                  {/* <button
+                  { <button
                     onClick={() => setPaymentMethod("Bit")}
                     style={{
                       flex: "1",
@@ -673,7 +674,7 @@ const CartPage = () => {
                     <img src="/svg/bit.svg" alt="Bit Icon" style={{ width: "20px", height: "20px" }} />
                     ביט
                   </button>
-                  {isIOS && (
+                  }isIOS && (
                     <button
                       onClick={() => setPaymentMethod("ApplePay")}
                       style={{
@@ -710,8 +711,8 @@ const CartPage = () => {
                     >
                       <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
                       גוגל פיי
-                    </button> */}
-                  {/* )} */}
+                    </button> {
+                  { )}}
                 </div>
               </div>
               {/* ✅ Delivery buttons */}
@@ -789,15 +790,14 @@ const CartPage = () => {
                 </button>
               </div>
               {paymentMethod === "Visa" && (
-                <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    placeholder="מספר כרטיס"
-                    value={visaDetails.cardNumber}
-                    onChange={handleVisaInputChange}
-                    required
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                <div style={{ marginTop: "20px" }}>
+                  <TranzilaPayment
+                    amount={calculateFinalTotal()}
+                    userPhone={phoneNumber}
+                    onChargeSuccess={(response) => {
+                      console.log("✅ Visa payment successful", response);
+                      handleFinalSubmit(); // only submit to backend if Visa success
+                    }}
                   />
                   <input
                     type="text"
