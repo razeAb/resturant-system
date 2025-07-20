@@ -31,6 +31,9 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
         input: {
           fontSize: "16px",
           width: "100%",
+          padding: "12px",
+          border: "1px solid #ccc",
+          borderRadius: "8px",
         },
       },
     });
@@ -43,7 +46,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "0054874", // Replace with your terminal name
+        terminal_name: "0054874", // Consider moving this to backend
         amount: amount,
         contact: userPhone || "",
         requested_by_user: "your_api_user", // Optional
@@ -61,26 +64,44 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="credit_card_number">מספר כרטיס:</label>
-        <div id="credit_card_number" className="tranzila-field" />
-        <div id="errors_for_number" className="error_message"></div>
+    <form onSubmit={handleSubmit} style={{ maxWidth: "400px", margin: "0 auto", direction: "rtl", fontFamily: "inherit" }}>
+      <div style={{ marginBottom: "15px" }}>
+        <label htmlFor="credit_card_number" style={{ display: "block", marginBottom: "5px" }}>
+          מספר כרטיס:
+        </label>
+        <div id="credit_card_number" className="tranzila-field" style={{ minHeight: "50px" }} />
+        <div id="errors_for_number" className="error_message" />
       </div>
 
-      <div>
-        <label htmlFor="cvv">CVV:</label>
-        <div id="cvv" className="tranzila-field" />
-        <div id="errors_for_cvv" className="error_message"></div>
+      <div style={{ marginBottom: "15px" }}>
+        <label htmlFor="cvv" style={{ display: "block", marginBottom: "5px" }}>
+          CVV:
+        </label>
+        <div id="cvv" className="tranzila-field" style={{ minHeight: "50px" }} />
+        <div id="errors_for_cvv" className="error_message" />
       </div>
 
-      <div>
-        <label htmlFor="expiry">תוקף:</label>
-        <div id="expiry" className="tranzila-field" />
-        <div id="errors_for_expiry" className="error_message"></div>
+      <div style={{ marginBottom: "20px" }}>
+        <label htmlFor="expiry" style={{ display: "block", marginBottom: "5px" }}>
+          תוקף:
+        </label>
+        <div id="expiry" className="tranzila-field" style={{ minHeight: "50px" }} />
+        <div id="errors_for_expiry" className="error_message" />
       </div>
 
-      <button type="submit" style={{ marginTop: "15px" }}>
+      <button
+        type="submit"
+        style={{
+          width: "100%",
+          padding: "12px",
+          backgroundColor: "#007bff",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          fontSize: "16px",
+          cursor: "pointer",
+        }}
+      >
         שלם עם כרטיס אשראי
       </button>
     </form>

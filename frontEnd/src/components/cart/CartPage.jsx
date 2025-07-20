@@ -796,33 +796,6 @@ const CartPage = () => {
                       handleFinalSubmit(); // only submit to backend if Visa success
                     }}
                   />
-                  <input
-                    type="text"
-                    name="expiryDate"
-                    placeholder="תוקף (MM/YY)"
-                    value={visaDetails.expiryDate}
-                    onChange={handleVisaInputChange}
-                    required
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-                  />
-                  <input
-                    type="text"
-                    name="cvv"
-                    placeholder="CVV"
-                    value={visaDetails.cvv}
-                    onChange={handleVisaInputChange}
-                    required
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-                  />
-                  <input
-                    type="text"
-                    name="cardholderName"
-                    placeholder="שם בעל הכרטיס"
-                    value={visaDetails.cardholderName}
-                    onChange={handleVisaInputChange}
-                    required
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-                  />
                 </div>
               )}
               {/* ✅ Send and Cancel buttons */}
