@@ -514,7 +514,6 @@ const CartPage = () => {
         <div className="cart-total">
           סה"כ: {calculateFinalTotal()} ILS
           <br />
-          <span style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</span>
         </div>{" "}
         <div style={{ marginTop: "20px" }}>
           <button
@@ -656,8 +655,8 @@ const CartPage = () => {
                     <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
                     ויזה
                   </button> */}
-                  {/* {isIOS && (
-                    <button
+                  {/*
+                  {isIOS && (                    <button
                       onClick={() => setPaymentMethod("ApplePay")}
                       style={{
                         flex: "1",
@@ -692,8 +691,9 @@ const CartPage = () => {
                     >
                       <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
                       גוגל פיי
-                    </button> */}
-                  ){" "}
+                   </button>
+                  )}
+                  */}
                 </div>
               </div>
               {/* ✅ Delivery buttons */}
@@ -770,6 +770,11 @@ const CartPage = () => {
                   אכילה במסעדה
                 </button>
               </div>
+              {deliveryOption === "Delivery" && (
+                <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
+                  שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
+                </p>
+              )}
               {paymentMethod === "Visa" && (
                 <div style={{ marginTop: "20px" }}>
                   <TranzilaPayment
