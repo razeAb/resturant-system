@@ -55,6 +55,10 @@ const OrderSchema = new mongoose.Schema({
     enum: ["pending", "preparing", "delivering", "done"],
     default: "pending",
   },
+  estimatedTime: {
+    type: Number,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

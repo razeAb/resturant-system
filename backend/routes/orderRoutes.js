@@ -52,14 +52,21 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-// ✅ Update order status
+// ✅ Update order status + estimatedTime if provided
 router.put("/:id/status", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, estimatedTime } = req.body;
 
   try {
-    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+    const updateFields = { status };
+
+    if (estimatedTime) {
+      updateFields.estimatedTime = estimatedTime;
+    }
+
+    const order = await Order.findByIdAndUpdate(id, updateFields, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found" });
+
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -15,6 +15,9 @@ const SideMenu = () => {
         <Link to="/admin/activeOrders" className="menu-link">
           הזמנות פעילות
         </Link>
+        <Link to="/kitchen" className="menu-link">
+          מסך מטבח
+        </Link>
         <Link to="/admin/orderHistory" className="menu-link">
           היסטוריית הזמנות
         </Link>
