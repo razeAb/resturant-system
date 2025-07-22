@@ -85,6 +85,29 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.post("/:id/add-item", async (req, res) => {
+  const { id } = req.params;
+  const { item, addedPrice } = req.body;
+
+  if (!item) return res.status(400).json({ message: "Item data is required" });
+
+  try {
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.items.push(item);
+    if (addedPrice) {
+      order.totalPrice = parseFloat(order.totalPrice || 0) + parseFloat(addedPrice);
+    }
+
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    console.error("❌ Failed to add item to order:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ✅ Get Active Orders (not marked as done)
 router.get("/active", async (req, res) => {
   try {

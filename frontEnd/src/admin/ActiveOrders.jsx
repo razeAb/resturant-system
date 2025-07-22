@@ -4,7 +4,7 @@ import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
-
+import AddItemModal from "./modals/AddItemModal";
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
@@ -24,16 +24,9 @@ const ActiveOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // play a sound when page loads
-  // useEffect(() => {
-  //   const unlockAudio = () => {
-  //     const audio = new Audio(notificationSound);
-  //     audio.play().catch(() => {}); // Try play and ignore error
-  //     document.removeEventListener("click", unlockAudio);
-  //   };
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addOrderId, setAddOrderId] = useState(null);
 
-  //   document.addEventListener("click", unlockAudio);
-  // }, []);
   useEffect(() => {
     fetchOrders();
 
@@ -85,8 +78,9 @@ const ActiveOrdersPage = () => {
   const fetchOrders = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders`);
-      const newOrderList = res.data.orders;
-
+      const newOrderList = res.data.orders.filter(
+        (order) => order.status !== ORDER_STATUS.DONE && order.status !== ORDER_STATUS.DELIVERING
+      );
       const currentCount = newOrderList.length;
       const prevCount = prevOrderCountRef.current;
 
@@ -370,6 +364,15 @@ const ActiveOrdersPage = () => {
                                   סמן כהושלם
                                 </button>
                               )}
+                              <button
+                                className="bg-yellow-600 text-white font-bold rounded px-4 py-2"
+                                onClick={() => {
+                                  setAddOrderId(order._id);
+                                  setShowAddModal(true);
+                                }}
+                              >
+                                הוסף פריט
+                              </button>
                               <button className="bg-red-500 text-white font-bold rounded px-4 py-2" onClick={() => deleteOrder(order._id)}>
                                 מחק הזמנה
                               </button>
@@ -385,6 +388,7 @@ const ActiveOrdersPage = () => {
           </div>
         )}
       </main>
+      {showAddModal && <AddItemModal orderId={addOrderId} onClose={() => setShowAddModal(false)} onItemAdded={fetchOrders} />}
     </div>
   );
 };
