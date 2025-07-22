@@ -84,8 +84,8 @@ const ActiveOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/active`);
-      const newOrderList = res.data;
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders`);
+      const newOrderList = res.data.orders;
 
       const currentCount = newOrderList.length;
       const prevCount = prevOrderCountRef.current;
@@ -152,9 +152,11 @@ const ActiveOrdersPage = () => {
     await updateOrderStatus(orderId, { status: ORDER_STATUS.DONE });
     alert("ההזמנה מוכנה!");
 
-    if (phone) {
+    if (phone && order.deliveryOption !== "EatIn") {
       const lastSixDigits = orderId.slice(-6);
-
+      // send WhatsApp
+    } else if (order.deliveryOption === "EatIn") {
+      console.log("🍽 Dine-in order marked as done — no WhatsApp message sent.");
       // 🧾 Generate receipt
       const receipt = order.items
         .map((item, i) => {
@@ -269,6 +271,8 @@ const ActiveOrdersPage = () => {
                               ? "bg-purple-500"
                               : order.status === ORDER_STATUS.DELIVERING
                               ? "bg-blue-500"
+                              : order.status === ORDER_STATUS.DONE
+                              ? "bg-green-500"
                               : "bg-orange-500"
                           }`}
                         >
@@ -276,6 +280,8 @@ const ActiveOrdersPage = () => {
                             ? "בהכנה"
                             : order.status === ORDER_STATUS.DELIVERING
                             ? "במשלוח"
+                            : order.status === ORDER_STATUS.DONE
+                            ? "אוכל מוכן"
                             : "מחכה אישור"}
                         </span>
                       </td>
@@ -330,21 +336,23 @@ const ActiveOrdersPage = () => {
                               <strong>סכום לתשלום:</strong> {order.totalPrice ? `${order.totalPrice} ₪` : "לא זמין"}
                             </p>
 
-                            <div>
-                              <label className="block mb-1">בחר זמן הכנה:</label>
-                              <select
-                                value={order.estimatedTime || ""}
-                                onChange={(e) => handleTimeChange(order._id, e.target.value)}
-                                className="bg-[#2a2a2a] border border-white/20 text-white rounded px-3 py-2"
-                              >
-                                <option value="">בחר זמן</option>
-                                {[15, 20, 25, 30, 35, 40, 45].map((t) => (
-                                  <option key={t} value={t}>
-                                    {t} דקות
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                            {order.deliveryOption !== "EatIn" && (
+                              <div>
+                                <label className="block mb-1">בחר זמן הכנה:</label>
+                                <select
+                                  value={order.estimatedTime || ""}
+                                  onChange={(e) => handleTimeChange(order._id, e.target.value)}
+                                  className="bg-[#2a2a2a] border border-white/20 text-white rounded px-3 py-2"
+                                >
+                                  <option value="">בחר זמן</option>
+                                  {[15, 20, 25, 30, 35, 40, 45].map((t) => (
+                                    <option key={t} value={t}>
+                                      {t} דקות
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
 
                             <div className="flex flex-col sm:flex-row gap-4">
                               {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.PREPARING ? (
