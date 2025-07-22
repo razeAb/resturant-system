@@ -44,6 +44,11 @@ const OrderSchema = new mongoose.Schema({
     cardLastFour: { type: String },
     cardholderName: { type: String },
   },
+  // Track which coupon was used for this order, if any
+  couponUsed: {
+    type: String,
+    enum: ["drink", "side"],
+  },
   status: {
     type: String,
     // Unified set of order statuses used across the app
