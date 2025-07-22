@@ -19,7 +19,8 @@ import OrderStatus from "./pages/OrderStatus";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
-import KitchenOrders from "./admin/kitchen/KitchenOrders";
+import KitchenOrders from "./admin/kitchen/kitchenOrders";
+
 const App = () => {
   return (
     <AuthProvider>
