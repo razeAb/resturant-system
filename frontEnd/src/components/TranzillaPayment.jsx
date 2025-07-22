@@ -47,7 +47,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "0054874", // replace with your terminal
+        terminal_name: "hungryvisa", // replace with your terminal
         amount: amount,
         contact: userPhone || "",
       },

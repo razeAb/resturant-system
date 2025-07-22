@@ -19,6 +19,7 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const uploadRoute = require("./uploadRoute");
+const paymentRoutes = require("./routes/paymentRoutes");
 // ✅ CORS setup
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
 
@@ -53,6 +54,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/upload", uploadRoute);
+app.use("/api/payments", paymentRoutes);
 
 // ✅ Tranzila Webhook Route
 app.post("/api/tranzila-webhook", (req, res) => {

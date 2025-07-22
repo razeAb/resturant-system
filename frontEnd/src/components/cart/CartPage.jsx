@@ -635,7 +635,7 @@ const CartPage = () => {
                     <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
                     מזומן
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setPaymentMethod("Visa");
                     }}
@@ -654,8 +654,8 @@ const CartPage = () => {
                   >
                     <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
                     ויזה
-                  </button>
-                  {isIOS && (
+                  </button> */}
+                  {/* {isIOS && (
                     <button
                       onClick={() => setPaymentMethod("ApplePay")}
                       style={{
@@ -691,8 +691,8 @@ const CartPage = () => {
                     >
                       <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
                       גוגל פיי
-                    </button>
-                  )}{" "}
+                    </button> */}
+                  ){" "}
                 </div>
               </div>
               {/* ✅ Delivery buttons */}
