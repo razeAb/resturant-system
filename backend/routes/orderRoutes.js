@@ -15,6 +15,7 @@ router.post("/", async (req, res) => {
       phone: phone || undefined,
       customerName: customerName || undefined,
       paymentDetails: paymentDetails || {},
+      couponUsed: couponUsed || undefined,
       items,
       totalPrice: parseFloat(totalPrice),
       deliveryOption,
@@ -29,8 +30,14 @@ router.post("/", async (req, res) => {
       const foundUser = await User.findById(user);
       if (foundUser) {
         foundUser.orderCount += 1;
-        if (foundUser.orderCount >= 10) {
-          foundUser.orderCount = 0; // reset to 0
+        if (couponUsed === "drink") {
+          foundUser.usedDrinkCoupon = true;
+        }
+        if (couponUsed === "side") {
+          foundUser.orderCount = 0;
+          foundUser.usedDrinkCoupon = false;
+        } else if (foundUser.orderCount >= 10) {
+          foundUser.orderCount = 10; // allow side coupon on next order
         }
         await foundUser.save();
       }

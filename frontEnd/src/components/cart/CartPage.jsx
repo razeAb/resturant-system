@@ -39,8 +39,7 @@ const CartPage = () => {
 
   //state to track in the order is ready to got to backend
   const [isOrderReady, setIsOrderReady] = useState(false);
-  const { user } = useContext(AuthContext); // ✅ get user
-
+  const { user, updateUser } = useContext(AuthContext); // ✅ get user and updater
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
   };
@@ -253,6 +252,17 @@ const CartPage = () => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
+      if (loggedInUserId) {
+        try {
+          const token = localStorage.getItem("token");
+          const profile = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          updateUser(profile.data.user);
+        } catch (e) {
+          console.error("❌ Failed to refresh user:", e.response?.data || e.message);
+        }
+      }
       setShowConfirmationModal(false);
       setGuestName("");
     } catch (error) {
