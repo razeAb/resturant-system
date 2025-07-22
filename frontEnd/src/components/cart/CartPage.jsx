@@ -352,7 +352,7 @@ const CartPage = () => {
   // calculate final total including delivery fee if selected
   const calculateFinalTotal = () => {
     const base = parseFloat(calculateCartTotal());
-    return (base + (deliveryOption === "Delivery" ? deliveryFee : 0)).toFixed(2);
+    return base.toFixed(2); // Removed + deliveryFee
   };
 
   const sendWhatsAppOrder = (deliveryOption) => {
@@ -513,7 +513,8 @@ const CartPage = () => {
         </div>
         <div className="cart-total">
           סה"כ: {calculateFinalTotal()} ILS
-          {deliveryOption === "Delivery" && " (כולל משלוח)"}
+          <br />
+          <span style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</span>
         </div>{" "}
         <div style={{ marginTop: "20px" }}>
           <button
@@ -611,8 +612,8 @@ const CartPage = () => {
                     </li>
                   ))}
                 </ul>
-                {deliveryOption === "Delivery" && <p>דמי משלוח: {deliveryFee} ILS</p>}
                 <p>סה"כ לתשלום: {calculateFinalTotal()} ILS</p>
+                <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
               </div>
               <div style={{ marginTop: "5px" }}>
                 <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
