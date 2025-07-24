@@ -114,6 +114,9 @@ export default function OrderHistory() {
           <p className="text-white/70 p-4">אין הזמנות בהיסטוריה</p>
         ) : (
           <div className="overflow-x-auto">
+            {/* ✅ Order count summary */}
+            <p className="text-white/70 mb-4">סה"כ הזמנות בטווח התאריכים: {filteredOrders.length}</p>
+
             <table className="min-w-full text-sm bg-[#2a2a2a] border-collapse">
               <thead>
                 <tr className="text-white/50 border-b border-white/20">
