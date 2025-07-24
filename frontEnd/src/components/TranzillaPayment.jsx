@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
   const initialized = useRef(false);
+  const [cardHolderId, setCardHolderId] = useState("");
 
   useEffect(() => {
     if (!window.TzlaHostedFields || initialized.current) return;
@@ -9,7 +10,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     initialized.current = true;
 
     window.fields = window.TzlaHostedFields.create({
-      sandbox: false, // set true for testing
+      sandbox: false,
       fields: {
         credit_card_number: {
           selector: "#credit_card_number",
@@ -47,16 +48,18 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "hungryvisa", // replace with your terminal
+        terminal_name: "hungryvisa",
         amount: amount,
         contact: userPhone || "",
+        card_holder_id_number: cardHolderId || "", // ✅ from input field
       },
       (err, response) => {
         if (err) {
           console.error("Tranzila error:", err);
-          alert("בעיה בתשלום. נסה שוב");
+          alert("שגיאה בתשלום. נסה שוב.");
           return;
         }
+
         console.log("Tranzila success:", response);
         onChargeSuccess(response);
       }
@@ -65,42 +68,42 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
   return (
     <form onSubmit={handleSubmit} style={{ direction: "rtl" }}>
+      {/* 🆔 Input field for Teudat Zehut */}
       <div style={{ marginBottom: "15px" }}>
-        <label htmlFor="credit_card_number">מספר כרטיס:</label>
-        <div
-          id="credit_card_number"
+        <label>תעודת זהות של בעל הכרטיס:</label>
+        <input
+          type="text"
+          value={cardHolderId}
+          onChange={(e) => setCardHolderId(e.target.value)}
+          placeholder="הכנס ת.ז"
+          required
           style={{
-            height: "45px",
+            width: "100%",
+            padding: "10px",
+            fontSize: "14px",
+            border: "1px solid #ccc",
             borderRadius: "6px",
-            overflow: "hidden",
           }}
         />
+      </div>
+
+      {/* 💳 Tranzila Hosted Fields */}
+      <div style={{ marginBottom: "15px" }}>
+        <label htmlFor="credit_card_number">מספר כרטיס:</label>
+        <div id="credit_card_number" style={{ height: "45px", borderRadius: "6px", overflow: "hidden" }} />
       </div>
 
       <div style={{ marginBottom: "15px" }}>
         <label htmlFor="cvv">CVV:</label>
-        <div
-          id="cvv"
-          style={{
-            height: "45px",
-            borderRadius: "6px",
-            overflow: "hidden",
-          }}
-        />
+        <div id="cvv" style={{ height: "45px", borderRadius: "6px", overflow: "hidden" }} />
       </div>
 
       <div style={{ marginBottom: "15px" }}>
         <label htmlFor="expiry">תוקף:</label>
-        <div
-          id="expiry"
-          style={{
-            height: "45px",
-            borderRadius: "6px",
-            overflow: "hidden",
-          }}
-        />
+        <div id="expiry" style={{ height: "45px", borderRadius: "6px", overflow: "hidden" }} />
       </div>
 
+      {/* ✅ Submit Button */}
       <button
         type="submit"
         style={{

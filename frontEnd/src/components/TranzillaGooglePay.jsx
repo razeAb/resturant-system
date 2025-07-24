@@ -1,45 +1,100 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-const TERMINAL_NAME = "hungryvisa"; // replace with your Tranzila terminal name
-
-const TranzilaGooglePay = ({ amount, onSuccess }) => {
-  const formRef = useRef(null);
-  const iframeRef = useRef(null);
-  useEffect(() => {
-    if (formRef.current) {
-      formRef.current.submit();
-    }
-  }, [amount]);
+const TranzilaGooglePay = ({ amount, userPhone, userId, onChargeSuccess }) => {
+  const initialized = useRef(false);
+  const [isGoogleEnabled, setIsGoogleEnabled] = useState(false);
 
   useEffect(() => {
-    const handleMessage = (e) => {
-      if (e.data && e.data.type === "tranzila-payment-success") {
-        onSuccess && onSuccess();
+    if (!window.TzlaHostedFields || initialized.current) return;
+
+    initialized.current = true;
+
+    // Initialize fields just to enable Google Pay detection
+    window.fields = window.TzlaHostedFields.create({
+      sandbox: false,
+      fields: {
+        credit_card_number: {
+          selector: "#credit_card_number",
+          placeholder: "0000 0000 0000 0000",
+        },
+        cvv: {
+          selector: "#cvv",
+          placeholder: "123",
+        },
+        expiry: {
+          selector: "#expiry",
+          placeholder: "MM/YY",
+        },
+      },
+    });
+
+    // Show Google Pay button when available
+    window.fields.onEvent("googleIsEnable", () => {
+      console.log("✅ Google Pay is available");
+      setIsGoogleEnabled(true);
+    });
+  }, []);
+
+  const handleGooglePay = () => {
+    if (!window.fields) return;
+
+    console.log("🔄 Charging via Google Pay...");
+    window.fields.chargeGpay(
+      {
+        // REQUIRED
+        terminal_name: "hungryvisa",
+        response_language: "english",
+        currency_code: "1", // 1 = NIS
+        amount: amount,
+        tran_mode: "A",
+
+        // OPTIONAL
+        contact: userPhone || "",
+        card_holder_id_number: userId || "",
+        json_purchase_data: encodeURIComponent(
+          JSON.stringify([
+            {
+              product_name: "Product Example",
+              product_quantity: 1,
+              product_price: amount,
+            },
+          ])
+        ),
+      },
+      (err, response) => {
+        if (err) {
+          console.error("❌ Google Pay Error:", err);
+          alert("שגיאה בתשלום עם Google Pay");
+          return;
+        }
+
+        console.log("✅ Google Pay Success:", response);
+        onChargeSuccess(response);
       }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [onSuccess]);
-
-  const successUrl = `${window.location.origin}/payment-success`;
+    );
+  };
 
   return (
-    <div style={{ width: "100%", height: "600px" }}>
-      <form ref={formRef} action={`https://direct.tranzila.com/${TERMINAL_NAME}/iframenew.php`} method="POST" target="tranzila_google">
-        <input type="hidden" name="sum" value={amount} />
-        <input type="hidden" name="google_pay" value="1" />
-        <input type="hidden" name="currency" value="1" />
-        <input type="hidden" name="success_url_address" value={successUrl} />
-        <input type="hidden" name="fail_url_address" value="https://example.com/failure" />
-      </form>
-      <iframe
-        ref={iframeRef}
-        title="Google Pay"
-        name="tranzila_google"
-        allow="payment"
-        style={{ width: "100%", height: "100%", border: "none" }}
-      />
-    </div>
+    <>
+      {isGoogleEnabled && (
+        <button
+          onClick={handleGooglePay}
+          style={{
+            marginTop: "20px",
+            backgroundColor: "#000",
+            color: "#fff",
+            padding: "12px",
+            fontSize: "16px",
+            borderRadius: "8px",
+            border: "none",
+            width: "100%",
+            cursor: "pointer",
+          }}
+        >
+          שלם עם Google Pay
+        </button>
+      )}
+    </>
   );
 };
 

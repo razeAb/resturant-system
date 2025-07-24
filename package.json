@@ -19,5 +19,8 @@
     "eslint": "^9.31.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.3.0"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1"
   }
 }
