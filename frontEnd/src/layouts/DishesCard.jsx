@@ -82,6 +82,7 @@ const DishesCard = (props) => {
               title={props.title}
               price={props.price}
               description={props.description}
+              options={props.options}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}

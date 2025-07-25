@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
 import axios from "axios";
 
-
 const categoriesList = [
   { id: "all", label: "הכל" },
   { id: "starters", label: "מנות פתיחה", filter: ["Starters"] },
@@ -50,6 +49,8 @@ const Menu = () => {
               price={item.price}
               category={item.category}
               isWeighted={item.isWeighted}
+              description={item.description}
+              options={{ vegetables: item.vegetables, additions: item.additions }}
               isActive={item.isActive}
               isOrder={item.isOrder}
               toggleOptions

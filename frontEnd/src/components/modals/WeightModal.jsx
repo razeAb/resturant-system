@@ -3,7 +3,7 @@ import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import Button from "../common/Button"; // ✅
 
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
+const Modal = ({ _id, img, title, price, description, options = {}, isOpen, onClose, onAddToCart }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -26,22 +26,41 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     }));
   };
 
-  // Extract the numeric price from the addition string
-  const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/); // Extract number from string
-    return priceMatch ? parseFloat(priceMatch[1]) : 0; // Return price as float
+  // Price helpers for additions
+  const getFixedPrice = (addition) => {
+    const fixed = options.additions?.fixed || [];
+    const match = fixed.find((item) => item.name === addition);
+    return match ? match.price : 0;
   };
 
-  // Handle addition selection
-  const handleAdditionChange = (addition) => {
-    const additionPrice = getPrice(addition);
+  const getGramPrice = (addition, grams) => {
+    const gram = options.additions?.grams?.find((g) => g.name === addition);
+    return gram?.prices?.[grams] || 0;
+  };
 
-    setSelectedOptions((prev) => ({
-      ...prev,
-      additions: prev.additions.some((item) => item.addition === addition)
-        ? prev.additions.filter((item) => item.addition !== addition) // Remove if deselected
-        : [...prev.additions, { addition, price: additionPrice }], // Add the new addition
-    }));
+  // Handle addition selection (fixed or gram based)
+  const handleAdditionChange = (addition, grams = null) => {
+    setSelectedOptions((prev) => {
+      const additionName = grams ? `${addition} (${grams} גרם)` : addition;
+      const alreadySelected = prev.additions.some((item) => item.addition === additionName);
+
+      if (alreadySelected) {
+        return {
+          ...prev,
+          additions: prev.additions.filter((item) => item.addition !== additionName),
+        };
+      } else {
+        // If selecting gram option, remove other gram choices for the same meat
+        const updated = grams ? prev.additions.filter((item) => !item.addition.startsWith(addition)) : prev.additions;
+
+        const price = grams ? getGramPrice(addition, grams) : getFixedPrice(addition);
+
+        return {
+          ...prev,
+          additions: [...updated, { addition: additionName, price }],
+        };
+      }
+    });
   };
 
   // Calculate the total price
@@ -93,7 +112,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות בצד למנה</h3>
-          {["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט קרוב", "צימצורי"].map((vegetable, index) => (
+          {(options.vegetables || []).map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
@@ -111,16 +130,39 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
+
+          {(options.additions?.grams || []).map((addition, index) => (
+            <div key={index} className="addition-buttons">
+              <span>{addition.name}</span>
+              {[50, 100].map((grams) => (
+                <button
+                  key={grams}
+                  className={`gram-button ${
+                    selectedOptions.additions.some((item) => item.addition === `${addition.name} (${grams} גרם)`) ? "selected" : ""
+                  }`}
+                  onClick={() => handleAdditionChange(addition.name, grams)}
+                >
+                  {grams} גרם
+                </button>
+              ))}
+            </div>
+          ))}
+
+          {(options.additions?.fixed || []).map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
-                <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
+                <input
+                  type="checkbox"
+                  id={`addition-option-${index}`}
+                  onChange={() => handleAdditionChange(addition.name)}
+                  checked={selectedOptions.additions.some((item) => item.addition === addition.name)}
+                />
                 <svg>
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
               <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition}
+                {addition.name} {addition.price}₪
               </label>
             </div>
           ))}

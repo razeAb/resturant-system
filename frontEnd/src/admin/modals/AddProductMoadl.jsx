@@ -11,7 +11,10 @@ const AddProductModal = ({ onClose, onAdd }) => {
     isActive: true,
     isWeighted: false,
     vegetables: [],
-    additions: { fixed: [] },
+    additions: {
+      fixed: [],
+      grams: [], // ✅ important!
+    },
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -48,7 +51,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       onAdd(response.data);
       onClose();
     } catch (err) {
-      setError("Failed to add product.");
+      setError("❌ שגיאה בהוספת מוצר.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -71,9 +74,9 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const cloudinaryUrl = uploadRes.data.imageUrl;
       setForm((prev) => ({ ...prev, image: cloudinaryUrl }));
 
-      alert("✅ Image uploaded successfully!");
+      alert("✅ תמונה הועלתה בהצלחה");
     } catch (err) {
-      alert("❌ Failed to upload image.");
+      alert("❌ שגיאה בהעלאת תמונה.");
       console.error(err);
     }
   };
@@ -85,10 +88,9 @@ const AddProductModal = ({ onClose, onAdd }) => {
         const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/categories`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Fetched categories:", res.data); // 👈 Add this
         setCategories(res.data);
       } catch (err) {
-        console.error("❌ Failed to fetch categories:", err);
+        console.error("❌ שגיאה בקבלת קטגוריות:", err);
       }
     };
 
@@ -106,25 +108,22 @@ const AddProductModal = ({ onClose, onAdd }) => {
 
         <input
           name="name"
-          placeholder="שם"
-          onChange={handleChange}
+          placeholder="שם מוצר"
           value={form.name}
-          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3 focus:outline-none"
+          onChange={handleChange}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
 
         <label className="font-semibold">העלה תמונה:</label>
         <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} className="w-full mb-2" />
-
         {imageFile && (
           <button
-            type="button"
             onClick={handleImageUpload}
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full mb-3"
           >
             העלה תמונה
           </button>
         )}
-
         {form.image && (
           <div className="text-center mb-3">
             <img src={form.image} alt="Preview" className="w-full max-w-[300px] mx-auto rounded border border-white/10" />
@@ -133,13 +132,13 @@ const AddProductModal = ({ onClose, onAdd }) => {
 
         <select
           name="category"
-          onChange={handleChange}
           value={form.category}
+          onChange={handleChange}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         >
           <option value="">בחר קטגוריה</option>
           {categories.map((cat) => (
-            <option key={cat._id || cat.name} value={cat.name}>
+            <option key={cat._id} value={cat.name}>
               {cat.name}
             </option>
           ))}
@@ -149,17 +148,16 @@ const AddProductModal = ({ onClose, onAdd }) => {
           name="stock"
           placeholder="מלאי"
           type="number"
-          onChange={handleChange}
           value={form.stock}
+          onChange={handleChange}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
-
         <input
           name="price"
           placeholder="מחיר"
           type="number"
-          onChange={handleChange}
           value={form.price}
+          onChange={handleChange}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
 
@@ -172,6 +170,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
           <input type="checkbox" name="isWeighted" checked={form.isWeighted} onChange={handleChange} />
           <span className="text-sm">מוצר לפי גרם</span>
         </label>
+
         <h3 className="font-bold text-sm mb-2">ירקות זמינים:</h3>
         {["חסה", "עגבניה", "בצל", "סלט קרוב", "מלפפון חמוץ", "צימצורי"].map((veg, i) => (
           <label key={i} className="flex items-center gap-2 mb-1">
@@ -188,6 +187,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
             <span className="text-sm">{veg}</span>
           </label>
         ))}
+
         <h3 className="font-bold text-sm mt-4 mb-2">תוספות קבועות:</h3>
         {form.additions.fixed.map((item, index) => (
           <div key={index} className="flex gap-2 mb-2">
@@ -230,20 +230,23 @@ const AddProductModal = ({ onClose, onAdd }) => {
           onClick={() =>
             setForm((prev) => ({
               ...prev,
-              additions: { ...prev.additions, fixed: [...prev.additions.fixed, { name: "", price: 0 }] },
+              additions: {
+                ...prev.additions,
+                fixed: [...prev.additions.fixed, { name: "", price: 0 }],
+              },
             }))
           }
           className="text-green-400 font-bold mt-1 mb-3"
         >
-          ➕ הוסף תוספת
+          ➕ הוסף תוספת קבועה
         </button>
 
         <h3 className="font-bold text-sm mt-6 mb-2">תוספות בגרמים:</h3>
-        {form.additions.grams?.map((item, index) => (
+        {form.additions.grams.map((item, index) => (
           <div key={index} className="flex flex-wrap gap-2 mb-2">
             <input
               type="text"
-              placeholder="שם תוספת"
+              placeholder="שם תוספת בגרמים"
               value={item.name}
               onChange={(e) => {
                 const updated = [...form.additions.grams];
@@ -254,22 +257,22 @@ const AddProductModal = ({ onClose, onAdd }) => {
             />
             <input
               type="number"
-              placeholder="מחיר ל-50 גרם"
-              value={item.prices["50"]}
+              placeholder="מחיר ל־50 גרם"
+              value={item.prices?.["50"] || 0}
               onChange={(e) => {
                 const updated = [...form.additions.grams];
-                updated[index].prices["50"] = Number(e.target.value);
+                updated[index].prices = { ...updated[index].prices, 50: Number(e.target.value) };
                 setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
               }}
               className="w-1/4 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
             />
             <input
               type="number"
-              placeholder="מחיר ל-100 גרם"
-              value={item.prices["100"]}
+              placeholder="מחיר ל־100 גרם"
+              value={item.prices?.["100"] || 0}
               onChange={(e) => {
                 const updated = [...form.additions.grams];
-                updated[index].prices["100"] = Number(e.target.value);
+                updated[index].prices = { ...updated[index].prices, 100: Number(e.target.value) };
                 setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
               }}
               className="w-1/4 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
@@ -286,14 +289,13 @@ const AddProductModal = ({ onClose, onAdd }) => {
             </button>
           </div>
         ))}
-
         <button
           onClick={() =>
             setForm((prev) => ({
               ...prev,
               additions: {
                 ...prev.additions,
-                grams: [...(prev.additions.grams || []), { name: "", prices: { 50: 0, 100: 0 } }],
+                grams: [...prev.additions.grams, { name: "", prices: { 50: 0, 100: 0 } }],
               },
             }))
           }

@@ -12,6 +12,8 @@ const productSchema = new mongoose.Schema({
   vegetables: [String], // ✅ ירקות לבחירה ללקוח (למשל חסה, עגבנייה)
   additions: {
     fixed: [
+      // ✅ תוספות עם מחיר קבוע (רוטב גבינה, ג'בטה וכו')
+
       {
         name: { type: String, required: true },
         price: { type: Number, required: true },
@@ -24,15 +26,6 @@ const productSchema = new mongoose.Schema({
           50: { type: Number, default: 0 },
           100: { type: Number, default: 0 },
         },
-      },
-    ],
-  },
-  additions: {
-    fixed: [
-      // ✅ תוספות עם מחיר קבוע (רוטב גבינה, ג'בטה וכו')
-      {
-        name: { type: String, required: true },
-        price: { type: Number, required: true },
       },
     ],
   },

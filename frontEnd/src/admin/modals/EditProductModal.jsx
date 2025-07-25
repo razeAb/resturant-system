@@ -84,7 +84,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             name="name"
             value={form.name}
             onChange={handleChange}
-            placeholder="שם מוצר"
+            placeholder="שם המוצר (לדוג׳: סנדוויץ' אנטריקוט)"
             required
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
@@ -93,7 +93,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             name="price"
             value={form.price}
             onChange={handleChange}
-            placeholder="מחיר"
+            placeholder="מחיר המוצר (₪)"
             required
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
@@ -102,7 +102,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             name="stock"
             value={form.stock}
             onChange={handleChange}
-            placeholder="מלאי"
+            placeholder="כמות במלאי"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
           <input
@@ -110,7 +110,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             name="image"
             value={form.image}
             onChange={handleChange}
-            placeholder="קישור לתמונה"
+            placeholder="קישור לתמונה (אם אין העלאה)"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
 
@@ -138,7 +138,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             name="category"
             value={form.category}
             onChange={handleChange}
-            placeholder="קטגוריה"
+            placeholder="שם הקטגוריה (לדוג' שתייה, תוספות)"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
 
@@ -169,7 +169,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             <div key={index} className="flex gap-2 mb-2">
               <input
                 type="text"
-                placeholder="שם תוספת"
+                placeholder="שם תוספת (לדוג' גבינה צהובה)"
                 value={item.name}
                 onChange={(e) => {
                   const updated = [...form.additions.fixed];
@@ -180,7 +180,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
               />
               <input
                 type="number"
-                placeholder="מחיר"
+                placeholder="מחיר התוספת (₪)"
                 value={item.price}
                 onChange={(e) => {
                   const updated = [...form.additions.fixed];
@@ -220,7 +220,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             <div key={index} className="flex flex-wrap gap-2 mb-2">
               <input
                 type="text"
-                placeholder="שם תוספת"
+                placeholder="שם תוספת בגרמים (לדוג' צלי כתף)"
                 value={item.name}
                 onChange={(e) => {
                   const updated = [...form.additions.grams];
@@ -231,7 +231,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
               />
               <input
                 type="number"
-                placeholder="50 גרם"
+                placeholder="מחיר ל-50 גרם (₪)"
                 value={item.prices?.["50"] || 0}
                 onChange={(e) => {
                   const updated = [...form.additions.grams];
@@ -242,7 +242,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
               />
               <input
                 type="number"
-                placeholder="100 גרם"
+                placeholder="מחיר ל-100 גרם (₪)"
                 value={item.prices?.["100"] || 0}
                 onChange={(e) => {
                   const updated = [...form.additions.grams];
