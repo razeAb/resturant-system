@@ -37,23 +37,36 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   const handleAdditionChange = (addition, grams = null) => {
     setSelectedOptions((prev) => {
       const additionName = grams ? `${addition} (${grams} גרם)` : addition;
+      const isSelected = prev.additions.some((item) => item.addition === additionName);
 
-      const alreadySelected = prev.additions.some((item) => item.addition === additionName);
+      const current50s = prev.additions.filter((item) => item.addition.includes("50 גרם"));
+      const current100 = prev.additions.find((item) => item.addition.includes("100 גרם"));
 
-      if (alreadySelected) {
-        // Toggle off: remove same selection
+      // If trying to select new 50g
+      if (grams === 50 && !isSelected) {
+        if (current100) return prev; // can't pick 50g if 100g selected
+        if (current50s.length >= 2) return prev; // limit to 2 x 50g
+      }
+
+      // If trying to select 100g
+      if (grams === 100 && !isSelected) {
+        if (current100) return prev; // already has 100g
+        if (current50s.length > 0) return prev; // can't pick 100g if 50g exists
+      }
+
+      if (isSelected) {
+        // remove it (toggle off)
         return {
           ...prev,
           additions: prev.additions.filter((item) => item.addition !== additionName),
         };
       } else {
-        // Remove any other variant of the same meat
-        const updatedAdditions = prev.additions.filter((item) => !item.addition.startsWith(addition));
-
+        // remove other versions of the same meat
+        const updated = prev.additions.filter((item) => !item.addition.startsWith(addition));
         return {
           ...prev,
           additions: [
-            ...updatedAdditions,
+            ...updated,
             {
               addition: additionName,
               price: grams === 50 ? 13 : grams === 100 ? 26 : getPrice(addition),
@@ -132,7 +145,12 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
         {/* Options for Additions with Buttons */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-2">:תוספת למנה רגילה</h3>
+          <p className="text-sm text-center text-gray-500 mb-6 leading-relaxed">
+            ניתן לבחור עד שתי תוספות של <strong>50 גרם</strong> או תוספת אחת של <strong>100 גרם</strong> בלבד.
+            <br />
+            <span className="text-red-400 font-medium">תוספות אלו כרוכות בתשלום נוסף</span>
+          </p>
 
           {/* Gram-based additions */}
           {(options?.additions?.grams || []).map((addition, index) => (
