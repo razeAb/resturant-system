@@ -9,11 +9,14 @@
     <script src="https://hf.tranzila.com/assets/js/thostedf.js"></script>
     <script src="https://hf.tranzila.com/assets/js/thfapplepay.js"></script>
     <!-- Use the correct terminal name for hosted fields -->
-    <script>
-      const terminal = import.meta.env.VITE_TRANZILA_TERMINAL;
-      document.write('<script src="https://direct.tranzila.com/' + terminal + '/tranzila-fields.js"><\/script>');
-
-      var $n = jQuery.noConflict(true);
+    <script type="module">
+      // Terminal name comes from Vite env variables (see .env)
+      const terminal = import.meta.env.VITE_TRANZILA_TERMINAL || "hungryvisa";
+      const script = document.createElement("script");
+      script.src = `https://direct.tranzila.com/${terminal}/tranzila-fields.js`;
+      script.onload = () => console.log("✅ Tranzila script loaded");
+      document.head.appendChild(script);
+      const $n = jQuery.noConflict(true);
     </script>
 
     <title>hungry</title>
