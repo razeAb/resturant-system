@@ -80,4 +80,18 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// ✅ DELETE /api/categories/:id - Remove a category
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Category.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json({ message: "Category deleted" });
+  } catch (err) {
+    console.error("Error deleting category:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
