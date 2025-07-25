@@ -1,4 +1,3 @@
-import React, { useRef, useEffect } from "react";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 const TERMINAL_NAME = import.meta.env.VITE_TRANZILA_TERMINAL;
