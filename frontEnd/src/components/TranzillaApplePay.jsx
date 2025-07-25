@@ -1,43 +1,56 @@
 import React, { useRef, useEffect } from "react";
-
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 const TERMINAL_NAME = import.meta.env.VITE_TRANZILA_TERMINAL;
 
 const TranzilaApplePay = ({ amount, onChargeSuccess }) => {
-  const formRef = useRef(null);
-  const iframeRef = useRef(null);
+  const [thtk, setThtk] = useState(null);
+  const [showButton, setShowButton] = useState(false);
   useEffect(() => {
-    if (formRef.current) {
-      formRef.current.submit();
-    }
-  }, [amount]);
-  useEffect(() => {
-    const handleMessage = (e) => {
-      if (e.data && e.data.type === "tranzila-payment-success") {
-        onChargeSuccess && onChargeSuccess();
+    const fetchHandshake = async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE}/api/payments/apple-pay-handshake`);
+        if (data && data.thtk) {
+          setThtk(data.thtk);
+          if (window.ApplePaySession) {
+            setShowButton(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to get Apple Pay handshake", err);
       }
     };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [onChargeSuccess]);
+    fetchHandshake();
+  }, []);
 
-  const successUrl = `${window.location.origin}/payment-success`;
+  const handleApplePay = () => {
+    if (!window.hfChargeApple || !thtk) return;
+
+    window.hfChargeApple(
+      {
+        terminal_name: TERMINAL_NAME,
+        currency_code: "ILS",
+        amount,
+        tran_mode: "A",
+        thtk,
+        labelApple: "Order Payment",
+      },
+      (err, response) => {
+        if (err) {
+          console.error("Apple Pay error", err);
+          return;
+        }
+        onChargeSuccess && onChargeSuccess(response);
+      }
+    );
+  };
+
+  if (!showButton) return null;
+
   return (
-    <div style={{ width: "100%", height: "600px" }}>
-      <form ref={formRef} action={`https://direct.tranzila.com/${TERMINAL_NAME}/iframenew.php`} method="POST" target="tranzila_apple">
-        <input type="hidden" name="sum" value={amount} />
-        <input type="hidden" name="apple_pay" value="1" />
-        <input type="hidden" name="currency" value="1" />
-        <input type="hidden" name="success_url_address" value={successUrl} />{" "}
-        <input type="hidden" name="fail_url_address" value="https://example.com/failure" />
-      </form>
-      <iframe
-        ref={iframeRef}
-        title="Apple Pay"
-        name="tranzila_apple"
-        allow="payment"
-        style={{ width: "100%", height: "100%", border: "none" }}
-      />{" "}
-    </div>
+    <button id="payApple" className="pay_button" onClick={handleApplePay} style={{ display: "block" }}>
+      Pay with <img src="./assets/images/applepay_logo.png" alt="Apple Pay" />
+    </button>
   );
 };
 
