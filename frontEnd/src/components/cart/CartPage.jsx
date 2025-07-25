@@ -204,24 +204,6 @@ const CartPage = () => {
   };
   
 
-
-    // ✅ Guest validations
-    if (isGuest()) {
-      if (!guestName.trim()) {
-        alert("אנא הזן שם לפני השלמת ההזמנה");
-        return;
-      }
-
-      // ✅ Only validate phone number for Delivery or Pickup
-      if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
-        alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
-        return;
-      }
-    }
-
-    submitOrderToBackend(deliveryOption);
-  };
-
   //submitting order to backend
   const submitOrderToBackend = async (deliveryOption) => {
     const groupedItems = groupCartItems();
@@ -1172,6 +1154,6 @@ const CartPage = () => {
       <ClosedModal isOpen={isClosedModalOpen} onClose={handleCloseModal} />
     </>
   );
-;
+};
 
 export default CartPage;
