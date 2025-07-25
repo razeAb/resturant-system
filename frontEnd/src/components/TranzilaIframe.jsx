@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 
 const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
-  const terminal = import.meta.env.VITE_TRANZILA_TERMINAL || "hungryvisa";
   const successUrl = `${window.location.origin}/payment-success`;
   const failUrl = `${window.location.origin}/payment-failure`;
 
@@ -47,11 +46,7 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         </button>
       </form>
       <div style={{ width: "100%", height: "600px", marginTop: "10px" }}>
-        <iframe
-          name="tranzila-frame"
-          allow="payment"
-          style={{ width: "100%", height: "100%", border: "none" }}
-        ></iframe>
+        <iframe name="tranzila-frame" allow="payment" style={{ width: "100%", height: "100%", border: "none" }}></iframe>
       </div>
     </div>
   );
