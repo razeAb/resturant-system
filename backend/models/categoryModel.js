@@ -6,6 +6,25 @@ const categorySchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  // Vegetables and additions are now stored per category
+  vegetables: [String],
+  additions: {
+    fixed: [
+      {
+        name: String,
+        price: Number,
+      },
+    ],
+    grams: [
+      {
+        name: String,
+        prices: {
+          50: { type: Number, default: 0 },
+          100: { type: Number, default: 0 },
+        },
+      },
+    ],
+  },
 });
 
 module.exports = mongoose.model("Category", categorySchema);

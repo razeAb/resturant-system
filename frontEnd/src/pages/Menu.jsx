@@ -14,16 +14,29 @@ const categoriesList = [
 const Menu = () => {
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categoryOptions, setCategoryOptions] = useState({});
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-        const normalizedProducts = response.data.products.map((product) => ({
+        const [prodRes, catRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`),
+          axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/categories`),
+        ]);
+
+        const normalizedProducts = prodRes.data.products.map((product) => ({
           ...product,
           isActive: product.isActive === true,
         }));
         setProducts(normalizedProducts);
+        const map = {};
+        (catRes.data || []).forEach((c) => {
+          map[c.name] = {
+            vegetables: c.vegetables || [],
+            additions: c.additions || { fixed: [], grams: [] },
+          };
+        });
+        setCategoryOptions(map);
       } catch (error) {
         console.error("❌ Error loading menu:", error);
       }
@@ -50,7 +63,7 @@ const Menu = () => {
               category={item.category}
               isWeighted={item.isWeighted}
               description={item.description}
-              options={{ vegetables: item.vegetables, additions: item.additions }}
+              options={categoryOptions[item.category] || {}}
               isActive={item.isActive}
               isOrder={item.isOrder}
               toggleOptions
