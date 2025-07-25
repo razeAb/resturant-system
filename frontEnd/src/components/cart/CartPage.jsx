@@ -498,20 +498,6 @@ const CartPage = () => {
         </div>
         {showConfirmationModal && !isClosedModalOpen && (
           <>
-            {paymentMethod === "Visa" && triggerVisaPayment && (
-              <div style={{ marginTop: "20px" }}>
-                <TranzilaPayment
-                  amount={calculateFinalTotal()}
-                  userPhone={phoneNumber}
-                  onChargeSuccess={(response) => {
-                    console.log("Visa Payment Success:", response);
-                    setTriggerVisaPayment(false);
-                    submitOrderToBackend(deliveryOption);
-                  }}
-                />
-              </div>
-            )}
-
             <div className="modal-overlay" onClick={closeModal}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>

@@ -11,6 +11,15 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
     const initFields = () => {
       if (!window.TzlaHostedFields || initialized.current) return;
 
+      const ccEl = document.getElementById("credit_card_number");
+      const cvvEl = document.getElementById("cvv");
+      const expiryEl = document.getElementById("expiry");
+
+      if (!ccEl || !cvvEl || !expiryEl) {
+        console.warn("❌ Hosted field containers not found yet. Retrying...");
+        return;
+      }
+
       initialized.current = true;
 
       window.fields = window.TzlaHostedFields.create({
@@ -49,19 +58,13 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
       });
     };
 
-    // Retry until window.TzlaHostedFields is available
-    if (!window.TzlaHostedFields) {
-      const interval = setInterval(() => {
-        if (window.TzlaHostedFields) {
-          initFields();
-          clearInterval(interval);
-        }
-      }, 300);
+    const interval = setInterval(() => {
+      if (window.TzlaHostedFields) {
+        initFields();
+      }
+    }, 300);
 
-      return () => clearInterval(interval);
-    } else {
-      initFields();
-    }
+    return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = (e) => {
