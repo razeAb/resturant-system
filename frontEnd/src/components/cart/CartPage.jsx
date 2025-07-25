@@ -27,7 +27,6 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [triggerVisaPayment, setTriggerVisaPayment] = useState(false);
 
-  
   // detect device type for payment options
   const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
@@ -56,7 +55,6 @@ const CartPage = () => {
   //isguest component
   const isGuest = () => !user;
 
-  
   useEffect(() => {
     if (user) {
       clearCart();
@@ -75,8 +73,6 @@ const CartPage = () => {
     }
   }, [user]);
 
-
-  
   useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
 
@@ -108,11 +104,8 @@ const CartPage = () => {
     }
   }, [cartItems, user, couponApplied]);
 
-
-  
   //check if payment and delivery options are selected
   const checkOrderReadiness = () => {
-
     return paymentMethod && deliveryOption;
   };
 
@@ -165,7 +158,6 @@ const CartPage = () => {
     const loggedInUserId = user?._id;
 
     const paymentDetails = { method: paymentMethod };
-
 
     const totalPrice = parseFloat(calculateCartTotal());
 
@@ -506,319 +498,321 @@ const CartPage = () => {
         </div>
         {showConfirmationModal && !isClosedModalOpen && (
           <>
-          {paymentMethod === "Visa" && triggerVisaPayment && (
-            <div style={{ marginTop: "20px" }}>
-              <TranzilaPayment
-                amount={calculateFinalTotal()}
-                userPhone={phoneNumber}
-                onChargeSuccess={(response) => {
-                  console.log("Visa Payment Success:", response);
-                  setTriggerVisaPayment(false);
-                  submitOrderToBackend(deliveryOption);
-                }}
-              />
-            </div>
-          )}
-          
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
-              <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
-                {" "}
-                אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
-              </p>{" "}
-              {isGuest() && (
-                <>
-                  <div style={{ marginBottom: "10px" }}>
-                    <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>שם לקוח:</h4>
-                    <input
-                      type="text"
-                      placeholder="הכנס שם"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      required
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        borderRadius: "5px",
-                        border: "1px solid #ccc",
-                      }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: "5px" }}>
-                    <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
-                    <input
-                      type="tel"
-                      placeholder="הכנס מספר טלפון"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
-                      pattern="^05\d{8}$"
-                      title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        borderRadius: "5px",
-                        border: "1px solid #ccc",
-                      }}
-                    />
-                  </div>
-                </>
-              )}
-              <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
-                <h4>סיכום הזמנה:</h4>
-                <ul style={{ listStyleType: "none", padding: 0 }}>
-                  {groupCartItems().map((item, idx) => (
-                    <li key={idx}>
-                      {item.title} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
-                    </li>
-                  ))}
-                </ul>
-                <p>סה"כ לתשלום: {calculateFinalTotal()} ILS</p>
-                <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
+            {paymentMethod === "Visa" && triggerVisaPayment && (
+              <div style={{ marginTop: "20px" }}>
+                <TranzilaPayment
+                  amount={calculateFinalTotal()}
+                  userPhone={phoneNumber}
+                  onChargeSuccess={(response) => {
+                    console.log("Visa Payment Success:", response);
+                    setTriggerVisaPayment(false);
+                    submitOrderToBackend(deliveryOption);
+                  }}
+                />
               </div>
-              <div style={{ marginTop: "5px" }}>
-                <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-                  <button
- onClick={() => {
-  setPaymentMethod("Cash");
-  setTriggerVisaPayment(false);
-}}                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 20px",
-                      backgroundColor: paymentMethod === "Cash" ? "#16a34a" : "#22c55e", // ✅ green/dark green
-                      border: paymentMethod === "Cash" ? "3px solid black" : "1px solid transparent", // Black border if selected
+            )}
 
-                      color: "#fff",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
-                    מזומן
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPaymentMethod("Visa");
-                      setTriggerVisaPayment(true);
-                    }}
-                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 20px",
-                      backgroundColor: paymentMethod === "Visa" ? "#1d4ed8" : "#2563eb", // ✅ blue/darker blue
-                      border: paymentMethod === "Visa" ? "3px solid black" : "1px solid transparent", // Black border if selected
-
-                      color: "#fff",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
-                    ויזה
-                  </button>
-
-                  {isIOS && (
+            <div className="modal-overlay" onClick={closeModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
+                <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
+                  {" "}
+                  אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
+                </p>{" "}
+                {isGuest() && (
+                  <>
+                    <div style={{ marginBottom: "10px" }}>
+                      <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>שם לקוח:</h4>
+                      <input
+                        type="text"
+                        placeholder="הכנס שם"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        required
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          borderRadius: "5px",
+                          border: "1px solid #ccc",
+                        }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: "5px" }}>
+                      <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
+                      <input
+                        type="tel"
+                        placeholder="הכנס מספר טלפון"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        required
+                        pattern="^05\d{8}$"
+                        title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          borderRadius: "5px",
+                          border: "1px solid #ccc",
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+                <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
+                  <h4>סיכום הזמנה:</h4>
+                  <ul style={{ listStyleType: "none", padding: 0 }}>
+                    {groupCartItems().map((item, idx) => (
+                      <li key={idx}>
+                        {item.title} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
+                      </li>
+                    ))}
+                  </ul>
+                  <p>סה"כ לתשלום: {calculateFinalTotal()} ILS</p>
+                  <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
+                </div>
+                <div style={{ marginTop: "5px" }}>
+                  <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
                     <button
-                    onClick={() => {
-                      setPaymentMethod("ApplePay");
-                      setTriggerVisaPayment(false);
-                    }}                      style={{
+                      onClick={() => {
+                        setPaymentMethod("Cash");
+                        setTriggerVisaPayment(false);
+                      }}
+                      style={{
                         flex: "1",
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
                         padding: "10px 20px",
-                        backgroundColor: paymentMethod === "ApplePay" ? "#374151" : "#4b5563",
-                        border: paymentMethod === "ApplePay" ? "3px solid black" : "1px solid transparent",
+                        backgroundColor: paymentMethod === "Cash" ? "#16a34a" : "#22c55e", // ✅ green/dark green
+                        border: paymentMethod === "Cash" ? "3px solid black" : "1px solid transparent", // Black border if selected
+
                         color: "#fff",
                         borderRadius: "5px",
                       }}
                     >
-                      <img src="/svg/applewhite.svg" alt="Apple Pay" style={{ width: "20px", height: "20px" }} />
-                      אפל פיי
+                      <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
+                      מזומן
                     </button>
-                  )}
-                  {isAndroid && (
                     <button
-                    onClick={() => {
-                      setPaymentMethod("GooglePay");
-                      setTriggerVisaPayment(false);
-                    }}
-                    style={{
+                      onClick={() => {
+                        setPaymentMethod("Visa");
+                        setTriggerVisaPayment(true);
+                      }}
+                      style={{
                         flex: "1",
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
                         padding: "10px 20px",
-                        backgroundColor: paymentMethod === "GooglePay" ? "#ca8a04" : "#eab308",
-                        border: paymentMethod === "GooglePay" ? "3px solid black" : "1px solid transparent",
+                        backgroundColor: paymentMethod === "Visa" ? "#1d4ed8" : "#2563eb", // ✅ blue/darker blue
+                        border: paymentMethod === "Visa" ? "3px solid black" : "1px solid transparent", // Black border if selected
+
                         color: "#fff",
                         borderRadius: "5px",
                       }}
                     >
-                      <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
-                      גוגל פיי
+                      <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
+                      ויזה
                     </button>
-                  )}
-                </div>
-              </div>
-              {/* ✅ Delivery buttons */}
-              <div
-                className="modal-delivery-buttons"
-                style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
-              >
-                <button
-                  onClick={() => setDeliveryOption("Pickup")}
-                  style={{
-                    flex: "1",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    padding: "12px 24px",
-                    border: "2px solid #f97316",
-                    color: deliveryOption === "Pickup" ? "#ffffff" : "#f97316",
-                    backgroundColor: deliveryOption === "Pickup" ? "#f97316" : "transparent",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
-                  איסוף עצמי
-                </button>
 
-                <button
-                  onClick={() => setDeliveryOption("Delivery")}
-                  style={{
-                    flex: "1",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    padding: "12px 24px",
-                    border: "2px solid #f97316",
-                    color: deliveryOption === "Delivery" ? "#ffffff" : "#f97316",
-                    backgroundColor: deliveryOption === "Delivery" ? "#f97316" : "transparent",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
+                    {isIOS && (
+                      <button
+                        onClick={() => {
+                          setPaymentMethod("ApplePay");
+                          setTriggerVisaPayment(false);
+                        }}
+                        style={{
+                          flex: "1",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 20px",
+                          backgroundColor: paymentMethod === "ApplePay" ? "#374151" : "#4b5563",
+                          border: paymentMethod === "ApplePay" ? "3px solid black" : "1px solid transparent",
+                          color: "#fff",
+                          borderRadius: "5px",
+                        }}
+                      >
+                        <img src="/svg/applewhite.svg" alt="Apple Pay" style={{ width: "20px", height: "20px" }} />
+                        אפל פיי
+                      </button>
+                    )}
+                    {isAndroid && (
+                      <button
+                        onClick={() => {
+                          setPaymentMethod("GooglePay");
+                          setTriggerVisaPayment(false);
+                        }}
+                        style={{
+                          flex: "1",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 20px",
+                          backgroundColor: paymentMethod === "GooglePay" ? "#ca8a04" : "#eab308",
+                          border: paymentMethod === "GooglePay" ? "3px solid black" : "1px solid transparent",
+                          color: "#fff",
+                          borderRadius: "5px",
+                        }}
+                      >
+                        <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
+                        גוגל פיי
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {/* ✅ Delivery buttons */}
+                <div
+                  className="modal-delivery-buttons"
+                  style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
                 >
-                  <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
-                  משלוח
-                </button>
+                  <button
+                    onClick={() => setDeliveryOption("Pickup")}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                      padding: "12px 24px",
+                      border: "2px solid #f97316",
+                      color: deliveryOption === "Pickup" ? "#ffffff" : "#f97316",
+                      backgroundColor: deliveryOption === "Pickup" ? "#f97316" : "transparent",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "16px",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
+                    איסוף עצמי
+                  </button>
 
-                <button
-                  onClick={() => setDeliveryOption("EatIn")}
-                  style={{
-                    flex: "1",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    padding: "12px 24px",
-                    border: "2px solid #f97316",
-                    color: deliveryOption === "EatIn" ? "#ffffff" : "#f97316",
-                    backgroundColor: deliveryOption === "EatIn" ? "#f97316" : "transparent",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <img src="/photos/dish.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
-                  אכילה במסעדה
-                </button>
-              </div>
-              {deliveryOption === "Delivery" && (
-                <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
-                  שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
-                </p>
-              )}
-              {paymentMethod === "Visa" && triggerVisaPayment && (
-                <div style={{ marginTop: "20px" }}>
-                  <TranzilaPayment
-                    amount={calculateFinalTotal()}
-                    userPhone={phoneNumber}
-                    onChargeSuccess={(response) => {
-                      console.log("✅ Visa payment successful", response);
-                      handleFinalSubmit(); // proceed after successful charge
-                      // After successful charge send the order to backend
-                      submitOrderToBackend(deliveryOption);
+                  <button
+                    onClick={() => setDeliveryOption("Delivery")}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                      padding: "12px 24px",
+                      border: "2px solid #f97316",
+                      color: deliveryOption === "Delivery" ? "#ffffff" : "#f97316",
+                      backgroundColor: deliveryOption === "Delivery" ? "#f97316" : "transparent",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "16px",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
                     }}
-                  />
-                </div>
-              )}
-              {paymentMethod === "ApplePay" && (
-                <div style={{ marginTop: "20px" }}>
-                  <TranzilaApplePay
-                    amount={calculateFinalTotal()}
-                    onSuccess={() => {
-                      console.log("✅ Apple Pay payment successful");
-                      handleFinalSubmit();
-                    }}
-                  />{" "}
-                </div>
-              )}
-              {paymentMethod === "GooglePay" && (
-                <div style={{ marginTop: "20px" }}>
-                  <TranzilaGooglePay
-                    amount={calculateFinalTotal()}
-                    onSuccess={() => {
-                      console.log("✅ Google Pay payment successful");
-                      handleFinalSubmit();
-                    }}
-                  />{" "}
-                </div>
-              )}
-              {/* ✅ Send and Cancel buttons */}
-              <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-                <button
-                  onClick={handleFinalSubmit}
-                  disabled={!paymentMethod || !deliveryOption}
-                  style={{
-                    padding: "12px 24px",
-                    backgroundColor: !paymentMethod || !deliveryOption ? "gray" : "green",
-                    color: "white",
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                    borderRadius: "8px",
-                    cursor: !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
-                    border: "none",
-                  }}
-                >
-                  שלח הזמנה
-                </button>
+                  >
+                    <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
+                    משלוח
+                  </button>
 
-                <button
-                  onClick={closeModal}
-                  style={{
-                    padding: "12px 24px",
-                    backgroundColor: "black",
-                    color: "white",
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    border: "none",
-                  }}
-                >
-                  בטל
-                </button>
+                  <button
+                    onClick={() => setDeliveryOption("EatIn")}
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                      padding: "12px 24px",
+                      border: "2px solid #f97316",
+                      color: deliveryOption === "EatIn" ? "#ffffff" : "#f97316",
+                      backgroundColor: deliveryOption === "EatIn" ? "#f97316" : "transparent",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "16px",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <img src="/photos/dish.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
+                    אכילה במסעדה
+                  </button>
+                </div>
+                {deliveryOption === "Delivery" && (
+                  <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
+                    שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
+                  </p>
+                )}
+                {paymentMethod === "Visa" && triggerVisaPayment && (
+                  <div style={{ marginTop: "20px" }}>
+                    <TranzilaPayment
+                      amount={calculateFinalTotal()}
+                      userPhone={phoneNumber}
+                      onChargeSuccess={(response) => {
+                        console.log("✅ Visa payment successful", response);
+                        handleFinalSubmit(); // proceed after successful charge
+                        // After successful charge send the order to backend
+                        submitOrderToBackend(deliveryOption);
+                      }}
+                    />
+                  </div>
+                )}
+                {paymentMethod === "ApplePay" && (
+                  <div style={{ marginTop: "20px" }}>
+                    <TranzilaApplePay
+                      amount={calculateFinalTotal()}
+                      onSuccess={() => {
+                        console.log("✅ Apple Pay payment successful");
+                        handleFinalSubmit();
+                      }}
+                    />{" "}
+                  </div>
+                )}
+                {paymentMethod === "GooglePay" && (
+                  <div style={{ marginTop: "20px" }}>
+                    <TranzilaGooglePay
+                      amount={calculateFinalTotal()}
+                      onSuccess={() => {
+                        console.log("✅ Google Pay payment successful");
+                        handleFinalSubmit();
+                      }}
+                    />{" "}
+                  </div>
+                )}
+                {/* ✅ Send and Cancel buttons */}
+                <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
+                  <button
+                    onClick={handleFinalSubmit}
+                    disabled={!paymentMethod || !deliveryOption}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: !paymentMethod || !deliveryOption ? "gray" : "green",
+                      color: "white",
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                      borderRadius: "8px",
+                      cursor: !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
+                      border: "none",
+                    }}
+                  >
+                    שלח הזמנה
+                  </button>
+
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "black",
+                      color: "white",
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      border: "none",
+                    }}
+                  >
+                    בטל
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
           </>
         )}
       </div>
