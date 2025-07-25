@@ -68,7 +68,7 @@ const KitchenOrders = () => {
   return (
     <div className="flex">
       {/* Sidebar - Desktop */}
-      <aside className="w-60 bg-[#2c2c2e] hidden md:block">
+      <aside className="w-60 bg-[#2c2c2e] hidden md:block min-h-screen">
         <SideMenu />
       </aside>
 
@@ -91,7 +91,19 @@ const KitchenOrders = () => {
 
       {/* Main Content */}
       <div className="min-h-screen bg-[#2a2a2a] text-white p-5 flex-1" dir="rtl">
-        <OrderListTitle title="מסך מטבח" />
+        {/* Top bar for mobile */}
+        <div className="flex items-center justify-between md:hidden mb-4">
+          <h1 className="text-xl font-bold">מסך מטבח</h1>
+          <button onClick={() => setIsSidebarOpen(true)} className="text-white text-2xl">
+            ☰
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="hidden md:block">
+          <OrderListTitle title="מסך מטבח" />
+        </div>
+
         {orders.length === 0 ? (
           <p className="text-white/70 p-4">אין הזמנות כרגע</p>
         ) : (

@@ -8,6 +8,8 @@ const AddProductModal = ({ onClose, onAdd }) => {
     category: "",
     stock: "",
     price: "",
+    displayOrder: "",
+
     isActive: true,
     isWeighted: false,
   });
@@ -23,7 +25,8 @@ const AddProductModal = ({ onClose, onAdd }) => {
     setForm((prev) => {
       const updated = { ...prev, [name]: val };
       if (name === "category") {
-        updated.isWeighted = value.toLowerCase().includes("meat");
+        const cat = categories.find((c) => c.name === value);
+        updated.isWeighted = cat ? cat.isWeighted : false;
       }
       return updated;
     });
@@ -41,6 +44,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
           ...form,
           stock: Number(form.stock),
           price: Number(form.price),
+          displayOrder: Number(form.displayOrder),
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -156,6 +160,15 @@ const AddProductModal = ({ onClose, onAdd }) => {
           placeholder="מחיר"
           type="number"
           value={form.price}
+          onChange={handleChange}
+          className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+        />
+
+        <input
+          name="displayOrder"
+          placeholder="סדר הצגה"
+          type="number"
+          value={form.displayOrder}
           onChange={handleChange}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />

@@ -6,6 +6,7 @@ const AddCategoryModal = ({ onClose, onAdd }) => {
     name: "",
     vegetables: [],
     additions: { fixed: [], grams: [] },
+    isWeighted: false,
   });
 
   const handleVegChange = (index, value) => {
@@ -182,6 +183,12 @@ const AddCategoryModal = ({ onClose, onAdd }) => {
             </button>
           </div>
 
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" checked={form.isWeighted} onChange={(e) => setForm({ ...form, isWeighted: e.target.checked })} />
+              <span>קטגוריה במשקל</span>
+            </label>
+          </div>
           <div className="flex justify-between pt-4">
             <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-bold">
               הוסף קטגוריה

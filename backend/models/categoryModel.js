@@ -6,6 +6,10 @@ const categorySchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  isWeighted: {
+    type: Boolean,
+    default: false,
+  },
   // Vegetables and additions are now stored per category
   vegetables: [String],
   additions: {

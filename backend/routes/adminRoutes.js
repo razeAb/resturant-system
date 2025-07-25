@@ -13,7 +13,7 @@ router.get("/dashboard", protect, async (req, res) => {
     }
 
     const users = await User.find().select("name email orderCount points");
-    const products = await Product.find().select("name stock price image category isActive");
+    const products = await Product.find().select("name stock price image category isActive displayOrder").sort({ displayOrder: 1 });
     const orders = await Order.find().populate("items.product", "name price");
 
     const topCustomers = users

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 const EditProductModal = ({ product, onClose, onUpdate }) => {
   const [form, setForm] = useState({
     ...product,
+    displayOrder: product.displayOrder ?? 0,
     isWeighted: product.isWeighted || false,
   });
 
@@ -138,6 +139,15 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             value={form.category}
             onChange={handleChange}
             placeholder="שם הקטגוריה (לדוג' שתייה, תוספות)"
+            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+          />
+
+          <input
+            type="number"
+            name="displayOrder"
+            value={form.displayOrder}
+            onChange={handleChange}
+            placeholder="סדר הצגה"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
 

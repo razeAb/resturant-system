@@ -8,7 +8,7 @@ const { protect } = require("../middleware/authMiddleware"); // Add isAdmin if n
 // ✅ Get All Products
 router.get("/", async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().sort({ displayOrder: 1 });
     res.status(200).json({ message: "✅ Products fetched successfully.", products });
   } catch (error) {
     console.error("❌ Error fetching products:", error);
@@ -19,14 +19,13 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, vegetables, additions } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, vegetables, additions, displayOrder } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
     }
 
-    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted, vegetables, additions });
-
+    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted, vegetables, additions, displayOrder });
     await newProduct.save();
 
     res.status(201).json({ message: "✅ Product added successfully.", product: newProduct });
@@ -44,6 +43,16 @@ router.patch("/:id/toggle-active", async (req, res) => {
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Failed to update product status" });
+  }
+});
+// Patch product display order
+router.patch("/:id/order", protect, async (req, res) => {
+  try {
+    const { displayOrder } = req.body;
+    const updated = await Product.findByIdAndUpdate(req.params.id, { displayOrder }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update product order" });
   }
 });
 
@@ -67,12 +76,13 @@ router.post("/add-products", protect, async (req, res) => {
 // ✅ Edit/Update Product by ID
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, vegetables, additions } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, vegetables, additions, displayOrder } = req.body;
+
     const productId = req.params.id;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
-      { name, price, stock, description, image, category, isWeighted, vegetables, additions },
+      { name, price, stock, description, image, category, isWeighted, vegetables, additions, displayOrder },
       { new: true, runValidators: true }
     );
 

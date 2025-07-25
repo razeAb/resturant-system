@@ -29,6 +29,7 @@ const productSchema = new mongoose.Schema({
       },
     ],
   },
+  displayOrder: { type: Number, default: 0 }, // סדר הצגה בתוך קטגוריה
 
   createdAt: { type: Date, default: Date.now }, // תאריך יצירה
 });

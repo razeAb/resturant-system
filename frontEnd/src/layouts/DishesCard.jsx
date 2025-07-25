@@ -16,7 +16,7 @@ const DishesCard = (props) => {
     console.log("isOrder:", props.isOrder);
     if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
-    } else if (props.category === "Meats") {
+    } else if (props.isWeighted) {
       setIsModalOpen(true); // Weighted modal
     } else if (props.category === "Sandwiches") {
       setIsModalOpen(true); // Sandwich modal
@@ -72,10 +72,10 @@ const DishesCard = (props) => {
         </div>
       </div>
 
-      {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats") && (
+      {/* Conditionally render the modal */}
+      {(props.isWeighted || props.category === "Sandwiches") && (
         <>
-          {props.category === "Meats" ? (
+          {props.isWeighted ? (
             <WeightedModal
               _id={props.id} // ⬅️ חשוב
               img={props.img}
@@ -87,7 +87,7 @@ const DishesCard = (props) => {
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
             />
-          ) : props.category === "Sandwiches" ? (
+          ) : (
             <Modal
               _id={props.id} // ⬅️ חשוב
               img={props.img}
@@ -99,7 +99,7 @@ const DishesCard = (props) => {
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
             />
-          ) : null}
+          )}
         </>
       )}
 

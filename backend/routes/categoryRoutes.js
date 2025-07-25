@@ -8,17 +8,19 @@ router.get("/seed", async (req, res) => {
     const sample = await Category.insertMany([
       {
         name: "Sandwiches",
+        isWeighted: false,
         vegetables: ["חסה", "עגבניה", "בצל"],
         additions: {
           fixed: [{ name: "גבינה", price: 5 }],
           grams: [],
         },
       },
-      { name: "Drinks", vegetables: [], additions: { fixed: [], grams: [] } },
-      { name: "Sides", vegetables: [], additions: { fixed: [], grams: [] } },
-      { name: "Starters", vegetables: [], additions: { fixed: [], grams: [] } },
+      { name: "Drinks", isWeighted: false, vegetables: [], additions: { fixed: [], grams: [] } },
+      { name: "Sides", isWeighted: false, vegetables: [], additions: { fixed: [], grams: [] } },
+      { name: "Starters", isWeighted: false, vegetables: [], additions: { fixed: [], grams: [] } },
       {
         name: "Meats",
+        isWeighted: true,
         vegetables: ["חסה", "בצל"],
         additions: {
           grams: [
@@ -49,12 +51,12 @@ router.get("/", async (req, res) => {
 // ✅ POST /api/categories - Create a new category
 router.post("/", async (req, res) => {
   try {
-    const { name, vegetables = [], additions = { fixed: [], grams: [] } } = req.body;
+    const { name, vegetables = [], additions = { fixed: [], grams: [] }, isWeighted = false } = req.body;
     if (!name) {
       return res.status(400).json({ message: "Category name is required" });
     }
 
-    const category = new Category({ name, vegetables, additions });
+    const category = new Category({ name, vegetables, additions, isWeighted });
     const saved = await category.save();
     res.status(201).json(saved);
   } catch (err) {
