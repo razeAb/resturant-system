@@ -16,10 +16,14 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const val = type === "checkbox" ? checked : value;
+    setForm((prev) => {
+      const updated = { ...prev, [name]: val };
+      if (name === "category") {
+        updated.isWeighted = value.toLowerCase().includes("meat");
+      }
+      return updated;
+    });
   };
 
   const handleImageUpload = async () => {
@@ -141,11 +145,6 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             placeholder="שם הקטגוריה (לדוג' שתייה, תוספות)"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
-
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="isWeighted" checked={form.isWeighted} onChange={handleChange} />
-            <span className="text-sm">מוצר לפי גרם</span>
-          </label>
 
           <h3 className="font-bold text-sm mb-2 mt-4">ירקות זמינים:</h3>
           {["חסה", "עגבניה", "בצל", "סלט קרוב", "מלפפון חמוץ", "צימצורי"].map((veg, i) => (
