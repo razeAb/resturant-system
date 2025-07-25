@@ -51,13 +51,15 @@ const TranzilaGooglePay = ({ amount, userPhone, userId, onChargeSuccess }) => {
         // OPTIONAL
         contact: userPhone || "",
         card_holder_id_number: userId || "",
-        json_purchase_data: JSON.stringify([
-          {
-            product_name: "Product Example",
-            product_quantity: 1,
-            product_price: amount,
-          },
-        ]),
+        json_purchase_data: encodeURIComponent(
+          JSON.stringify([
+            {
+              product_name: "Product Example",
+              product_quantity: 1,
+              product_price: amount,
+            },
+          ])
+        ),
       },
       (err, response) => {
         if (err) {
@@ -74,6 +76,10 @@ const TranzilaGooglePay = ({ amount, userPhone, userId, onChargeSuccess }) => {
 
   return (
     <>
+      {/* Hidden containers required for Tranzila Hosted Fields */}
+      <div id="credit_card_number" style={{ display: "none" }} />
+      <div id="cvv" style={{ display: "none" }} />
+      <div id="expiry" style={{ display: "none" }} />
       {isGoogleEnabled && (
         <button
           onClick={handleGooglePay}
