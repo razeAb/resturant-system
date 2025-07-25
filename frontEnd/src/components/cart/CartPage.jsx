@@ -26,6 +26,8 @@ const CartPage = () => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [triggerVisaPayment, setTriggerVisaPayment] = useState(false);
+
   const [visaDetails, setVisaDetails] = useState({
     cardNumber: "",
     expiryDate: "",
@@ -179,6 +181,29 @@ const CartPage = () => {
       alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
       return;
     }
+  
+    if (isGuest()) {
+      if (!guestName.trim()) {
+        alert("אנא הזן שם לפני השלמת ההזמנה");
+        return;
+      }
+  
+      if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
+        alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
+        return;
+      }
+    }
+  
+    if (paymentMethod === "Visa") {
+      setTriggerVisaPayment(true);
+      return; // wait for Visa payment
+    }
+  
+    // For all other methods, submit directly
+    submitOrderToBackend(deliveryOption);
+  };
+  
+
 
     // ✅ Guest validations
     if (isGuest()) {
@@ -787,14 +812,15 @@ const CartPage = () => {
                   שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                 </p>
               )}
-              {paymentMethod === "Visa" && (
+              {paymentMethod === "Visa" && triggerVisaPayment && (
                 <div style={{ marginTop: "20px" }}>
                   <TranzilaPayment
                     amount={calculateFinalTotal()}
                     userPhone={phoneNumber}
                     onChargeSuccess={(response) => {
                       console.log("✅ Visa payment successful", response);
-                      handleFinalSubmit(); // only submit to backend if Visa success
+                      setTriggerVisaPayment(false); // reset
+                      handleFinalSubmit(); // proceed after successful charge
                     }}
                   />
                 </div>
