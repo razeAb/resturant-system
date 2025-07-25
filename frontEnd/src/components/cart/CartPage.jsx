@@ -27,6 +27,26 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [triggerVisaPayment, setTriggerVisaPayment] = useState(false);
 
+  const DelayedVisaPayment = ({ amount, userPhone, onChargeSuccess }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setShouldRender(true);
+      }, 100); // Delay allows DOM to fully mount
+
+      return () => clearTimeout(timer);
+    }, []);
+
+    if (!shouldRender) return null;
+
+    return (
+      <div style={{ marginTop: "20px" }}>
+        <TranzilaPayment amount={amount} userPhone={userPhone} onChargeSuccess={onChargeSuccess} />
+      </div>
+    );
+  };
+
   // detect device type for payment options
   const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
@@ -726,19 +746,16 @@ const CartPage = () => {
                     שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                   </p>
                 )}
-                {paymentMethod === "Visa" && triggerVisaPayment && (
-                  <div style={{ marginTop: "20px" }}>
-                    <TranzilaPayment
-                      amount={calculateFinalTotal()}
-                      userPhone={phoneNumber}
-                      onChargeSuccess={(response) => {
-                        console.log("✅ Visa payment successful", response);
-                        handleFinalSubmit(); // proceed after successful charge
-                        // After successful charge send the order to backend
-                        submitOrderToBackend(deliveryOption);
-                      }}
-                    />
-                  </div>
+                {paymentMethod === "Visa" && triggerVisaPayment && showConfirmationModal && (
+                  <DelayedVisaPayment
+                    amount={calculateFinalTotal()}
+                    userPhone={phoneNumber}
+                    onChargeSuccess={(response) => {
+                      console.log("✅ Visa payment successful", response);
+                      handleFinalSubmit();
+                      submitOrderToBackend(deliveryOption);
+                    }}
+                  />
                 )}
                 {paymentMethod === "ApplePay" && (
                   <div style={{ marginTop: "20px" }}>
