@@ -5,9 +5,6 @@ const multer = require("multer");
 const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware"); // Add isAdmin if needed
 
-
-
-
 // ✅ Get All Products
 router.get("/", async (req, res) => {
   try {
@@ -22,13 +19,14 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image,  category, isWeighted } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, vegetables, additions } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
     }
 
-    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted });
+    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted, vegetables, additions });
+
     await newProduct.save();
 
     res.status(201).json({ message: "✅ Product added successfully.", product: newProduct });
@@ -69,12 +67,12 @@ router.post("/add-products", protect, async (req, res) => {
 // ✅ Edit/Update Product by ID
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, vegetables, additions } = req.body;
     const productId = req.params.id;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
-      { name, price, stock, description, image, category, isWeighted },
+      { name, price, stock, description, image, category, isWeighted, vegetables, additions },
       { new: true, runValidators: true }
     );
 

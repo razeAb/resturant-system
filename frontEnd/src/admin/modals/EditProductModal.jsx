@@ -1,13 +1,25 @@
 import React, { useState } from "react";
 
 const EditProductModal = ({ product, onClose, onUpdate }) => {
-  const [form, setForm] = useState({ ...product });
+  const [form, setForm] = useState({
+    ...product,
+    vegetables: product.vegetables || [],
+    additions: {
+      fixed: product.additions?.fixed || [],
+      grams: product.additions?.grams || [],
+    },
+    isWeighted: product.isWeighted || false,
+  });
+
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleImageUpload = async () => {
@@ -93,7 +105,6 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             placeholder="מלאי"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
-
           <input
             type="text"
             name="image"
@@ -130,6 +141,144 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             placeholder="קטגוריה"
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
+
+          <label className="flex items-center gap-2">
+            <input type="checkbox" name="isWeighted" checked={form.isWeighted} onChange={handleChange} />
+            <span className="text-sm">מוצר לפי גרם</span>
+          </label>
+
+          <h3 className="font-bold text-sm mb-2 mt-4">ירקות זמינים:</h3>
+          {["חסה", "עגבניה", "בצל", "סלט קרוב", "מלפפון חמוץ", "צימצורי"].map((veg, i) => (
+            <label key={i} className="flex items-center gap-2 mb-1">
+              <input
+                type="checkbox"
+                checked={form.vegetables.includes(veg)}
+                onChange={() => {
+                  setForm((prev) => ({
+                    ...prev,
+                    vegetables: prev.vegetables.includes(veg) ? prev.vegetables.filter((v) => v !== veg) : [...prev.vegetables, veg],
+                  }));
+                }}
+              />
+              <span className="text-sm">{veg}</span>
+            </label>
+          ))}
+
+          <h3 className="font-bold text-sm mt-4 mb-2">תוספות קבועות:</h3>
+          {form.additions.fixed.map((item, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="שם תוספת"
+                value={item.name}
+                onChange={(e) => {
+                  const updated = [...form.additions.fixed];
+                  updated[index].name = e.target.value;
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, fixed: updated } }));
+                }}
+                className="w-1/2 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
+              />
+              <input
+                type="number"
+                placeholder="מחיר"
+                value={item.price}
+                onChange={(e) => {
+                  const updated = [...form.additions.fixed];
+                  updated[index].price = Number(e.target.value);
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, fixed: updated } }));
+                }}
+                className="w-1/3 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = [...form.additions.fixed];
+                  updated.splice(index, 1);
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, fixed: updated } }));
+                }}
+                className="text-red-400 font-bold"
+              >
+                🗑️
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              setForm((prev) => ({
+                ...prev,
+                additions: { ...prev.additions, fixed: [...prev.additions.fixed, { name: "", price: 0 }] },
+              }))
+            }
+            className="text-green-400 font-bold mt-1 mb-3"
+          >
+            ➕ הוסף תוספת רגילה
+          </button>
+
+          <h3 className="font-bold text-sm mt-4 mb-2">תוספות בגרמים:</h3>
+          {form.additions.grams.map((item, index) => (
+            <div key={index} className="flex flex-wrap gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="שם תוספת"
+                value={item.name}
+                onChange={(e) => {
+                  const updated = [...form.additions.grams];
+                  updated[index].name = e.target.value;
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
+                }}
+                className="w-1/2 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
+              />
+              <input
+                type="number"
+                placeholder="50 גרם"
+                value={item.prices?.["50"] || 0}
+                onChange={(e) => {
+                  const updated = [...form.additions.grams];
+                  updated[index].prices = { ...updated[index].prices, 50: Number(e.target.value) };
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
+                }}
+                className="w-1/4 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
+              />
+              <input
+                type="number"
+                placeholder="100 גרם"
+                value={item.prices?.["100"] || 0}
+                onChange={(e) => {
+                  const updated = [...form.additions.grams];
+                  updated[index].prices = { ...updated[index].prices, 100: Number(e.target.value) };
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
+                }}
+                className="w-1/4 px-2 py-1 bg-[#1f1f1f] border border-white/20 rounded"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = [...form.additions.grams];
+                  updated.splice(index, 1);
+                  setForm((prev) => ({ ...prev, additions: { ...prev.additions, grams: updated } }));
+                }}
+                className="text-red-400 font-bold"
+              >
+                🗑️
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              setForm((prev) => ({
+                ...prev,
+                additions: {
+                  ...prev.additions,
+                  grams: [...prev.additions.grams, { name: "", prices: { 50: 0, 100: 0 } }],
+                },
+              }))
+            }
+            className="text-green-400 font-bold mt-1 mb-3"
+          >
+            ➕ הוסף תוספת בגרמים
+          </button>
 
           <div className="flex justify-between pt-4">
             <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded font-bold">
