@@ -27,12 +27,7 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [triggerVisaPayment, setTriggerVisaPayment] = useState(false);
 
-  const [visaDetails, setVisaDetails] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardholderName: "",
-  });
+  
   // detect device type for payment options
   const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
@@ -54,62 +49,12 @@ const CartPage = () => {
 
     setPaymentMethod(null);
     setDeliveryOption(null);
-    setVisaDetails({
-      cardNumber: "",
-      expiryDate: "",
-      cvv: "",
-      cardholderName: "",
-    });
+
     setIsOrderReady(false);
   };
 
   //isguest component
   const isGuest = () => !user;
-
-  // Handle visa input changes
-  const handleVisaInputChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "expiryDate") {
-      // Handle expiry date formatting: MM/YY
-      let cleaned = value.replace(/\D/g, "");
-
-      if (cleaned.length >= 3) {
-        cleaned = cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4);
-      }
-
-      if (cleaned.length > 5) {
-        cleaned = cleaned.slice(0, 5);
-      }
-
-      setVisaDetails((prevDetails) => ({
-        ...prevDetails,
-        [name]: cleaned,
-      }));
-    } else if (name === "cardNumber") {
-      // Allow only digits, limit to 16 digits
-      const cleaned = value.replace(/\D/g, "").slice(0, 16);
-
-      setVisaDetails((prevDetails) => ({
-        ...prevDetails,
-        [name]: cleaned,
-      }));
-    } else if (name === "cvv") {
-      // Allow only digits, limit to 3 digits
-      const cleaned = value.replace(/\D/g, "").slice(0, 3);
-
-      setVisaDetails((prevDetails) => ({
-        ...prevDetails,
-        [name]: cleaned,
-      }));
-    } else {
-      // Normal text input (like cardholder name)
-      setVisaDetails((prevDetails) => ({
-        ...prevDetails,
-        [name]: value,
-      }));
-    }
-  };
 
   
   useEffect(() => {
@@ -119,12 +64,7 @@ const CartPage = () => {
       // Reset cart state when user logs in
       setPaymentMethod(null);
       setDeliveryOption(null);
-      setVisaDetails({
-        cardNumber: "",
-        expiryDate: "",
-        cvv: "",
-        cardholderName: "",
-      });
+      setTriggerVisaPayment(false);
       setPhoneNumber("");
       setGuestName("");
       setCouponApplied(false);
@@ -172,10 +112,6 @@ const CartPage = () => {
   
   //check if payment and delivery options are selected
   const checkOrderReadiness = () => {
-    if (paymentMethod === "Visa") {
-      const { cardNumber, expiryDate, cvv, cardholderName } = visaDetails;
-      return cardNumber && expiryDate && cvv && cardholderName && deliveryOption;
-    }
 
     return paymentMethod && deliveryOption;
   };
@@ -199,9 +135,9 @@ const CartPage = () => {
       }
     }
 
-    if (paymentMethod === "Visa") {
-      setTriggerVisaPayment(true);
-      return; // wait for Visa payment
+    if (paymentMethod !== "Visa") {
+      // For non-Visa methods submit directly
+      submitOrderToBackend(deliveryOption);
     }
 
     // For all other methods, submit directly
@@ -231,16 +167,8 @@ const CartPage = () => {
 
     const loggedInUserId = user?._id;
 
-    let paymentDetails = {};
-    if (paymentMethod === "Visa") {
-      paymentDetails = {
-        method: "Visa",
-        cardLastFour: visaDetails.cardNumber.slice(-4),
-        cardholderName: visaDetails.cardholderName,
-      };
-    } else {
-      paymentDetails = { method: paymentMethod };
-    }
+    const paymentDetails = { method: paymentMethod };
+
 
     const totalPrice = parseFloat(calculateCartTotal());
 
@@ -655,8 +583,10 @@ const CartPage = () => {
                 <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
                   <button
-                    onClick={() => setPaymentMethod("Cash")}
-                    style={{
+ onClick={() => {
+  setPaymentMethod("Cash");
+  setTriggerVisaPayment(false);
+}}                    style={{
                       flex: "1",
                       display: "flex",
                       alignItems: "center",
@@ -675,6 +605,7 @@ const CartPage = () => {
                   <button
                     onClick={() => {
                       setPaymentMethod("Visa");
+                      setTriggerVisaPayment(true);
                     }}
                     style={{
                       flex: "1",
@@ -695,8 +626,10 @@ const CartPage = () => {
 
                   {isIOS && (
                     <button
-                      onClick={() => setPaymentMethod("ApplePay")}
-                      style={{
+                    onClick={() => {
+                      setPaymentMethod("ApplePay");
+                      setTriggerVisaPayment(false);
+                    }}                      style={{
                         flex: "1",
                         display: "flex",
                         alignItems: "center",
@@ -714,8 +647,11 @@ const CartPage = () => {
                   )}
                   {isAndroid && (
                     <button
-                      onClick={() => setPaymentMethod("GooglePay")}
-                      style={{
+                    onClick={() => {
+                      setPaymentMethod("GooglePay");
+                      setTriggerVisaPayment(false);
+                    }}
+                    style={{
                         flex: "1",
                         display: "flex",
                         alignItems: "center",
@@ -819,7 +755,6 @@ const CartPage = () => {
                     userPhone={phoneNumber}
                     onChargeSuccess={(response) => {
                       console.log("✅ Visa payment successful", response);
-                      setTriggerVisaPayment(false); // reset
                       handleFinalSubmit(); // proceed after successful charge
                       // After successful charge send the order to backend
                       submitOrderToBackend(deliveryOption);
