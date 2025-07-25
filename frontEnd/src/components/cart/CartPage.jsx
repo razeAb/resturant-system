@@ -1172,6 +1172,6 @@ const CartPage = () => {
       <ClosedModal isOpen={isClosedModalOpen} onClose={handleCloseModal} />
     </>
   );
-};
+;
 
 export default CartPage;
