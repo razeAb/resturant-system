@@ -99,7 +99,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
@@ -108,14 +107,13 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
         {/* Dynamically updated price */}
-        
 
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
 
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות על המנה</h3>
-          {["בלי חסה", "בלי מלפפון חמוץ", "בלי עגבניה", "בלי בצל", "בלי סלט קרוב", "בלי צימצורי "].map((vegetable, index) => (
+          {[" חסה", " מלפפון חמוץ", " עגבניה", " בצל", " סלט קרוב", " צימצורי "].map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
@@ -215,12 +213,12 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
           {/* Add to Cart Button with Price */}
           <button
-  onClick={handleAddToCart}
-  className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
->
-  <span>הוספה לעגלה</span>
-  <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
-</button>
+            onClick={handleAddToCart}
+            className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
+          >
+            <span>הוספה לעגלה</span>
+            <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
+          </button>
         </div>
 
         {/* SVG for checkbox */}
