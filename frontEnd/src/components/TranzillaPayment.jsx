@@ -85,7 +85,7 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
 
     window.fields.charge(
       {
-        terminal_name: "hungryvisa",
+        terminal_name: import.meta.env.VITE_TRANZILA_TERMINAL,
         amount,
         contact: userPhone || "",
         card_holder_id_number: cardHolderId,

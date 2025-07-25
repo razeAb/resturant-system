@@ -42,7 +42,7 @@ const TranzilaGooglePay = ({ amount, userPhone, userId, onChargeSuccess }) => {
     window.fields.chargeGpay(
       {
         // REQUIRED
-        terminal_name: "hungryvisa",
+        terminal_name: import.meta.env.VITE_TRANZILA_TERMINAL,
         response_language: "english",
         currency_code: "1", // 1 = NIS
         amount: amount,

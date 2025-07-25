@@ -8,11 +8,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://hf.tranzila.com/assets/js/thostedf.js"></script>
     <!-- Use the correct terminal name for hosted fields -->
-    <script src="https://direct.tranzila.com/hungryvisa/tranzila-fields.js"></script>
     <script>
-      document.write('<script src="https://direct.tranzila.com/js/tranzilanapple_v3.js?v=' + Date.now() + '"><\/script>');
-    </script>
-    <script>
+      const terminal = import.meta.env.VITE_TRANZILA_TERMINAL;
+      document.write('<script src="https://direct.tranzila.com/' + terminal + '/tranzila-fields.js"><\/script>');
+      document.write('<script src="https://direct.tranzila.com/js/tranzilanapple_v3.js?v=' + Date.now() + '\"><\/script>');
       var $n = jQuery.noConflict(true);
     </script>
 
