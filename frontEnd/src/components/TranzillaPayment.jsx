@@ -3,72 +3,116 @@ import React, { useEffect, useRef, useState } from "react";
 const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
   const initialized = useRef(false);
   const [cardHolderId, setCardHolderId] = useState("");
+  const [formLoaded, setFormLoaded] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!window.TzlaHostedFields || initialized.current) return;
+    const initFields = () => {
+      if (!window.TzlaHostedFields || initialized.current) return;
 
-    initialized.current = true;
+      initialized.current = true;
 
-    window.fields = window.TzlaHostedFields.create({
-      sandbox: false,
-      fields: {
-        credit_card_number: {
-          selector: "#credit_card_number",
-          placeholder: "4580 4580 4580 4580",
-          tabindex: 1,
+      window.fields = window.TzlaHostedFields.create({
+        sandbox: false,
+        fields: {
+          credit_card_number: {
+            selector: "#credit_card_number",
+            placeholder: "4580 4580 4580 4580",
+            tabindex: 1,
+          },
+          cvv: {
+            selector: "#cvv",
+            placeholder: "123",
+            tabindex: 2,
+          },
+          expiry: {
+            selector: "#expiry",
+            placeholder: "MM/YY",
+            tabindex: 3,
+          },
         },
-        cvv: {
-          selector: "#cvv",
-          placeholder: "123",
-          tabindex: 2,
+        styles: {
+          input: {
+            fontSize: "14px",
+            padding: "6px",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            width: "100%",
+            boxSizing: "border-box",
+          },
         },
-        expiry: {
-          selector: "#expiry",
-          placeholder: "MM/YY",
-          tabindex: 3,
+        onLoad: () => {
+          console.log("✅ Tranzila fields loaded.");
+          setFormLoaded(true);
         },
-      },
-      styles: {
-        input: {
-          fontSize: "14px",
-          padding: "6px",
-          border: "1px solid #ccc",
-          borderRadius: "6px",
-          width: "100%",
-          boxSizing: "border-box",
-        },
-      },
-    });
+      });
+    };
+
+    // Retry until window.TzlaHostedFields is available
+    if (!window.TzlaHostedFields) {
+      const interval = setInterval(() => {
+        if (window.TzlaHostedFields) {
+          initFields();
+          clearInterval(interval);
+        }
+      }, 300);
+
+      return () => clearInterval(interval);
+    } else {
+      initFields();
+    }
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMsg("");
 
-    if (!window.fields) return;
+    if (!window.fields) {
+      setErrorMsg("שגיאה בטעינת טופס תשלום.");
+      return;
+    }
+
+    if (cardHolderId.trim().length < 5) {
+      setErrorMsg("הכנס תעודת זהות תקינה (לפחות 5 ספרות).");
+      return;
+    }
+
+    setLoading(true);
 
     window.fields.charge(
       {
         terminal_name: "hungryvisa",
-        amount: amount,
+        amount,
         contact: userPhone || "",
-        card_holder_id_number: cardHolderId || "", // ✅ from input field
+        card_holder_id_number: cardHolderId,
       },
       (err, response) => {
+        setLoading(false);
+
         if (err) {
-          console.error("Tranzila error:", err);
-          alert("שגיאה בתשלום. נסה שוב.");
+          console.error("❌ Tranzila error:", err);
+          setErrorMsg("שגיאה בתשלום. נסה שוב.");
           return;
         }
 
-        console.log("Tranzila success:", response);
+        console.log("✅ Tranzila success:", response);
         onChargeSuccess(response);
       }
     );
   };
 
+  if (!formLoaded) {
+    return (
+      <div style={{ textAlign: "center", padding: "10px" }}>
+        <p>📦 טוען טופס תשלום...</p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} style={{ direction: "rtl" }}>
-      {/* 🆔 Input field for Teudat Zehut */}
+      {/* 🆔 Input for Teudat Zehut */}
       <div style={{ marginBottom: "15px" }}>
         <label>תעודת זהות של בעל הכרטיס:</label>
         <input
@@ -103,22 +147,26 @@ const TranzilaPayment = ({ onChargeSuccess, amount, userPhone }) => {
         <div id="expiry" style={{ height: "45px", borderRadius: "6px", overflow: "hidden" }} />
       </div>
 
+      {/* ❌ Error message */}
+      {errorMsg && <p style={{ color: "red", marginTop: "10px", textAlign: "center" }}>{errorMsg}</p>}
+
       {/* ✅ Submit Button */}
       <button
         type="submit"
+        disabled={loading}
         style={{
           marginTop: "20px",
-          backgroundColor: "#007bff",
+          backgroundColor: loading ? "#6c757d" : "#007bff",
           color: "#fff",
           padding: "10px 20px",
           fontSize: "16px",
           border: "none",
           borderRadius: "8px",
-          cursor: "pointer",
+          cursor: loading ? "not-allowed" : "pointer",
           width: "100%",
         }}
       >
-        שלם עם כרטיס אשראי
+        {loading ? "מבצע תשלום..." : "שלם עם כרטיס אשראי"}
       </button>
     </form>
   );
