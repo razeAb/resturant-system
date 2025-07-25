@@ -136,12 +136,9 @@ const CartPage = () => {
     }
 
     if (paymentMethod !== "Visa") {
-      // For non-Visa methods submit directly
+      // For Cash, Apple Pay or Google Pay submit immediately
       submitOrderToBackend(deliveryOption);
     }
-
-    // For all other methods, submit directly
-    submitOrderToBackend(deliveryOption);
   };
 
   //submitting order to backend
@@ -508,6 +505,7 @@ const CartPage = () => {
           )}
         </div>
         {showConfirmationModal && !isClosedModalOpen && (
+          <>
           {paymentMethod === "Visa" && triggerVisaPayment && (
             <div style={{ marginTop: "20px" }}>
               <TranzilaPayment
@@ -821,6 +819,7 @@ const CartPage = () => {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
 
