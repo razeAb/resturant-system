@@ -12,6 +12,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminProducts from "./admin/AdminProducts";
+import AdminCategories from "./admin/AdminCategories";
 import ActiveOrders from "./admin/ActiveOrders";
 import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
@@ -54,6 +55,7 @@ const App = () => {
               <Route path="/order-status" element={<OrderStatus />} />
 
               <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/categories" element={<AdminCategories />} />
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
               <Route path="/admin/orderHistory" element={<OrderHistory />} />
               <Route path="/admin/collections" element={<CollectionsReport />} />

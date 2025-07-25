@@ -24,6 +24,9 @@ const SideMenu = () => {
         <Link to="/admin/collections" className="menu-link">
           collections
         </Link>
+        <Link to="/admin/categories" className="menu-link">
+          עריכת קטגוריות
+        </Link>
         <Link to="/" className="menu-link">
           חזרה לדף הבית
         </Link>

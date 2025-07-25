@@ -63,4 +63,21 @@ router.post("/", async (req, res) => {
   }
 });
 
+// ✅ PUT /api/categories/:id - Update a category
+router.put("/:id", async (req, res) => {
+  try {
+    const updated = await Category.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updated) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error("Error updating category:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
