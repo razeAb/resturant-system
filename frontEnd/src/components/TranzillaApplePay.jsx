@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 
 const TERMINAL_NAME = "hungryvisa"; // replace with your Tranzila terminal name
 
-const TranzilaApplePay = ({ amount, onSuccess }) => {
+const TranzilaApplePay = ({ amount, onChargeSuccess }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
   useEffect(() => {
@@ -13,12 +13,12 @@ const TranzilaApplePay = ({ amount, onSuccess }) => {
   useEffect(() => {
     const handleMessage = (e) => {
       if (e.data && e.data.type === "tranzila-payment-success") {
-        onSuccess && onSuccess();
+        onChargeSuccess && onChargeSuccess();
       }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [onSuccess]);
+  }, [onChargeSuccess]);
 
   const successUrl = `${window.location.origin}/payment-success`;
   return (

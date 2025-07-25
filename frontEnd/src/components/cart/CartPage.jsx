@@ -761,7 +761,7 @@ const CartPage = () => {
                   <div style={{ marginTop: "20px" }}>
                     <TranzilaApplePay
                       amount={calculateFinalTotal()}
-                      onSuccess={() => {
+                      onChargeSuccess={() => {
                         console.log("✅ Apple Pay payment successful");
                         handleFinalSubmit();
                       }}
@@ -772,7 +772,7 @@ const CartPage = () => {
                   <div style={{ marginTop: "20px" }}>
                     <TranzilaGooglePay
                       amount={calculateFinalTotal()}
-                      onSuccess={() => {
+                      onChargeSuccess={() => {
                         console.log("✅ Google Pay payment successful");
                         handleFinalSubmit();
                       }}
