@@ -12,6 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // ✅ Import routes
+const tranzilaRoute = require("./routes/tranzilaRoute");
+app.use("/api", tranzilaRoute);
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
