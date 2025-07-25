@@ -6,9 +6,8 @@ import axios from "axios";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
-import TranzilaPayment from "../TranzillaPayment";
-import TranzilaGooglePay from "../TranzillaGooglePay";
-import TranzilaApplePay from "../TranzillaApplePay";
+import TranzilaIframe from "../TranzilaIframe";
+
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
@@ -25,31 +24,8 @@ const CartPage = () => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
-  const [triggerVisaPayment, setTriggerVisaPayment] = useState(false);
+  const [showCardPayment, setShowCardPayment] = useState(false);
 
-  const DelayedVisaPayment = ({ amount, userPhone, onChargeSuccess }) => {
-    const [shouldRender, setShouldRender] = useState(false);
-
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setShouldRender(true);
-      }, 100); // Delay allows DOM to fully mount
-
-      return () => clearTimeout(timer);
-    }, []);
-
-    if (!shouldRender) return null;
-
-    return (
-      <div style={{ marginTop: "20px" }}>
-        <TranzilaPayment amount={amount} userPhone={userPhone} onChargeSuccess={onChargeSuccess} />
-      </div>
-    );
-  };
-
-  // detect device type for payment options
-  const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
   const deliveryFee = 25;
 
   //state to track in the order is ready to got to backend
@@ -68,6 +44,7 @@ const CartPage = () => {
 
     setPaymentMethod(null);
     setDeliveryOption(null);
+    setShowCardPayment(false);
 
     setIsOrderReady(false);
   };
@@ -82,7 +59,7 @@ const CartPage = () => {
       // Reset cart state when user logs in
       setPaymentMethod(null);
       setDeliveryOption(null);
-      setTriggerVisaPayment(false);
+      setShowCardPayment(false);
       setPhoneNumber("");
       setGuestName("");
       setCouponApplied(false);
@@ -148,8 +125,8 @@ const CartPage = () => {
       }
     }
 
-    if (paymentMethod !== "Visa") {
-      // For Cash, Apple Pay or Google Pay submit immediately
+    if (paymentMethod !== "Card") {
+      // For Cash submit immediately
       submitOrderToBackend(deliveryOption);
     }
   };
@@ -581,7 +558,7 @@ const CartPage = () => {
                     <button
                       onClick={() => {
                         setPaymentMethod("Cash");
-                        setTriggerVisaPayment(false);
+                        setShowCardPayment(false);
                       }}
                       style={{
                         flex: "1",
@@ -601,8 +578,8 @@ const CartPage = () => {
                     </button>
                     <button
                       onClick={() => {
-                        setPaymentMethod("Visa");
-                        setTriggerVisaPayment(true);
+                        setPaymentMethod("Card");
+                        setShowCardPayment(true);
                       }}
                       style={{
                         flex: "1",
@@ -610,61 +587,16 @@ const CartPage = () => {
                         alignItems: "center",
                         gap: "10px",
                         padding: "10px 20px",
-                        backgroundColor: paymentMethod === "Visa" ? "#1d4ed8" : "#2563eb", // ✅ blue/darker blue
-                        border: paymentMethod === "Visa" ? "3px solid black" : "1px solid transparent", // Black border if selected
+                        backgroundColor: paymentMethod === "Card" ? "#1d4ed8" : "#2563eb",
+                        border: paymentMethod === "Card" ? "3px solid black" : "1px solid transparent",
 
                         color: "#fff",
                         borderRadius: "5px",
                       }}
                     >
-                      <img src="/svg/visa.svg" alt="Visa Icon" style={{ width: "20px", height: "20px" }} />
-                      ויזה
+                      <img src="/svg/visa.svg" alt="Card Icon" style={{ width: "20px", height: "20px" }} />
+                      כרטיס אשראי
                     </button>
-
-                    {isIOS && (
-                      <button
-                        onClick={() => {
-                          setPaymentMethod("ApplePay");
-                          setTriggerVisaPayment(false);
-                        }}
-                        style={{
-                          flex: "1",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          padding: "10px 20px",
-                          backgroundColor: paymentMethod === "ApplePay" ? "#374151" : "#4b5563",
-                          border: paymentMethod === "ApplePay" ? "3px solid black" : "1px solid transparent",
-                          color: "#fff",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        <img src="/svg/applewhite.svg" alt="Apple Pay" style={{ width: "20px", height: "20px" }} />
-                        אפל פיי
-                      </button>
-                    )}
-                    {isAndroid && (
-                      <button
-                        onClick={() => {
-                          setPaymentMethod("GooglePay");
-                          setTriggerVisaPayment(false);
-                        }}
-                        style={{
-                          flex: "1",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          padding: "10px 20px",
-                          backgroundColor: paymentMethod === "GooglePay" ? "#ca8a04" : "#eab308",
-                          border: paymentMethod === "GooglePay" ? "3px solid black" : "1px solid transparent",
-                          color: "#fff",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        <img src="/svg/google.svg" alt="Google Pay" style={{ width: "20px", height: "20px" }} />
-                        גוגל פיי
-                      </button>
-                    )}
                   </div>
                 </div>
                 {/* ✅ Delivery buttons */}
@@ -746,38 +678,17 @@ const CartPage = () => {
                     שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                   </p>
                 )}
-                {paymentMethod === "Visa" && triggerVisaPayment && showConfirmationModal && (
-                  <DelayedVisaPayment
+                {paymentMethod === "Card" && showCardPayment && (
+                  <TranzilaIframe
                     amount={calculateFinalTotal()}
-                    userPhone={phoneNumber}
-                    onChargeSuccess={(response) => {
-                      console.log("✅ Visa payment successful", response);
+                    onSuccess={() => {
                       handleFinalSubmit();
                       submitOrderToBackend(deliveryOption);
                     }}
+                    onFailure={() => {
+                      alert("שגיאה בתשלום");
+                    }}
                   />
-                )}
-                {paymentMethod === "ApplePay" && (
-                  <div style={{ marginTop: "20px" }}>
-                    <TranzilaApplePay
-                      amount={calculateFinalTotal()}
-                      onChargeSuccess={() => {
-                        console.log("✅ Apple Pay payment successful");
-                        handleFinalSubmit();
-                      }}
-                    />{" "}
-                  </div>
-                )}
-                {paymentMethod === "GooglePay" && (
-                  <div style={{ marginTop: "20px" }}>
-                    <TranzilaGooglePay
-                      amount={calculateFinalTotal()}
-                      onChargeSuccess={() => {
-                        console.log("✅ Google Pay payment successful");
-                        handleFinalSubmit();
-                      }}
-                    />{" "}
-                  </div>
                 )}
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>

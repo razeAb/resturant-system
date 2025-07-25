@@ -17,6 +17,7 @@ import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
 import OrderStatus from "./pages/OrderStatus";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailure from "./pages/PaymentFailure";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
@@ -59,6 +60,7 @@ const App = () => {
               <Route path="/admin/collections" element={<CollectionsReport />} />
               <Route path="/kitchen" element={<KitchenOrders />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/payment-failure" element={<PaymentFailure />} />
             </Routes>
 
             {/* CartIcon should be placed here to appear on all pages */}
