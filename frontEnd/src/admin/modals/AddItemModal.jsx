@@ -10,7 +10,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
+        const res = await axios.get(`/api/products`);
         setProducts(res.data.products || []);
       } catch (err) {
         console.error("Failed to fetch products", err);
@@ -52,7 +52,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
       ? (product.price * quantity) / 100 // every 100 grams = 1 unit
       : product.price * quantity;
     try {
-      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/add-item`, {
+      await axios.post(`api/orders/${orderId}/add-item`, {
         item,
         addedPrice,
       });

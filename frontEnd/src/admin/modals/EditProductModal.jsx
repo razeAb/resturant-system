@@ -18,7 +18,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/upload`, {
+      const res = await fetch(`/api/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -41,7 +41,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${product._id}`, {
+      const res = await fetch(`/api/products/${product._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

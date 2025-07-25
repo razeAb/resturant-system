@@ -24,7 +24,7 @@ const CollectionsReport = () => {
       const token = localStorage.getItem("token");
 
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/collections`,
+        `/api/admin/collections`,
         {
           params: { startDate: fromDate, endDate: toDate },
           headers: { Authorization: `Bearer ${token}` },

@@ -88,7 +88,7 @@ const CartPage = () => {
 
         axios
           .patch(
-            `${import.meta.env.VITE_API_BASE_URL}/api/users/${_id}`,
+            `/api/users/${_id}`,
             {
               orderCount: 0,
               usedDrinkCoupon: false,
@@ -174,7 +174,7 @@ const CartPage = () => {
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, payload);
+      const response = await axios.post(`/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -182,7 +182,7 @@ const CartPage = () => {
       if (loggedInUserId) {
         try {
           const token = localStorage.getItem("token");
-          const profile = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
+          const profile = await axios.get(`/api/users/profile`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           updateUser(profile.data.user);

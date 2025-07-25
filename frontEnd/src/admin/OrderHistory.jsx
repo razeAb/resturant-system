@@ -16,7 +16,7 @@ const formatTime = (timestamp) => {
 const getOrderHistory = async () => {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/history`, {
+    const response = await axios.get(`/api/orders/history`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

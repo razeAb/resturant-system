@@ -41,7 +41,7 @@ const KitchenOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders/active`);
+      const res = await axios.get(`/api/orders/active`);
       const allOrders = res.data;
 
       const kitchenOrders = allOrders.filter((order) => {
@@ -58,7 +58,7 @@ const KitchenOrders = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${id}/status`, { status });
+      await axios.put(`/api/orders/${id}/status`, { status });
       fetchOrders();
     } catch (err) {
       console.error("Error updating status", err);

@@ -77,7 +77,8 @@ const ActiveOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders`);
+      const res = await axios.get("/api/orders");
+
       const newOrderList = res.data.orders.filter(
         (order) => order.status !== ORDER_STATUS.DONE && order.status !== ORDER_STATUS.DELIVERING
       );
@@ -105,7 +106,8 @@ const ActiveOrdersPage = () => {
 
   const updateOrderStatus = async (orderId, data) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/status`, data);
+      await axios.put(`/api/orders/${orderId}/status`, data);
+
       fetchOrders();
     } catch (err) {
       console.error("שגיאה בעדכון סטטוס:", err);
@@ -115,7 +117,8 @@ const ActiveOrdersPage = () => {
   const deleteOrder = async (orderId) => {
     if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`);
+      await axios.delete(`/api/orders/${orderId}`);
+
       fetchOrders();
     } catch (err) {
       alert("שגיאה במחיקת ההזמנה");

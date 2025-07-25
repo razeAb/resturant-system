@@ -31,7 +31,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/products`,
+        `/api/products`,
         {
           ...form,
           stock: Number(form.stock),
@@ -58,7 +58,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const uploadRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/upload`, formData, {
+      const uploadRes = await axios.post(`/api/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -79,7 +79,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/categories`, {
+        const res = await axios.get(`/api/categories`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Fetched categories:", res.data); // 👈 Add this
