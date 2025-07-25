@@ -3,7 +3,6 @@ import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
 import axios from "axios";
-import { comment } from "postcss";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
@@ -181,28 +180,27 @@ const CartPage = () => {
       alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
       return;
     }
-  
+
     if (isGuest()) {
       if (!guestName.trim()) {
         alert("אנא הזן שם לפני השלמת ההזמנה");
         return;
       }
-  
+
       if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
         alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
         return;
       }
     }
-  
+
     if (paymentMethod === "Visa") {
       setTriggerVisaPayment(true);
       return; // wait for Visa payment
     }
-  
+
     // For all other methods, submit directly
     submitOrderToBackend(deliveryOption);
   };
-  
 
   //submitting order to backend
   const submitOrderToBackend = async (deliveryOption) => {
@@ -803,6 +801,8 @@ const CartPage = () => {
                       console.log("✅ Visa payment successful", response);
                       setTriggerVisaPayment(false); // reset
                       handleFinalSubmit(); // proceed after successful charge
+                      // After successful charge send the order to backend
+                      submitOrderToBackend(deliveryOption);
                     }}
                   />
                 </div>
