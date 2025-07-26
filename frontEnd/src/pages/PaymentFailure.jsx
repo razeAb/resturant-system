@@ -4,6 +4,7 @@ const PaymentFailure = () => {
   useEffect(() => {
     if (window.opener) {
       window.opener.postMessage({ type: "tranzila-payment-failure" }, "*");
+      window.close(); // ✅ Close failure tab too if needed
     } else if (window.parent) {
       window.parent.postMessage({ type: "tranzila-payment-failure" }, "*");
     }
@@ -12,7 +13,7 @@ const PaymentFailure = () => {
   return (
     <div style={{ textAlign: "center", padding: "40px" }}>
       <h2>התשלום נכשל</h2>
-      <p>אנא נסו שוב או פנו לתמיכה.</p>
+      <p>אנא נסה שוב או פנה לתמיכה.</p>
     </div>
   );
 };
