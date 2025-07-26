@@ -56,7 +56,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/upload", uploadRoute);
 app.use("/api/payments", paymentRoutes);
 app.use("/api", require("./routes/tranzila")); // ✅ Add this line
-
+app.use("/api/config", require("./routes/config"));
 // ✅ Tranzila Webhook Route
 app.post("/api/tranzila-webhook", (req, res) => {
   const data = req.body;
