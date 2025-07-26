@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-router.get("/firebase-config", (req, res) => {
+router.get("/firebase", (req, res) => {
   res.json({
     apiKey: process.env.VITE_FIREBASE_API_KEY,
     authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
