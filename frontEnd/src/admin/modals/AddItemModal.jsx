@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api";
 
 const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
   const [products, setProducts] = useState([]);
@@ -10,7 +10,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`/api/products`);
+        const res = await api.get(`/api/products`);
         setProducts(res.data.products || []);
       } catch (err) {
         console.error("Failed to fetch products", err);
@@ -52,8 +52,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
       ? (product.price * quantity) / 100 // every 100 grams = 1 unit
       : product.price * quantity;
     try {
-      await axios.post(`api/orders/${orderId}/add-item`, {
-        item,
+      await api.post(`/api/orders/${orderId}/add-item`, {        item,
         addedPrice,
       });
       onItemAdded();

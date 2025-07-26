@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
-import axios from "axios";
+import api from "../../api";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
@@ -86,7 +86,7 @@ const CartPage = () => {
         // ✅ Reset order count to 0 and reset drink coupon usage
         const token = localStorage.getItem("token");
 
-        axios
+        api
           .patch(
             `/api/users/${_id}`,
             {
@@ -174,7 +174,7 @@ const CartPage = () => {
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
-      const response = await axios.post(`/api/orders`, payload);
+      const response = await api.post(`/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -182,7 +182,7 @@ const CartPage = () => {
       if (loggedInUserId) {
         try {
           const token = localStorage.getItem("token");
-          const profile = await axios.get(`/api/users/profile`, {
+          const profile = await api.get(`/api/users/profile`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           updateUser(profile.data.user);

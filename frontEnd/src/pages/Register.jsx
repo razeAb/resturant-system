@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { initializeFirebase } from "../firebase"; // ✅ שימוש נכון
@@ -77,7 +77,7 @@ const Register = () => {
 
       await confirmationResult.confirm(verificationCode);
 
-      const response = await axios.post(`/api/auth/register`, {
+      const response = await api.post(`/api/auth/register`, {
         ...formData,
         phoneVerified: true,
       });
@@ -134,10 +134,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`/api/auth/register`, {
-        ...formData,
-        phoneVerified: false,
-      });
+      const response = await api.post(`/api/auth/register`, { ...formData, phoneVerified: false });
 
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);

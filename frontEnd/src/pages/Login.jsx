@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { initializeFirebase } from "../firebase"; // ✅ חדש
@@ -28,8 +28,7 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await axios.post(`/api/auth/login`, { email, password });
-      const user = response.data.user;
+      const response = await api.post(`/api/auth/login`, { email, password });      const user = response.data.user;
 
       clearCart();
       localStorage.removeItem("cartItems");
@@ -63,7 +62,7 @@ const Login = () => {
   };
 
   const sendUserToBackend = async (user, token) => {
-    const response = await axios.post(
+    const response = await api.post(
       `/api/auth/firebase-login`,
       {
         name: user.displayName,

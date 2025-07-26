@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api";
 import OrderListTitle from "../../components/OrderListTitle";
 import SideMenu from "../../layouts/SideMenu";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
@@ -41,8 +41,7 @@ const KitchenOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`/api/orders/active`);
-      const allOrders = res.data;
+      const res = await api.get(`/api/orders/active`);      const allOrders = res.data;
 
       const kitchenOrders = allOrders.filter((order) => {
         if (order.deliveryOption === "EatIn") return true;
@@ -58,8 +57,7 @@ const KitchenOrders = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`/api/orders/${id}/status`, { status });
-      fetchOrders();
+      await api.put(`/api/orders/${id}/status`, { status });      fetchOrders();
     } catch (err) {
       console.error("Error updating status", err);
     }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import AddProductModal from "./modals/AddProductMoadl";
 import EditProductModal from "./modals/EditProductModal";
@@ -18,8 +18,7 @@ const AdminProducts = () => {
     const fetchProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`/api/admin/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/api/admin/dashboard`, {          headers: { Authorization: `Bearer ${token}` },
         });
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
         setProducts(normalized);
@@ -34,7 +33,7 @@ const AdminProducts = () => {
   const handleToggleActive = async (productId, currentStatus) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(
+      await api.patch(
         `/api/products/${productId}/toggle-active`,
         { isActive: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -48,8 +47,7 @@ const AdminProducts = () => {
   const handleDelete = async (productId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`/api/products/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await api.delete(`/api/products/${productId}`, {        headers: { Authorization: `Bearer ${token}` },
       });
 
       setProducts((prev) => prev.filter((p) => p._id !== productId));

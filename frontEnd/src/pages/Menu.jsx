@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
-import axios from "axios";
+import api from "../api";
 
 
 const categoriesList = [
@@ -19,8 +19,7 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get(`/api/products`);
-        const normalizedProducts = response.data.products.map((product) => ({
+        const response = await api.get(`/api/products`);        const normalizedProducts = response.data.products.map((product) => ({
           ...product,
           isActive: product.isActive === true,
         }));

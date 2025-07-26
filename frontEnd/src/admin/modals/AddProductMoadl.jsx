@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../api";
 
 const AddProductModal = ({ onClose, onAdd }) => {
   const [form, setForm] = useState({
@@ -30,7 +30,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.post(
+      const response = await api.post(
         `/api/products`,
         {
           ...form,
@@ -58,8 +58,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const uploadRes = await axios.post(`/api/upload`, formData, {
-        headers: {
+      const uploadRes = await api.post(`/api/upload`, formData, {        headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
@@ -79,8 +78,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`/api/categories`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await api.get(`/api/categories`, {          headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Fetched categories:", res.data); // 👈 Add this
         setCategories(res.data);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../api";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
@@ -77,7 +77,7 @@ const ActiveOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get("/api/orders");
+      const res = await api.get("/api/orders");
 
       const newOrderList = res.data.orders.filter(
         (order) => order.status !== ORDER_STATUS.DONE && order.status !== ORDER_STATUS.DELIVERING
@@ -117,7 +117,7 @@ const ActiveOrdersPage = () => {
   const deleteOrder = async (orderId) => {
     if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
     try {
-      await axios.delete(`/api/orders/${orderId}`);
+      await api.delete(`/api/orders/${orderId}`);
 
       fetchOrders();
     } catch (err) {

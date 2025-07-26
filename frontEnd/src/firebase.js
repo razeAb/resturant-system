@@ -9,7 +9,7 @@ import {
   PhoneAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import axios from "axios";
+import api from "./api";
 
 // 🔄 Firebase instance refs
 let firebaseApp = null;
@@ -21,8 +21,7 @@ let googleProvider = null;
  */
 const initializeFirebase = async () => {
   if (!firebaseApp) {
-    const res = await axios.get(`/api/config/firebase`);
-    const config = res.data;
+    const res = await api.get(`/api/config/firebase`);    const config = res.data;
 
     firebaseApp = initializeApp(config);
     auth = getAuth(firebaseApp);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 
@@ -16,8 +16,7 @@ const formatTime = (timestamp) => {
 const getOrderHistory = async () => {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.get(`/api/orders/history`, {
-      headers: {
+    const response = await api.get(`/api/orders/history`, {      headers: {
         Authorization: `Bearer ${token}`,
       },
     });
