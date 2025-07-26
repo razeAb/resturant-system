@@ -3,7 +3,8 @@ import React, { useEffect } from "react";
 const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const successUrl = `${window.location.origin}/payment-success`;
   const failUrl = `${window.location.origin}/payment-failure`;
-
+  // terminal name for Tranzila, configurable via environment variable
+  const terminal = import.meta.env.VITE_TRANZILA_TERMINAL || "hungryvisa";
   useEffect(() => {
     const handler = (e) => {
       if (e.data?.type === "tranzila-payment-success") {
