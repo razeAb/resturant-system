@@ -5,7 +5,7 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
 
   const successUrl = `${window.location.origin}/payment-success`;
   const failUrl = `${window.location.origin}/payment-failure`;
-  const terminal = import.meta.env.VITE_TRANZILA_TERMINAL || "hungry";
+  const terminal = import.meta.env.VITE_TRANZILA_TERMINAL || "hungryvisa";
 
   // ✅ Auto-submit on mount
   useEffect(() => {
