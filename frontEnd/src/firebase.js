@@ -21,7 +21,7 @@ let googleProvider = null;
  */
 const initializeFirebase = async () => {
   if (!firebaseApp) {
-    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/config/firebase`);
+    const res = await axios.get(`/api/config/firebase`);
     const config = res.data;
 
     firebaseApp = initializeApp(config);
