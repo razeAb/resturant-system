@@ -6,7 +6,7 @@ import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
 const formatTime = (timestamp) => {
-  const date = new Date(timestamp);
+  const date = new Date(new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
   const now = new Date();
   const diffMs = now - date;
   const diffMinutes = Math.floor(diffMs / 60000);
