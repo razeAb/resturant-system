@@ -3,9 +3,17 @@ import React, { useEffect, useRef } from "react";
 const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const formRef = useRef(null);
 
-  const successUrl = `${window.location.origin}/payment-success/index.html`;
-  const failUrl = `${window.location.origin}/payment-failure/index.html`;
+  const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+  const successUrl = `${window.location.origin}${basePath}/payment-success/index.html`;
+  const failUrl = `${window.location.origin}${basePath}/payment-failure/index.html`;
   const terminal = "hungryvisa";
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`;
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   // ✅ Auto-submit on mount
   useEffect(() => {
@@ -51,8 +59,9 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
 
         {/* Modern payment methods */}
-        <input type="hidden" name="bit_pay" value="1" />
         <input type="hidden" name="google_pay" value="1" />
+        <input type="hidden" name="tranmode" value="A" />
+        <input type="hidden" name="apple_pay" value="1" />
       </form>
 
       {/* Iframe container - adjusted to remove gap */}
