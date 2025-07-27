@@ -1,15 +1,58 @@
-frontEnd/public/payment-failure/index.html New +28 -0
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he">
   <head>
     <meta charset="UTF-8" />
-    <title>Payment Failed</title>
+    <title>התשלום נכשל</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #fef2f2; /* soft red background */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #991b1b; /* dark red text */
         text-align: center;
+        direction: rtl;
+      }
+
+      .container {
+        background: #fff;
         padding: 40px;
-        font-family: sans-serif;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
+      }
+
+      h2 {
+        font-size: 28px;
+        margin-bottom: 16px;
+      }
+
+      p {
+        font-size: 18px;
+        margin-bottom: 32px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #991b1b;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #7f1d1d;
       }
     </style>
     <script>
@@ -24,7 +67,10 @@ frontEnd/public/payment-failure/index.html New +28 -0
     </script>
   </head>
   <body>
-    <h2>התשלום נכשל</h2>
-    <p>אנא נסה שוב או פנה לתמיכה.</p>
+    <div class="container">
+      <h2>התשלום נכשל</h2>
+      <p>אנא נסה שוב או פנה לתמיכה.</p>
+      <a class="button" href="/">חזרה לעמוד הבית</a>
+    </div>
   </body>
 </html>
