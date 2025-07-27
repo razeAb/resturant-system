@@ -7,8 +7,6 @@ import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure y
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
-import PaymentSuccess from "../../pages/PaymentSuccess";
-import PaymentFailure from "../../pages/PaymentFailure";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -700,21 +698,38 @@ const CartPage = () => {
                     }}
                   />
                 )}
-                {paymentMethod === "Card" && paymentResult === "success" && <PaymentSuccess />}
-                {paymentMethod === "Card" && paymentResult === "failure" && (
-                  <div style={{ textAlign: "center" }}>
-                    <PaymentFailure />
+                {paymentResult === "success" && (
+                  <div style={{ textAlign: "center", marginTop: "20px" }}>
+                    <img src="/icons/check-success.svg" alt="Success" style={{ width: "60px", marginBottom: "10px" }} />
+                    <h3 style={{ color: "#16a34a" }}>התשלום הצליח!</h3>
+                    <p>ניתן כעת להשלים את ההזמנה</p>
+                  </div>
+                )}
+                {paymentResult === "failure" && (
+                  <div style={{ textAlign: "center", marginTop: "20px" }}>
+                    <img src="/icons/fail-icon.svg" alt="Failure" style={{ width: "60px", marginBottom: "10px" }} />
+                    <h3 style={{ color: "#dc2626" }}>התשלום נכשל</h3>
+                    <p>אנא נסה שוב או נסה אמצעי תשלום אחר</p>
                     <button
                       onClick={() => {
                         setPaymentResult(null);
                         setShowCardPayment(true);
                       }}
-                      style={{ marginTop: "15px", padding: "10px 20px", backgroundColor: "#1d4ed8", color: "white", borderRadius: "8px" }}
+                      style={{
+                        marginTop: "15px",
+                        padding: "10px 20px",
+                        backgroundColor: "#1d4ed8",
+                        color: "white",
+                        borderRadius: "8px",
+                        border: "none",
+                      }}
                     >
                       נסה שוב
                     </button>
                   </div>
                 )}
+              
+                
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
