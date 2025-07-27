@@ -7,6 +7,8 @@ import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure y
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
+import PaymentSuccess from "../../pages/PaymentSuccess";
+import PaymentFailure from "../../pages/PaymentFailure";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -25,6 +27,7 @@ const CartPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
 
   const deliveryFee = 25;
 
@@ -125,10 +128,14 @@ const CartPage = () => {
       }
     }
 
-    if (paymentMethod !== "Card") {
-      // For Cash submit immediately
-      submitOrderToBackend(deliveryOption);
+    if (paymentMethod === "Card") {
+      if (paymentResult !== "success") {
+        alert("אנא השלם את התשלום לפני שליחת ההזמנה");
+        return;
+      }
     }
+
+    submitOrderToBackend(deliveryOption);
   };
 
   //submitting order to backend
@@ -559,6 +566,7 @@ const CartPage = () => {
                       onClick={() => {
                         setPaymentMethod("Cash");
                         setShowCardPayment(false);
+                        setPaymentResult(null);
                       }}
                       style={{
                         flex: "1",
@@ -580,6 +588,7 @@ const CartPage = () => {
                       onClick={() => {
                         setPaymentMethod("Card");
                         setShowCardPayment(true);
+                        setPaymentResult(null);
                       }}
                       style={{
                         flex: "1",
@@ -678,31 +687,51 @@ const CartPage = () => {
                     שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                   </p>
                 )}
-                {paymentMethod === "Card" && showCardPayment && (
+                {paymentMethod === "Card" && showCardPayment && !paymentResult && (
                   <TranzilaIframe
                     amount={calculateFinalTotal()}
                     onSuccess={() => {
-                      handleFinalSubmit();
-                      submitOrderToBackend(deliveryOption);
+                      setPaymentResult("success");
+                      setShowCardPayment(false);
                     }}
                     onFailure={() => {
-                      alert("שגיאה בתשלום");
+                      setPaymentResult("failure");
+                      setShowCardPayment(false);
                     }}
                   />
+                )}
+                {paymentMethod === "Card" && paymentResult === "success" && <PaymentSuccess />}
+                {paymentMethod === "Card" && paymentResult === "failure" && (
+                  <div style={{ textAlign: "center" }}>
+                    <PaymentFailure />
+                    <button
+                      onClick={() => {
+                        setPaymentResult(null);
+                        setShowCardPayment(true);
+                      }}
+                      style={{ marginTop: "15px", padding: "10px 20px", backgroundColor: "#1d4ed8", color: "white", borderRadius: "8px" }}
+                    >
+                      נסה שוב
+                    </button>
+                  </div>
                 )}
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={!paymentMethod || !deliveryOption}
+                    disabled={!paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")}
                     style={{
                       padding: "12px 24px",
-                      backgroundColor: !paymentMethod || !deliveryOption ? "gray" : "green",
+                      backgroundColor:
+                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success") ? "gray" : "green",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "bold",
                       borderRadius: "8px",
-                      cursor: !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
+                      cursor:
+                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                          ? "not-allowed"
+                          : "pointer",
                       border: "none",
                     }}
                   >
