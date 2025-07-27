@@ -3,8 +3,8 @@ import React, { useEffect, useRef } from "react";
 const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const formRef = useRef(null);
 
-  const successUrl = `${window.location.origin}/payment-success`;
-  const failUrl = `${window.location.origin}/payment-failure`;
+  const successUrl = `${window.location.origin}/payment-success/index.html`;
+  const failUrl = `${window.location.origin}/payment-failure/index.html`;
   const terminal = "hungryvisa";
 
   // ✅ Auto-submit on mount
