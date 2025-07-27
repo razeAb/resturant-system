@@ -106,8 +106,7 @@ const ActiveOrdersPage = () => {
 
   const updateOrderStatus = async (orderId, data) => {
     try {
-      await axios.put(`/api/orders/${orderId}/status`, data);
-
+      await api.put(`/api/orders/${orderId}/status`, data);
       fetchOrders();
     } catch (err) {
       console.error("שגיאה בעדכון סטטוס:", err);
