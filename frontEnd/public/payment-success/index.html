@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Payment Successful</title>
+    <style>
+      body {
+        text-align: center;
+        padding: 40px;
+        font-family: sans-serif;
+      }
+    </style>
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        if (window.opener) {
+          window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
+          window.close();
+        } else if (window.parent) {
+          window.parent.postMessage({ type: "tranzila-payment-success" }, "*");
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h2>התשלום הצליח</h2>
+    <p>ניתן לסגור חלון זה.</p>
+  </body>
+</html>

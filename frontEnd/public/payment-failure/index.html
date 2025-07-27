@@ -1,0 +1,30 @@
+frontEnd/public/payment-failure/index.html New +28 -0
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Payment Failed</title>
+    <style>
+      body {
+        text-align: center;
+        padding: 40px;
+        font-family: sans-serif;
+      }
+    </style>
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        if (window.opener) {
+          window.opener.postMessage({ type: "tranzila-payment-failure" }, "*");
+          window.close();
+        } else if (window.parent) {
+          window.parent.postMessage({ type: "tranzila-payment-failure" }, "*");
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h2>התשלום נכשל</h2>
+    <p>אנא נסה שוב או פנה לתמיכה.</p>
+  </body>
+</html>
