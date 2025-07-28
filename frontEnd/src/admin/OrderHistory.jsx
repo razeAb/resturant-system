@@ -16,7 +16,8 @@ const formatTime = (timestamp) => {
 const getOrderHistory = async () => {
   try {
     const token = localStorage.getItem("token");
-    const response = await api.get(`/api/orders/history`, {      headers: {
+    const response = await api.get(`/api/orders/history`, {
+      headers: {
         Authorization: `Bearer ${token}`,
       },
     });
@@ -52,13 +53,13 @@ export default function OrderHistory() {
       });
   }, []);
 
-  if (loading) return <div className="text-center text-slate-400 py-10">Loading...</div>;
-  if (error) return <div className="text-center text-red-400 py-10">Error: {error}</div>;
-
   const filteredOrders = orders.filter((order) => {
     const orderDate = new Date(order.createdAt).toISOString().split("T")[0];
     return orderDate >= fromDate && orderDate <= toDate;
   });
+
+  if (loading) return <div className="text-center text-slate-400 py-10">Loading...</div>;
+  if (error) return <div className="text-center text-red-400 py-10">Error: {error}</div>;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative">
@@ -110,11 +111,13 @@ export default function OrderHistory() {
         </div>
 
         {filteredOrders.length === 0 ? (
-          <p className="text-white/70 p-4">אין הזמנות בהיסטוריה</p>
+          <>
+            <p className="text-white/70 p-4">אין הזמנות בהיסטוריה</p>
+            <p className="text-white/70 mt-2">סה\'כ כל ההזמנות: {orders.length}</p>
+          </>
         ) : (
           <div className="overflow-x-auto">
-            {/* ✅ Order count summary */}
-            <p className="text-white/70 mb-4">סה"כ הזמנות בטווח התאריכים: {filteredOrders.length}</p>
+            <p className="text-white/70 mb-4">סה\'כ הזמנות בטווח התאריכים: {filteredOrders.length}</p>
 
             <table className="min-w-full text-sm bg-[#2a2a2a] border-collapse">
               <thead>
