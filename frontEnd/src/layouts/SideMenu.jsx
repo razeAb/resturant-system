@@ -33,9 +33,9 @@ const SideMenu = ({ onClose }) => {
         <Link to="/admin/collections" className="menu-link">
           collections
         </Link>
-        <Link to="/admin/cash-register" className="menu-link">
+        <a href="https://hungry1.gotpose.com/" target="_blank" rel="noopener noreferrer" className="menu-link">
           קופה
-        </Link>
+        </a>
         <Link to="/" className="menu-link">
           חזרה לדף הבית
         </Link>
