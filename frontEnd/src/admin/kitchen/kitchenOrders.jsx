@@ -41,7 +41,8 @@ const KitchenOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get(`/api/orders/active`);      const allOrders = res.data;
+      const res = await api.get(`/api/orders/active`);
+      const allOrders = res.data;
 
       const kitchenOrders = allOrders.filter((order) => {
         if (order.deliveryOption === "EatIn") return true;
@@ -57,19 +58,23 @@ const KitchenOrders = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await api.put(`/api/orders/${id}/status`, { status });      fetchOrders();
+      await api.put(`/api/orders/${id}/status`, { status });
+      fetchOrders();
     } catch (err) {
       console.error("Error updating status", err);
     }
   };
 
   return (
-    <div className="flex">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative">
+      {/* Mobile Menu Button */}
+      <button onClick={() => setIsSidebarOpen(true)} className="md:hidden bg-[#2c2c2e] text-white px-4 py-3">
+        ☰ תפריט
+      </button>{" "}
       {/* Sidebar - Desktop */}
       <aside className="w-60 bg-[#2c2c2e] hidden md:block">
         <SideMenu />
       </aside>
-
       {/* Sidebar - Mobile */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-[#2c2c2e] z-50 transform transition-transform duration-300 ease-in-out ${
@@ -83,10 +88,8 @@ const KitchenOrders = () => {
         </div>
         <SideMenu />
       </div>
-
       {/* Overlay */}
       {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
-
       {/* Main Content */}
       <div className="min-h-screen bg-[#2a2a2a] text-white p-5 flex-1" dir="rtl">
         <OrderListTitle title="מסך מטבח" />
