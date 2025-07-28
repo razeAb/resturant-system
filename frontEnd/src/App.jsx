@@ -21,6 +21,7 @@ import PaymentFailure from "./pages/PaymentFailure";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
+import CashRegister from "./admin/CashRegister";
 
 const App = () => {
   return (
@@ -58,6 +59,7 @@ const App = () => {
               <Route path="/admin/activeOrders" element={<ActiveOrders />} />
               <Route path="/admin/orderHistory" element={<OrderHistory />} />
               <Route path="/admin/collections" element={<CollectionsReport />} />
+              <Route path="/admin/cash-register" element={<CashRegister />} />
               <Route path="/kitchen" element={<KitchenOrders />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
