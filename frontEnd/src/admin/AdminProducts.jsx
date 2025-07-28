@@ -13,15 +13,16 @@ const AdminProducts = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [restaurantOpen, setRestaurantOpen] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await api.get(`/api/admin/dashboard`, {          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get(`/api/admin/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
         setProducts(normalized);
+        setRestaurantOpen(normalized.every((p) => p.isActive));
       } catch (err) {
         console.error("שגיאה בטעינת מוצרים:", err);
         setError("שגיאה בטעינת מוצרים");
@@ -44,11 +45,22 @@ const AdminProducts = () => {
     }
   };
 
+  const handleToggleRestaurant = async (open) => {
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = open ? "/api/products/activate-all" : "/api/products/deactivate-all";
+      await api.patch(endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setProducts((prev) => prev.map((p) => ({ ...p, isActive: open })));
+      setRestaurantOpen(open);
+    } catch (error) {
+      console.error("שגיאה בעדכון סטטוס מסעדה:", error);
+    }
+  };
+
   const handleDelete = async (productId) => {
     try {
       const token = localStorage.getItem("token");
-      await api.delete(`/api/products/${productId}`, {        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/api/products/${productId}`, { headers: { Authorization: `Bearer ${token}` } });
 
       setProducts((prev) => prev.filter((p) => p._id !== productId));
     } catch (error) {
@@ -68,17 +80,14 @@ const AdminProducts = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative">
-      {/* כפתור תפריט מובייל */}
       <button onClick={() => setIsSidebarOpen(true)} className="md:hidden bg-[#2c2c2e] text-white px-4 py-3">
         ☰ תפריט
       </button>
 
-      {/* תפריט צד דסקטופ */}
       <aside className="w-60 bg-[#2c2c2e] hidden md:block">
         <SideMenu />
       </aside>
 
-      {/* תפריט צד מובייל */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-[#2c2c2e] z-50 transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -92,13 +101,18 @@ const AdminProducts = () => {
         <SideMenu />
       </div>
 
-      {/* רקע כהה כאשר תפריט פתוח */}
       {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* תוכן ראשי - RTL */}
       <main className="flex-1 p-5 overflow-x-auto text-right" dir="rtl">
-        <div className="text-center mb-6">
-          <Button title="הוסף מוצר חדש" onClick={() => setShowModal(true)} />
+        <div className="text-center mb-6 flex flex-wrap justify-center gap-4">
+          <Button
+            title="הוסף מוצר חדש"
+            onClick={() => {
+              setSelectedProduct(null);
+              setShowModal(true);
+            }}
+          />
+          <Button title={restaurantOpen ? "סגור את המסעדה" : "פתח את המסעדה"} onClick={() => handleToggleRestaurant(!restaurantOpen)} />
         </div>
 
         {showModal && !selectedProduct && (
