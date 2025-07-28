@@ -8,7 +8,6 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const failUrl = `${window.location.origin}${basePath}/payment-failure/index.html`;
   const terminal = "hungryvisa";
 
-  // ✅ Load Apple Pay SDK
   useEffect(() => {
     const script = document.createElement("script");
     script.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`;
@@ -16,7 +15,14 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
     document.body.appendChild(script);
   }, []);
 
-  // ✅ Listen for success/failure messages from iframe
+  // ✅ Auto-submit on mount
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.submit();
+    }
+  }, []);
+
+  // ✅ Listen for success/failure
   useEffect(() => {
     const handler = (e) => {
       if (e.data?.type === "tranzila-payment-success") {
@@ -43,32 +49,26 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         {/* Payment core settings */}
         <input type="hidden" name="sum" value={amount} />
         <input type="hidden" name="currency" value="1" />
-        <input type="hidden" name="tranmode" value="A" />
         <input type="hidden" name="success_url_address" value={successUrl} />
         <input type="hidden" name="fail_url_address" value={failUrl} />
 
-        {/* Payment methods */}
-        <input type="hidden" name="google_pay" value="1" />
-        <input type="hidden" name="apple_pay" value="1" />
-        <input type="hidden" name="bit_pay" value="1" />
-
-        {/* Optional styling and language */}
+        {/* Language and branding */}
         <input type="hidden" name="lang" value="il" />
         <input type="hidden" name="nologo" value="1" />
         <input type="hidden" name="trBgColor" value="#ffffff" />
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
 
-        {/* ✅ Hidden submit to let Apple/Google/Bit handle payment */}
-        <button type="submit" style={{ display: "none" }}>
-          Submit
-        </button>
+        {/* Modern payment methods */}
+        <input type="hidden" name="google_pay" value="1" />
+        <input type="hidden" name="tranmode" value="A" />
+        <input type="hidden" name="apple_pay" value="1" />
       </form>
 
-      {/* Iframe container */}
+      {/* Iframe container - adjusted to remove gap */}
       <div
         style={{
           width: "100%",
-          height: "565px",
+          height: "565px", // tweak as needed
           margin: 0,
           padding: 0,
           overflow: "hidden",
