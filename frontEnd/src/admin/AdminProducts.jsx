@@ -13,7 +13,6 @@ const AdminProducts = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [restaurantOpen, setRestaurantOpen] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,7 +21,6 @@ const AdminProducts = () => {
         const response = await api.get(`/api/admin/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
         setProducts(normalized);
-        setRestaurantOpen(normalized.every((p) => p.isActive));
       } catch (err) {
         console.error("שגיאה בטעינת מוצרים:", err);
         setError("שגיאה בטעינת מוצרים");
@@ -45,23 +43,10 @@ const AdminProducts = () => {
     }
   };
 
-  const handleToggleRestaurant = async (open) => {
-    try {
-      const token = localStorage.getItem("token");
-      const endpoint = open ? "/api/products/activate-all" : "/api/products/deactivate-all";
-      await api.patch(endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setProducts((prev) => prev.map((p) => ({ ...p, isActive: open })));
-      setRestaurantOpen(open);
-    } catch (error) {
-      console.error("שגיאה בעדכון סטטוס מסעדה:", error);
-    }
-  };
-
   const handleDelete = async (productId) => {
     try {
       const token = localStorage.getItem("token");
       await api.delete(`/api/products/${productId}`, { headers: { Authorization: `Bearer ${token}` } });
-
       setProducts((prev) => prev.filter((p) => p._id !== productId));
     } catch (error) {
       console.error("שגיאה במחיקת מוצר:", error);
@@ -112,7 +97,6 @@ const AdminProducts = () => {
               setShowModal(true);
             }}
           />
-          <Button title={restaurantOpen ? "סגור את המסעדה" : "פתח את המסעדה"} onClick={() => handleToggleRestaurant(!restaurantOpen)} />
         </div>
 
         {showModal && !selectedProduct && (

@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
+import Button from "../components/common/Button";
 
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [error, setError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [restaurantOpen, setRestaurantOpen] = useState(true);
+
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
@@ -18,11 +21,11 @@ const AdminDashboard = () => {
     const fetchDashboard = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await api.get("/api/admin/dashboard", {          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/api/admin/dashboard", { headers: { Authorization: `Bearer ${token}` } });
 
         const data = response.data;
         setDashboardData(data);
+        setRestaurantOpen(data.products.every((p) => p.isActive));
 
         const total = data.orders
           .filter((order) => order.status === ORDER_STATUS.DONE && order.createdAt.startsWith(selectedDate))
@@ -36,6 +39,18 @@ const AdminDashboard = () => {
     };
     fetchDashboard();
   }, [selectedDate]);
+
+  const handleToggleRestaurant = async (open) => {
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = open ? "/api/products/activate-all" : "/api/products/deactivate-all";
+      await api.patch(endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setDashboardData((prev) => ({ ...prev, products: prev.products.map((p) => ({ ...p, isActive: open })) }));
+      setRestaurantOpen(open);
+    } catch (error) {
+      console.error("שגיאה בעדכון סטטוס מסעדה:", error);
+    }
+  };
 
   if (error) return <div className="text-red-400 text-center py-10 font-medium">{error}</div>;
   if (!dashboardData) return <div className="text-slate-400 text-center py-10">טוען נתונים...</div>;
@@ -86,6 +101,7 @@ const AdminDashboard = () => {
                 className="mr-2 px-3 py-1 bg-[#1f1f1f] border border-white/20 rounded text-white"
               />
             </label>
+            <Button title={restaurantOpen ? "סגור את המסעדה" : "פתח את המסעדה"} onClick={() => handleToggleRestaurant(!restaurantOpen)} />
           </div>
         </header>
 
