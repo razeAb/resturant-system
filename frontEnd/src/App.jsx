@@ -22,6 +22,7 @@ import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
 import CashRegister from "./admin/CashRegister";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 const App = () => {
   return (

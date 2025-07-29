@@ -2,15 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="photos/logo1.jpg" href="photos/logo1.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>hungry</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="photos/logo1.jpg" />
+
+    <!-- Font Awesome (replace with your actual kit ID or use CDN version) -->
+    <script src="https://kit.fontawesome.com/yourkitid.js" crossorigin="anonymous"></script>
+
+    <!-- Tailwind (optional if you're not injecting via PostCSS) -->
+    <!-- <link href="/dist/output.css" rel="stylesheet"> -->
   </head>
+
   <body>
     <div id="root"></div>
+
+    <!-- React Entry -->
     <script type="module" src="/src/main.jsx"></script>
-    <!-- Load Tranzila\'s jQuery and Apple Pay library for iframe payments -->
+
+    <!-- Tranzila's jQuery and Apple Pay scripts -->
     <script type="text/javascript" src="https://direct.tranzila.com/Tranzila_files/jquery.js"></script>
     <script>
       document.write('<script src="https://direct.tranzila.com/js/tranzilanapple_v3.js?v=' + Date.now() + '"><\\/script>');
