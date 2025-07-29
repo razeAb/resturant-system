@@ -1,3 +1,4 @@
+// Fixed ActiveOrders with updated design and logic
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import { ORDER_STATUS } from "../../constants/orderStatus";
@@ -37,9 +38,8 @@ export default function ActiveOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/api/orders");
-      const filtered = res.data.orders.filter((o) => o.status !== ORDER_STATUS.DONE);
-      setOrders(filtered);
+      const res = await api.get("/api/orders/active");
+      setOrders(res.data || []);
     } catch (err) {
       console.error("Error fetching orders", err);
       setOrders([]);
@@ -80,62 +80,62 @@ export default function ActiveOrders() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0f1015] text-white font-[Inter]">
+    <div className="min-h-screen flex bg-[#0f1015] text-white font-[Inter]" dir="rtl">
       {/* Sidebar */}
       <aside className="w-[260px] bg-[#0c0d12] p-6 hidden md:flex flex-col justify-between">
         <div>
           <div className="text-3xl font-bold text-white mb-10">
-            <span className="text-[#40f99b]">Sedap</span>.<div className="text-xs font-normal text-[#7d808a]">Modern Admin Dashboard</div>
+            <span className="text-[#40f99b]">Sedap</span>.<div className="text-xs font-normal text-[#7d808a]">מערכת ניהול</div>
           </div>
           <nav className="flex flex-col gap-4 text-[#7d808a] text-sm">
             <div className="flex items-center gap-3">
-              <i className="fas fa-th-large" /> Dashboard
+              <i className="fas fa-th-large" /> לוח בקרה
             </div>
             <div className="flex items-center gap-3 text-[#40f99b] font-medium">
-              <i className="fas fa-list-ul" /> Order List
+              <i className="fas fa-list-ul" /> רשימת הזמנות
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-file-alt" /> Order Detail
+              <i className="fas fa-file-alt" /> פרטי הזמנה
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-user" /> Customer
+              <i className="fas fa-user" /> לקוחות
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-chart-bar" /> Analytics
+              <i className="fas fa-chart-bar" /> אנליטיקות
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-star" /> Reviews
+              <i className="fas fa-star" /> ביקורות
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-utensils" /> Foods
+              <i className="fas fa-utensils" /> מנות
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-info-circle" /> Food Detail
+              <i className="fas fa-info-circle" /> פרטי מנה
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-id-card" /> Customer Detail
+              <i className="fas fa-id-card" /> פרטי לקוח
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-calendar-alt" /> Calendar
+              <i className="fas fa-calendar-alt" /> יומן
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-comments" /> Chat
+              <i className="fas fa-comments" /> צ'אט
             </div>
             <div className="flex items-center gap-3">
-              <i className="fas fa-wallet" /> Wallet
+              <i className="fas fa-wallet" /> ארנק
             </div>
           </nav>
         </div>
         <div className="bg-[#1f222d] rounded-lg p-4 text-center text-sm mt-4">
-          <img src="https://placehold.co/160x100" alt="Add Menu" className="mx-auto mb-2" />
-          <p className="mb-2">Please, organize your menu through button below!</p>
-          <button className="bg-[#40f99b] text-black font-semibold px-4 py-2 rounded">+ Add Menus</button>
+          <img src="https://placehold.co/160x100" alt="הוסף תפריט" className="mx-auto mb-2" />
+          <p className="mb-2">סדר את התפריט שלך באמצעות הכפתור למטה!</p>
+          <button className="bg-[#40f99b] text-black font-semibold px-4 py-2 rounded">+ הוסף תפריט</button>
         </div>
         <div className="text-xs text-[#7d808a] mt-6">
-          Sedap Restaurant Admin Dashboard
-          <br />© 2023 All Rights Reserved
+          מערכת ניהול מסעדה
+          <br />© 2023 כל הזכויות שמורות
           <br />
-          Made with ❤️ by Peterdraw
+          נוצר באהבה על ידי Peterdraw
         </div>
       </aside>
 
@@ -143,7 +143,7 @@ export default function ActiveOrders() {
       <main className="flex-1 p-8">
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-6">
-          <input type="text" placeholder="Search here" className="bg-[#1a1c24] placeholder-[#7d808a] text-white px-4 py-2 rounded w-1/3" />
+          <input type="text" placeholder="חיפוש" className="bg-[#1a1c24] placeholder-[#7d808a] text-white px-4 py-2 rounded w-1/3" />
           <div className="flex items-center gap-4">
             <div className="flex gap-3 text-lg text-[#7d808a]">
               <i className="fas fa-comment" />
@@ -152,31 +152,31 @@ export default function ActiveOrders() {
               <i className="fas fa-cog" />
             </div>
             <div className="text-sm">
-              Hello, <span className="font-semibold text-white">Admin</span>
+              שלום, <span className="font-semibold text-white">Admin</span>
             </div>
             <img src="https://placehold.co/40x40" alt="Admin" className="rounded-full" />
           </div>
         </div>
 
-        <h1 className="text-2xl font-semibold mb-2">Your Orders</h1>
-        <p className="text-sm text-[#7d808a] mb-6">This is your order list data</p>
+        <h1 className="text-2xl font-semibold mb-2">הזמנות פעילות</h1>
+        <p className="text-sm text-[#7d808a] mb-6">רשימת ההזמנות הפעילות</p>
 
         {/* Filters */}
         <div className="flex gap-4 mb-4">
-          <button className="bg-[#00c48c] text-white px-4 py-2 rounded font-medium">All Status</button>
-          <button className="bg-[#1a1c24] text-white px-4 py-2 rounded font-medium">Today</button>
+          <button className="bg-[#00c48c] text-white px-4 py-2 rounded font-medium">כל הסטטוסים</button>
+          <button className="bg-[#1a1c24] text-white px-4 py-2 rounded font-medium">היום</button>
         </div>
 
         {/* Table */}
         <div className="rounded-lg overflow-hidden">
           <div className="grid grid-cols-7 bg-[#00c48c] text-sm font-medium text-white px-4 py-3">
-            <div>Order ID</div>
-            <div>Date</div>
-            <div>Customer Name</div>
-            <div>Delivery</div>
-            <div>Amount</div>
-            <div>Status</div>
-            <div>Action</div>
+            <div>מספר הזמנה</div>
+            <div>תאריך</div>
+            <div>שם לקוח</div>
+            <div>משלוח</div>
+            <div>סכום</div>
+            <div>סטטוס</div>
+            <div>פעולות</div>
           </div>
 
           {orders.map((order) => (
@@ -195,7 +195,7 @@ export default function ActiveOrders() {
                     className="bg-[#00c48c] text-black px-2 py-1 rounded"
                     onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
                   >
-                    {expandedOrderId === order._id ? "Hide" : "Details"}
+                    {expandedOrderId === order._id ? "הסתר" : "פרטים"}
                   </button>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function ActiveOrders() {
 
         {/* Footer */}
         <div className="text-sm text-[#7d808a] mt-4">
-          Showing {orders.length} from {orders.length} data
+          מציג {orders.length} מתוך {orders.length} הזמנות
         </div>
         <div className="flex gap-2 mt-2">
           {[1, 2, 3, 4].map((num) => (

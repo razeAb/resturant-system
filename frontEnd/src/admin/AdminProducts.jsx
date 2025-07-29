@@ -192,7 +192,7 @@ const AdminProducts = () => {
                 const totalQty = orderQty.reduce((sum, i) => sum + (i.quantity || 1), 0);
                 return acc + totalQty;
               }, 0);
-              const totalOrdered = orders.reduce((acc, o) => acc + o.items.length, 0);
+              const totalOrdered = orders.flatMap((o) => o.items).reduce((sum, item) => sum + (item.quantity || 1), 0);
               const percent = totalOrdered ? Math.round((categoryCount / totalOrdered) * 100) : 0;
 
               return (
