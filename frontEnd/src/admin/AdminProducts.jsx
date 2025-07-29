@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaSearch, FaEdit, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import AdminLayout from "../layouts/AdminLayout";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import AddProductModal from "./modals/AddProductMoadl";

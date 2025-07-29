@@ -9,19 +9,21 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [restaurantOpen, setRestaurantOpen] = useState(true);
+  const [dailyRevenue, setDailyRevenue] = useState(0);
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     return today.toISOString().split("T")[0];
   });
-  const [dailyRevenue, setDailyRevenue] = useState(0);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await api.get("/api/admin/dashboard", { headers: { Authorization: `Bearer ${token}` } });
+        const response = await api.get("/api/admin/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         const data = response.data;
         setDashboardData(data);
@@ -45,7 +47,10 @@ const AdminDashboard = () => {
       const token = localStorage.getItem("token");
       const endpoint = open ? "/api/products/activate-all" : "/api/products/deactivate-all";
       await api.patch(endpoint, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setDashboardData((prev) => ({ ...prev, products: prev.products.map((p) => ({ ...p, isActive: open })) }));
+      setDashboardData((prev) => ({
+        ...prev,
+        products: prev.products.map((p) => ({ ...p, isActive: open })),
+      }));
       setRestaurantOpen(open);
     } catch (error) {
       console.error("שגיאה בעדכון סטטוס מסעדה:", error);
@@ -58,17 +63,16 @@ const AdminDashboard = () => {
   const { topCustomers, hotProducts, coldProducts, products } = dashboardData;
 
   return (
-    <div className="min-h-screen flex font-[Inter] text-white bg-[#0f1015]" dir="rtl">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col items-center w-[260px] bg-[#0c0d12] py-6">
-        <img src="/logo.png" alt="Logo" className="w-32 mb-6" />
+    <div className="min-h-screen bg-[#0f1015] text-white font-[Inter]" dir="rtl">
+      {/* Fixed Sidebar Desktop */}
+      <aside className="hidden md:block fixed top-0 left-0 h-full w-64 bg-[#0c0d12] z-50">
         <SideMenu />
       </aside>
 
-      {/* Sidebar - Mobile Drawer */}
+      {/* Mobile Sidebar (slide in) */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-[#0c0d12] z-50 transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed top-0 left-0 h-full w-64 bg-[#0c0d12] z-50 transform transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:hidden`}
       >
         <div className="flex justify-end p-4">
@@ -76,35 +80,38 @@ const AdminDashboard = () => {
             ❌
           </button>
         </div>
-        <img src="/logo.png" alt="Logo" className="w-32 mx-auto mb-4" />
         <SideMenu />
       </div>
 
-      {/* Overlay when sidebar open */}
-      {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
-<main className="flex-1 p-6 md:mr-[260px] space-y-8">
-        {/* Mobile Toggle */}
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <main className="md:pl-64 p-6 space-y-8">
+        {/* Mobile Menu Button */}
         <button onClick={() => setIsSidebarOpen(true)} className="md:hidden bg-[#2c2c2e] text-white px-4 py-3">
           ☰ תפריט
         </button>
 
-        {/* Top Bar */}
-        <div className="flex justify-between items-center mb-6">
-          <input type="text" placeholder="חפש כאן" className="bg-[#1a1c24] placeholder-[#7d808a] text-white px-4 py-2 rounded w-[300px]" />
+        {/* Topbar */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <div className="flex gap-3 text-lg text-[#7d808a]">
-              <i className="fas fa-comment" />
-              <i className="fas fa-bell" />
-              <i className="fas fa-shopping-cart" />
-              <i className="fas fa-cog" />
-            </div>
-            <div className="text-sm">
-              שלום, <span className="font-semibold text-white">אדמין</span>
-            </div>
-            <img src="https://placehold.co/40x40" alt="Admin" className="rounded-full" />
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 bg-white rounded" />
+            <h1 className="text-2xl font-bold text-white">📊 לוח הבקרה</h1>
           </div>
+          <input
+            type="text"
+            placeholder="חפש כאן"
+            className="bg-[#1a1c24] placeholder-[#7d808a] text-white px-4 py-2 rounded w-full sm:w-[300px]"
+          />
         </div>
 
+        {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <label className="text-sm flex items-center">
             בחר תאריך:
@@ -115,7 +122,10 @@ const AdminDashboard = () => {
               className="mr-2 px-3 py-1 bg-[#1f1f1f] border border-white/20 rounded text-white"
             />
           </label>
-          <Button title={restaurantOpen ? "סגור את המסעדה" : "פתח את המסעדה"} onClick={() => handleToggleRestaurant(!restaurantOpen)} />
+          <Button
+            title={restaurantOpen ? "סגור את המסעדה" : "פתח את המסעדה"}
+            onClick={() => handleToggleRestaurant(!restaurantOpen)}
+          />
         </div>
 
         {/* Metrics */}
@@ -127,9 +137,10 @@ const AdminDashboard = () => {
             icon="fas fa-truck"
           />
           <MetricCard title="מוצרים" value={products.length} icon="fas fa-hamburger" />
-          <MetricCard title="סך ההכנסות" value={`₪${dashboardData.totalRevenue}`} icon="fas fa-dollar-sign" />
+          <MetricCard title="הכנסות להיום" value={`₪${dailyRevenue}`} icon="fas fa-shekel-sign" />
         </div>
 
+        {/* Top Customers */}
         <section>
           <h2 className="text-lg font-semibold mb-2">לקוחות מובילים</h2>
           <ul className="bg-[#1a1c24] rounded-xl p-4 divide-y divide-[#0f1015]">
@@ -142,6 +153,7 @@ const AdminDashboard = () => {
           </ul>
         </section>
 
+        {/* Products */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <section>
             <h2 className="text-lg font-semibold mb-2">מוצרים חמים</h2>
@@ -154,7 +166,6 @@ const AdminDashboard = () => {
               ))}
             </ul>
           </section>
-
           <section>
             <h2 className="text-lg font-semibold mb-2">מוצרים קרים</h2>
             <ul className="bg-[#1a1c24] rounded-xl p-4 divide-y divide-[#0f1015]">
