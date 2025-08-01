@@ -56,7 +56,7 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         <input type="hidden" name="currency" value="1" />
 
         {/* 🟦 Terminal & Supplier Info */}
-        <input type="hidden" name="supplier" value={supplier} />
+        <input type="hidden" name="terminal" value={terminal} />
         <input type="hidden" name="cred_type" value="1" />
 
         {/* 🟦 URLs */}
