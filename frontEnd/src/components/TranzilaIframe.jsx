@@ -72,7 +72,7 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         {/* 🟦 Payment Methods */}
         <input type="hidden" name="apple_pay" value="1" />
         <input type="hidden" name="google_pay" value="1" />
-        <input type="hidden" name="tranmode" value="A" />
+        <input type="hidden" name="tranmode" value="V" />
       </form>
 
       {/* 🟩 iFrame Display */}
