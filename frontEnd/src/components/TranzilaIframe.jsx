@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
   const formRef = useRef(null);
 
-  const supplier = "0054874"; // Your Tranzila supplier ID
+  const supplier = "54874"; // Your Tranzila supplier ID
   const terminal = "hungryvisa"; // Your terminal name
 
   const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
