@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { auth } from "../firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { initializeFirebase } from "../firebase"; // ✅ שימוש נכון
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +15,7 @@ const ResetPassword = () => {
     setSuccess("");
 
     try {
-      // Send the password reset email
+      const { auth } = await initializeFirebase(); // ✅ קבל את האובייקט מהפונקציה
       await sendPasswordResetEmail(auth, email);
       setSuccess("Password reset email sent! Please check your inbox.");
     } catch (error) {

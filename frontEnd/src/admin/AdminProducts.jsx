@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import AddProductModal from "./modals/AddProductMoadl";
 import EditProductModal from "./modals/EditProductModal";
@@ -18,9 +18,7 @@ const AdminProducts = () => {
     const fetchProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get(`/api/admin/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
         const normalized = response.data.products.map((p) => ({ ...p, isActive: Boolean(p.isActive) }));
         setProducts(normalized);
       } catch (err) {
@@ -34,8 +32,9 @@ const AdminProducts = () => {
   const handleToggleActive = async (productId, currentStatus) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(
-`${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}/toggle-active`,        { isActive: !currentStatus },
+      await api.patch(
+        `/api/products/${productId}/toggle-active`,
+        { isActive: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setProducts((prev) => prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p)));
@@ -47,12 +46,7 @@ const AdminProducts = () => {
   const handleDelete = async (productId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await api.delete(`/api/products/${productId}`, { headers: { Authorization: `Bearer ${token}` } });
       setProducts((prev) => prev.filter((p) => p._id !== productId));
     } catch (error) {
       console.error("שגיאה במחיקת מוצר:", error);
@@ -71,17 +65,14 @@ const AdminProducts = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative">
-      {/* כפתור תפריט מובייל */}
       <button onClick={() => setIsSidebarOpen(true)} className="md:hidden bg-[#2c2c2e] text-white px-4 py-3">
         ☰ תפריט
       </button>
 
-      {/* תפריט צד דסקטופ */}
       <aside className="w-60 bg-[#2c2c2e] hidden md:block">
         <SideMenu />
       </aside>
 
-      {/* תפריט צד מובייל */}
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-[#2c2c2e] z-50 transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -95,13 +86,17 @@ const AdminProducts = () => {
         <SideMenu />
       </div>
 
-      {/* רקע כהה כאשר תפריט פתוח */}
       {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* תוכן ראשי - RTL */}
       <main className="flex-1 p-5 overflow-x-auto text-right" dir="rtl">
-        <div className="text-center mb-6">
-          <Button title="הוסף מוצר חדש" onClick={() => setShowModal(true)} />
+        <div className="text-center mb-6 flex flex-wrap justify-center gap-4">
+          <Button
+            title="הוסף מוצר חדש"
+            onClick={() => {
+              setSelectedProduct(null);
+              setShowModal(true);
+            }}
+          />
         </div>
 
         {showModal && !selectedProduct && (

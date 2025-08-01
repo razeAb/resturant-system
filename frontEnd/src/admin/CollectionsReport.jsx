@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 
 const CollectionsReport = () => {
@@ -23,8 +23,7 @@ const CollectionsReport = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/collections`,
+      const res = await api.get(        `/api/admin/collections`,
         {
           params: { startDate: fromDate, endDate: toDate },
           headers: { Authorization: `Bearer ${token}` },

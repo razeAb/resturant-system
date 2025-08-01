@@ -10,5 +10,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Load Tranzila\'s jQuery and Apple Pay library for iframe payments -->
+    <script type="text/javascript" src="https://direct.tranzila.com/Tranzila_files/jquery.js"></script>
+    <script>
+      document.write('<script src="https://direct.tranzila.com/js/tranzilanapple_v3.js?v=' + Date.now() + '"><\\/script>');
+    </script>
+    <script>
+      var $n = jQuery.noConflict(true);
+    </script>
   </body>
 </html>

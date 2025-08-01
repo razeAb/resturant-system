@@ -138,6 +138,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
             { name: "אונטרייב", prices: { 50: 13, 100: 26 } },
             { name: "אסאדו", prices: { 50: 15, 100: 30 } },
             { name: "צוואר טלה", prices: { 50: 15, 100: 30 } },
+            { name: "בריסקת", prices: { 50: 13, 100: 26 } },
           ].map((addition, index) => (
             <div key={index} className="addition-buttons">
               <span>{addition.name}</span>

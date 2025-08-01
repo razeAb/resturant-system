@@ -2,9 +2,9 @@ import { useEffect } from "react";
 
 const PaymentSuccess = () => {
   useEffect(() => {
-    // notify parent window (iframe or opener) that payment succeeded
     if (window.opener) {
       window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
+      window.close(); // ✅ Auto-close the tab if opened in a new window
     } else if (window.parent) {
       window.parent.postMessage({ type: "tranzila-payment-success" }, "*");
     }

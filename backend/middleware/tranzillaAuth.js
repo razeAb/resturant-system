@@ -7,7 +7,7 @@ function generateNonce(length = 80) {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-async function sendTranzilaRequest(data, endpoint) {
+async function sendTranzilaRequest(data, endpoint, method = "POST") {
   const appKey = process.env.TRANZILA_PUBLIC_KEY;
   const secretKey = process.env.TRANZILA_SECRET_KEY;
 
@@ -26,7 +26,12 @@ async function sendTranzilaRequest(data, endpoint) {
   };
 
   try {
-    const response = await axios.post(endpoint, data, { headers });
+    let response;
+    if (method.toUpperCase() === "GET") {
+      response = await axios.get(endpoint, { params: data, headers });
+    } else {
+      response = await axios.post(endpoint, data, { headers });
+    }
     return response.data;
   } catch (error) {
     console.error("🔴 Tranzila request failed:", error.response?.data || error.message);

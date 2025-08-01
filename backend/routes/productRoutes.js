@@ -5,9 +5,6 @@ const multer = require("multer");
 const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware"); // Add isAdmin if needed
 
-
-
-
 // ✅ Get All Products
 router.get("/", async (req, res) => {
   try {
@@ -22,7 +19,7 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image,  category, isWeighted } = req.body;
+    const { name, price, stock, description, image, category, isWeighted } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
@@ -46,6 +43,26 @@ router.patch("/:id/toggle-active", async (req, res) => {
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Failed to update product status" });
+  }
+});
+
+// ✅ Activate all products (open restaurant)
+router.patch("/activate-all", protect, async (req, res) => {
+  try {
+    await Product.updateMany({}, { isActive: true });
+    res.json({ message: "All products activated" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to activate all products" });
+  }
+});
+
+// ✅ Deactivate all products (close restaurant)
+router.patch("/deactivate-all", protect, async (req, res) => {
+  try {
+    await Product.updateMany({}, { isActive: false });
+    res.json({ message: "All products deactivated" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to deactivate all products" });
   }
 });
 

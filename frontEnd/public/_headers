@@ -1,2 +1,4 @@
-/*
-  Content-Security-Policy: frame-ancestors https://*.tranzila.com https://hf.tranzila.com https://hungryresturant.netlify.app;
+# Allow embedding the site from any origin. This resolves blank pages
+  # when the application is loaded inside an iframe on other domains.
+  # Adjust the policy as needed if you want to restrict embedding.
+  Content-Security-Policy: frame-ancestors *;

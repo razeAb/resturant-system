@@ -24,7 +24,7 @@ router.get("/apple-pay-handshake", async (req, res) => {
       terminal_name: process.env.TRANZILA_TERMINAL,
     };
 
-    const response = await sendTranzilaRequest(requestData, endpoint);
+    const response = await sendTranzilaRequest(requestData, endpoint, "GET");
     res.status(200).json(response);
   } catch (err) {
     console.error("Handshake error:", err.response?.data || err.message);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { auth, googleProvider } from "../firebase";
 import { signInWithPopup } from "firebase/auth";
+import { initializeFirebase } from "../firebase"; // ✅ חדש
 import { AuthContext } from "../context/AuthContext";
 import CartContext from "../context/CartContext";
 
@@ -17,23 +17,21 @@ const formatPhoneNumber = (number) => {
 const Login = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { clearCart } = useContext(CartContext); // ✅ get clearCart
+  const { clearCart } = useContext(CartContext);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Email and password login
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, { email, password });
-      const user = response.data.user;
+      const response = await api.post(`/api/auth/login`, { email, password });      const user = response.data.user;
 
-      clearCart(); // ✅ clear cart from context
-      localStorage.removeItem("cartItems"); // ✅ remove local cart
+      clearCart();
+      localStorage.removeItem("cartItems");
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -46,10 +44,10 @@ const Login = () => {
     }
   };
 
-  // ✅ Google login
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      const { auth, googleProvider } = await initializeFirebase(); // ✅ שורה חדשה
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
@@ -63,10 +61,9 @@ const Login = () => {
     }
   };
 
-  // ✅ Send user data to backend
   const sendUserToBackend = async (user, token) => {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/api/auth/firebase-login`,
+    const response = await api.post(
+      `/api/auth/firebase-login`,
       {
         name: user.displayName,
         email: user.email,
@@ -86,7 +83,6 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
-        {/* 🔥 Logo */}
         <RouterLink to="/">
           <img src="/photos/logo1.jpg" alt="Logo" className="w-20 h-20 mx-auto mb-4" />
         </RouterLink>

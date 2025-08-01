@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="he">
+  <head>
+    <meta charset="UTF-8" />
+    <title>התשלום הצליח</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #ecfdf5; /* soft green background */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #065f46; /* dark green text */
+        text-align: center;
+        direction: rtl;
+      }
+
+      .container {
+        background: #fff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
+      }
+
+      h2 {
+        font-size: 28px;
+        margin-bottom: 16px;
+      }
+
+      p {
+        font-size: 18px;
+        margin-bottom: 32px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #10b981;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #059669;
+      }
+    </style>
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        if (window.opener) {
+          window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
+          window.close();
+        } else if (window.parent) {
+          window.parent.postMessage({ type: "tranzila-payment-success" }, "*");
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>התשלום הצליח ✅</h2>
+      <p>ניתן לסגור חלון זה או לחזור לעמוד הבית.</p>
+      <a class="button" href="/">חזרה לעמוד הבית</a>
+    </div>
+  </body>
+</html>

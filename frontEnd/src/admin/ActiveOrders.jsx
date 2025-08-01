@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../api";
 import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
 const formatTime = (timestamp) => {
-  const date = new Date(timestamp);
+  const date = new Date(new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
   const now = new Date();
   const diffMs = now - date;
   const diffMinutes = Math.floor(diffMs / 60000);
@@ -77,10 +77,11 @@ const ActiveOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders`);
-      const newOrderList = res.data.orders.filter(
-        (order) => order.status !== ORDER_STATUS.DONE && order.status !== ORDER_STATUS.DELIVERING
-      );
+      const res = await api.get("/api/orders");
+
+      // ✅ Only hide DONE orders — keep DELIVERING visible
+      const newOrderList = res.data.orders.filter((order) => order.status !== ORDER_STATUS.DONE);
+
       const currentCount = newOrderList.length;
       const prevCount = prevOrderCountRef.current;
 
@@ -105,7 +106,7 @@ const ActiveOrdersPage = () => {
 
   const updateOrderStatus = async (orderId, data) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/status`, data);
+      await api.put(`/api/orders/${orderId}/status`, data);
       fetchOrders();
     } catch (err) {
       console.error("שגיאה בעדכון סטטוס:", err);
@@ -115,7 +116,8 @@ const ActiveOrdersPage = () => {
   const deleteOrder = async (orderId) => {
     if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`);
+      await api.delete(`/api/orders/${orderId}`);
+
       fetchOrders();
     } catch (err) {
       alert("שגיאה במחיקת ההזמנה");
@@ -349,14 +351,19 @@ const ActiveOrdersPage = () => {
                             )}
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                              {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.PREPARING ? (
+                              {/* Show “Start Delivery” button if preparing and delivery */}
+                              {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.PREPARING && (
                                 <button
                                   className="bg-blue-600 text-white font-bold rounded px-4 py-2"
                                   onClick={() => markAsDelivering(order._id)}
                                 >
                                   במשלוח
                                 </button>
-                              ) : (
+                              )}
+
+                              {/* Show “Mark as Done” if already in delivery OR not a delivery order */}
+                              {((order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.DELIVERING) ||
+                                order.deliveryOption !== "Delivery") && (
                                 <button
                                   className="bg-green-500 text-white font-bold rounded px-4 py-2"
                                   onClick={() => markAsDone(order._id)}
@@ -364,6 +371,7 @@ const ActiveOrdersPage = () => {
                                   סמן כהושלם
                                 </button>
                               )}
+
                               <button
                                 className="bg-yellow-600 text-white font-bold rounded px-4 py-2"
                                 onClick={() => {

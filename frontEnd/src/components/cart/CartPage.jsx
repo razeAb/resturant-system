@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
-import axios from "axios";
+import api from "../../api";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
@@ -25,6 +25,7 @@ const CartPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
 
   const deliveryFee = 25;
 
@@ -86,9 +87,9 @@ const CartPage = () => {
         // ✅ Reset order count to 0 and reset drink coupon usage
         const token = localStorage.getItem("token");
 
-        axios
+        api
           .patch(
-            `${import.meta.env.VITE_API_BASE_URL}/api/users/${_id}`,
+            `/api/users/${_id}`,
             {
               orderCount: 0,
               usedDrinkCoupon: false,
@@ -125,10 +126,14 @@ const CartPage = () => {
       }
     }
 
-    if (paymentMethod !== "Card") {
-      // For Cash submit immediately
-      submitOrderToBackend(deliveryOption);
+    if (paymentMethod === "Card") {
+      if (paymentResult !== "success") {
+        alert("אנא השלם את התשלום לפני שליחת ההזמנה");
+        return;
+      }
     }
+
+    submitOrderToBackend(deliveryOption);
   };
 
   //submitting order to backend
@@ -174,7 +179,7 @@ const CartPage = () => {
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, payload);
+      const response = await api.post(`/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -182,7 +187,7 @@ const CartPage = () => {
       if (loggedInUserId) {
         try {
           const token = localStorage.getItem("token");
-          const profile = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
+          const profile = await api.get(`/api/users/profile`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           updateUser(profile.data.user);
@@ -559,6 +564,7 @@ const CartPage = () => {
                       onClick={() => {
                         setPaymentMethod("Cash");
                         setShowCardPayment(false);
+                        setPaymentResult(null);
                       }}
                       style={{
                         flex: "1",
@@ -580,6 +586,7 @@ const CartPage = () => {
                       onClick={() => {
                         setPaymentMethod("Card");
                         setShowCardPayment(true);
+                        setPaymentResult(null);
                       }}
                       style={{
                         flex: "1",
@@ -678,31 +685,68 @@ const CartPage = () => {
                     שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                   </p>
                 )}
-                {paymentMethod === "Card" && showCardPayment && (
+                {paymentMethod === "Card" && showCardPayment && !paymentResult && (
                   <TranzilaIframe
                     amount={calculateFinalTotal()}
                     onSuccess={() => {
-                      handleFinalSubmit();
-                      submitOrderToBackend(deliveryOption);
+                      setPaymentResult("success");
+                      setShowCardPayment(false);
                     }}
                     onFailure={() => {
-                      alert("שגיאה בתשלום");
+                      setPaymentResult("failure");
+                      setShowCardPayment(false);
                     }}
                   />
                 )}
+                {paymentResult === "success" && (
+                  <div style={{ textAlign: "center", marginTop: "20px" }}>
+                    <img src="/icons/check-success.svg" alt="Success" style={{ width: "60px", marginBottom: "10px" }} />
+                    <h3 style={{ color: "#16a34a" }}>התשלום הצליח!</h3>
+                    <p>ניתן כעת להשלים את ההזמנה</p>
+                  </div>
+                )}
+                {paymentResult === "failure" && (
+                  <div style={{ textAlign: "center", marginTop: "20px" }}>
+                    <img src="/icons/fail-icon.svg" alt="Failure" style={{ width: "60px", marginBottom: "10px" }} />
+                    <h3 style={{ color: "#dc2626" }}>התשלום נכשל</h3>
+                    <p>אנא נסה שוב או נסה אמצעי תשלום אחר</p>
+                    <button
+                      onClick={() => {
+                        setPaymentResult(null);
+                        setShowCardPayment(true);
+                      }}
+                      style={{
+                        marginTop: "15px",
+                        padding: "10px 20px",
+                        backgroundColor: "#1d4ed8",
+                        color: "white",
+                        borderRadius: "8px",
+                        border: "none",
+                      }}
+                    >
+                      נסה שוב
+                    </button>
+                  </div>
+                )}
+              
+                
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={!paymentMethod || !deliveryOption}
+                    disabled={!paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")}
                     style={{
                       padding: "12px 24px",
-                      backgroundColor: !paymentMethod || !deliveryOption ? "gray" : "green",
+                      backgroundColor:
+                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success") ? "gray" : "green",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "bold",
                       borderRadius: "8px",
-                      cursor: !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
+                      cursor:
+                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                          ? "not-allowed"
+                          : "pointer",
                       border: "none",
                     }}
                   >

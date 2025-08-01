@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
-import { auth, googleProvider } from "../firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { initializeFirebase } from "../firebase"; // ✅ שימוש נכון
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,38 +21,7 @@ const Register = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setError(""); // Clear error when user types
-  };
-
-  // Function to initialize RecaptchaVerifier on demand when needed
-  const setupRecaptcha = () => {
-    // Always create a new instance when needed and don't store it globally
-    try {
-      // Clear any existing recaptcha first
-      const recaptchaContainer = document.getElementById("recaptcha-container");
-      while (recaptchaContainer.firstChild) {
-        recaptchaContainer.removeChild(recaptchaContainer.firstChild);
-      }
-
-      // Create new invisible RecaptchaVerifier
-      const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-        size: "invisible",
-        callback: (response) => {
-          console.log("reCAPTCHA verified successfully");
-        },
-        "expired-callback": () => {
-          console.log("reCAPTCHA expired");
-          setError("Security verification expired. Please try again.");
-        },
-      });
-
-      // Render the reCAPTCHA widget
-      return recaptchaVerifier.render();
-    } catch (error) {
-      console.error("Error setting up reCAPTCHA:", error);
-      setError(`Error setting up security verification: ${error.message}`);
-      return null;
-    }
+    setError("");
   };
 
   const sendVerificationCode = async () => {
@@ -64,22 +33,24 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Set up recaptcha on demand
+      const { auth } = await initializeFirebase();
+
       const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
         size: "invisible",
         callback: () => {
           console.log("reCAPTCHA verified");
         },
+        "expired-callback": () => {
+          console.log("reCAPTCHA expired");
+          setError("Security verification expired. Please try again.");
+        },
       });
 
-      await recaptchaVerifier.render(); // Make sure to render it
+      await recaptchaVerifier.render();
 
-      // Format the phone number for Israel
       const formattedPhone = `+972${formData.phone.replace(/^0/, "")}`;
-      console.log("Sending code to:", formattedPhone);
-
-      // Send the verification code
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
+
       setConfirmationResult(confirmation);
       setVerificationStep("verification");
       setSuccess(`Verification code sent to ${formattedPhone}`);
@@ -100,15 +71,13 @@ const Register = () => {
 
     setLoading(true);
     try {
-      // Confirm the verification code
       if (!confirmationResult) {
         throw new Error("Verification session expired. Please try again.");
       }
 
       await confirmationResult.confirm(verificationCode);
 
-      // After phone verification succeeds, register the user
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
+      const response = await api.post(`/api/auth/register`, {
         ...formData,
         phoneVerified: true,
       });
@@ -130,41 +99,34 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Form validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
       setError("All fields are required");
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError("Please enter a valid email address");
       return;
     }
 
-    // Password validation (at least 8 characters)
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters long");
       return;
     }
 
-    // Phone validation (Israeli format)
     const phoneRegex = /^0?\d{9}$/;
     if (!phoneRegex.test(formData.phone)) {
       setError("Please enter a valid Israeli phone number");
       return;
     }
 
-    // Send verification code
     await sendVerificationCode();
   };
 
-  // Try a simpler registration flow without phone verification for troubleshooting
   const handleSimpleRegistration = async (e) => {
     e.preventDefault();
 
-    // Form validation
     if (!formData.name || !formData.email || !formData.password) {
       setError("Name, email and password are required");
       return;
@@ -172,11 +134,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      // Register without phone verification for testing
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
-        ...formData,
-        phoneVerified: false, // Skip phone verification for now
-      });
+      const response = await api.post(`/api/auth/register`, { ...formData, phoneVerified: false });
 
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
@@ -237,7 +195,6 @@ const Register = () => {
                 required
               />
 
-              {/* This div is where reCAPTCHA will be rendered */}
               <div id="recaptcha-container" className="mb-4"></div>
 
               <button
@@ -248,7 +205,6 @@ const Register = () => {
                 {loading ? "Processing..." : "Register"}
               </button>
 
-              {/* Temporary fallback button for testing */}
               <button
                 type="button"
                 onClick={handleSimpleRegistration}
@@ -264,7 +220,6 @@ const Register = () => {
             </button>
           </>
         ) : (
-          // Phone verification step
           <div className="text-left">
             <h2 className="text-2xl font-semibold mb-6 text-center">Verify Your Phone</h2>
             {error && <p className="text-red-500 mb-4">{error}</p>}
