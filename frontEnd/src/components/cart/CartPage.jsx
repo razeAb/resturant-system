@@ -26,6 +26,7 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
 
   const deliveryFee = 25;
 
@@ -46,6 +47,9 @@ const CartPage = () => {
     setPaymentMethod(null);
     setDeliveryOption(null);
     setShowCardPayment(false);
+
+    setPaymentResult(null);
+    setOrderSubmitted(false);
 
     setIsOrderReady(false);
   };
@@ -68,6 +72,7 @@ const CartPage = () => {
       setShowConfirmationModal(false);
       setIsClosedModalOpen(false);
       setIsOrderReady(false);
+      setOrderSubmitted(false);
     }
   }, [user]);
 
@@ -109,6 +114,8 @@ const CartPage = () => {
 
   //Final submission handler
   const handleFinalSubmit = () => {
+    if (orderSubmitted) return;
+
     if (!checkOrderReadiness()) {
       alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
       return;
@@ -181,6 +188,8 @@ const CartPage = () => {
     try {
       const response = await api.post(`/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
+      setOrderSubmitted(true);
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
@@ -612,7 +621,12 @@ const CartPage = () => {
                   style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
                 >
                   <button
-                    onClick={() => setDeliveryOption("Pickup")}
+                    onClick={() => {
+                      setDeliveryOption("Pickup");
+                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
+                        handleFinalSubmit();
+                      }
+                    }}
                     style={{
                       flex: "1",
                       display: "flex",
@@ -635,7 +649,12 @@ const CartPage = () => {
                   </button>
 
                   <button
-                    onClick={() => setDeliveryOption("Delivery")}
+                    onClick={() => {
+                      setDeliveryOption("Delivery");
+                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
+                        handleFinalSubmit();
+                      }
+                    }}
                     style={{
                       flex: "1",
                       display: "flex",
@@ -658,7 +677,12 @@ const CartPage = () => {
                   </button>
 
                   <button
-                    onClick={() => setDeliveryOption("EatIn")}
+                    onClick={() => {
+                      setDeliveryOption("EatIn");
+                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
+                        handleFinalSubmit();
+                      }
+                    }}
                     style={{
                       flex: "1",
                       display: "flex",
@@ -691,6 +715,10 @@ const CartPage = () => {
                     onSuccess={() => {
                       setPaymentResult("success");
                       setShowCardPayment(false);
+                      // if delivery option already selected, submit the order
+                      if (deliveryOption && !orderSubmitted) {
+                        handleFinalSubmit();
+                      }
                     }}
                     onFailure={() => {
                       setPaymentResult("failure");
@@ -728,29 +756,32 @@ const CartPage = () => {
                     </button>
                   </div>
                 )}
-              
-                
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={!paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")}
+                    disabled={
+                      orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                    }
                     style={{
                       padding: "12px 24px",
                       backgroundColor:
-                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success") ? "gray" : "green",
+                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                          ? "gray"
+                          : "green",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "bold",
                       borderRadius: "8px",
                       cursor:
-                        !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
                           ? "not-allowed"
                           : "pointer",
                       border: "none",
                     }}
                   >
                     שלח הזמנה
+                    {orderSubmitted ? "הזמנה נשלחה" : "שלח הזמנה"}
                   </button>
 
                   <button
