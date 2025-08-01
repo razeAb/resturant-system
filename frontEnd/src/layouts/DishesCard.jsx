@@ -6,9 +6,11 @@ import CommentModal from "../components/modals/CommentModal";
 import AlertModal from "../components/common/AlertModal"; // Import AlertModal
 import "./DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
+import ImageModal from "../components/common/ImageModal";
 
 const DishesCard = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false); // State for AlertModal
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
   const isActive = props.isActive === true;
@@ -62,7 +64,7 @@ const DishesCard = (props) => {
 
   return (
     <div className={`w-full lg:w-1/4 p-5 shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px] ${!isActive ? "inactive-card" : ""} `}>
-      <img className="rounded-xl" src={props.img} alt={props.title} />
+      <img className="rounded-xl cursor-pointer" src={props.img} alt={props.title} onClick={() => setIsImageOpen(true)} />{" "}
       <div className="space-y-4">
         <h3 className="font-semibold text-center text-xl pt-6">{props.title}</h3>
         {!isActive && <p className="text-red-600 text-center text-sm font-semibold">❌ אזל מהמלאי</p>}
@@ -74,7 +76,6 @@ const DishesCard = (props) => {
           <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
         </div>
       </div>
-
       {/* Conditionally render the modal based on props.modalType */}
       {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats" || props.category === "Starters") && (
         <>
@@ -114,9 +115,10 @@ const DishesCard = (props) => {
           ) : null}
         </>
       )}
-
       {/* Render the AlertModal */}
       <AlertModal isOpen={isAlertOpen} onClose={handleCloseAlert} />
+      {/* Render full screen image modal */}
+      <ImageModal isOpen={isImageOpen} img={props.img} onClose={() => setIsImageOpen(false)} />
     </div>
   );
 };
