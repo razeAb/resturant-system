@@ -1,16 +1,17 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
+const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const formRef = useRef(null);
 
-  const supplier = "54874"; // Your Tranzila supplier ID
-  const terminal = "hungryvisa"; // Your terminal name
+  // Replace with your actual supplier number from Tranzila
+  const supplier = "0054874";
+  const terminal = "hungryvisa";
 
   const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
   const successUrl = `${window.location.origin}${basePath}/payment-success/index.html`;
   const failUrl = `${window.location.origin}${basePath}/payment-failure/index.html`;
 
-  // Load Apple Pay JS (optional)
+  // Load Apple Pay JS
   useEffect(() => {
     const script = document.createElement("script");
     script.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`;
@@ -18,20 +19,21 @@ const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
     document.body.appendChild(script);
   }, []);
 
-  // Auto-submit form on mount
+  // Auto-submit the form
   useEffect(() => {
     if (formRef.current) {
       formRef.current.submit();
     }
   }, []);
 
-  // Listen for postMessage from iframe (success/failure)
+  // Listen for result from iframe
   useEffect(() => {
     const handler = (e) => {
+      console.log("Tranzila iframe message:", e.data); // Debug log
       if (e.data?.type === "tranzila-payment-success") {
-        onSuccess?.(e.data.payload);
+        onSuccess?.();
       } else if (e.data?.type === "tranzila-payment-failure") {
-        onFailure?.(e.data.payload);
+        onFailure?.();
       }
     };
     window.addEventListener("message", handler);
@@ -40,7 +42,6 @@ const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
 
   return (
     <div style={{ marginTop: "20px" }}>
-      {/* 🔒 Secure Payment Form */}
       <form
         ref={formRef}
         action={`https://direct.tranzila.com/${terminal}/iframenew.php`}
@@ -48,30 +49,39 @@ const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
         target="tranzila-frame"
         noValidate
         autoComplete="off"
+        style={{ textAlign: "center" }}
       >
-        {/* 🔹 Required Params */}
-        <input type="hidden" name="supplier" value={supplier} />
+        {/* 🟦 Payment Amount */}
         <input type="hidden" name="sum" value={amount} />
-        <input type="hidden" name="currency" value="1" /> {/* ILS */}
-        <input type="hidden" name="tranmode" value="V" />
+        <input type="hidden" name="currency" value="1" />
+
+        {/* 🟦 Terminal & Supplier Info */}
+        <input type="hidden" name="supplier" value={supplier} />
+        <input type="hidden" name="cred_type" value="1" />
+
+        {/* 🟦 URLs */}
         <input type="hidden" name="success_url_address" value={successUrl} />
         <input type="hidden" name="fail_url_address" value={failUrl} />
-        <input type="hidden" name="debug" value="1" />
-        {/* 🎨 Appearance */}
+
+        {/* 🟦 Appearance */}
         <input type="hidden" name="lang" value="il" />
         <input type="hidden" name="nologo" value="1" />
         <input type="hidden" name="trBgColor" value="#ffffff" />
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
-        {/* 🧾 Optional Payment Options */}
+
+        {/* 🟦 Payment Methods */}
         <input type="hidden" name="apple_pay" value="1" />
         <input type="hidden" name="google_pay" value="1" />
+        <input type="hidden" name="tranmode" value="A" />
       </form>
 
-      {/* 🧾 Payment Iframe */}
+      {/* 🟩 iFrame Display */}
       <div
         style={{
           width: "100%",
           height: "565px",
+          margin: 0,
+          padding: 0,
           overflow: "hidden",
           border: "none",
         }}
@@ -79,6 +89,7 @@ const TranzilaIframe = ({ amount = 50, onSuccess, onFailure }) => {
         <iframe
           name="tranzila-frame"
           allow="payment"
+          allowpaymentrequest="true"
           scrolling="no"
           frameBorder="0"
           style={{
