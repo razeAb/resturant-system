@@ -58,26 +58,31 @@ const DishesCard = (props) => {
   };
 
   return (
-    <div className={`w-full lg:w-1/4 p-5 shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px] ${!isActive ? "inactive-card" : ""} `}>
-      <img className="rounded-xl" src={props.img} alt={props.title} />
-      <div className="space-y-4">
-        <h3 className="font-semibold text-center text-xl pt-6">{props.title}</h3>
-        {!isActive && <p className="text-red-600 text-center text-sm font-semibold">❌ אזל מהמלאי</p>}
+    <div className={`bg-[#ab4c20] rounded-2xl p-3 flex flex-col items-center text-white relative ${!isActive ? "opacity-50" : ""}`}>
+      <img src={props.img} alt={props.title} className="rounded-full w-24 h-24 object-cover -mt-12 mb-2" />
 
-        <div className="flex flex-row justify-center"></div>
-        <div className="flex flex-col items-center justify-center gap-2">
-          {" "}
-          <h3 className="font-semibold text-lg">{props.price} ILS</h3>
-          <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
-        </div>
+      <div className="space-y-1 text-center">
+        <h3 className="font-semibold text-sm">{props.title}</h3>
+        <p className="text-xs text-[#f5cf9f]">{props.category}</p>
+        <p className="font-semibold text-sm">${props.price}</p>
       </div>
 
-      {/* Conditionally render the modal based on props.modalType */}
+      {!isActive && <p className="text-red-500 text-xs mt-1">❌ אזל מהמלאי</p>}
+
+      <button
+        disabled={!isActive}
+        onClick={handleButtonClick}
+        className="mt-3 bg-[#f8b91c] w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-50"
+      >
+        <i className="fas fa-shopping-bag text-white text-sm"></i>
+      </button>
+
+      {/* Modals */}
       {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats") && (
         <>
           {props.category === "Meats" ? (
             <WeightedModal
-              _id={props.id} // ⬅️ חשוב
+              _id={props.id}
               img={props.img}
               title={props.title}
               price={props.price}
@@ -88,7 +93,7 @@ const DishesCard = (props) => {
             />
           ) : props.category === "Sandwiches" ? (
             <Modal
-              _id={props.id} // ⬅️ חשוב
+              _id={props.id}
               img={props.img}
               title={props.title}
               price={props.price}
@@ -102,7 +107,6 @@ const DishesCard = (props) => {
         </>
       )}
 
-      {/* Render the AlertModal */}
       <AlertModal isOpen={isAlertOpen} onClose={handleCloseAlert} />
     </div>
   );

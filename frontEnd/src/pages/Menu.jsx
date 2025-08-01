@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
 import axios from "axios";
 
-
 const categoriesList = [
   { id: "all", label: "הכל" },
   { id: "starters", label: "מנות פתיחה", filter: ["Starters"] },
@@ -40,7 +39,7 @@ const Menu = () => {
     return (
       <div className="mb-10">
         <h2 className="text-3xl font-semibold text-center pb-6">{title}</h2>
-        <div className="flex flex-wrap gap-8 justify-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 w-full justify-items-center">
           {filtered.map((item) => (
             <DishesCard
               key={item._id}

@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // ✅ Import routes
-const tranzilaRoute = require("./routes/tranzilaRoute");
+const tranzilaRoute = require("./routes/TranzillaRoutes.js");
 app.use("/api", tranzilaRoute);
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
