@@ -39,7 +39,7 @@ const Menu = () => {
     return (
       <div className="mb-10">
         <h2 className="text-3xl font-semibold text-center pb-6">{title}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 w-full">
+        <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-8 sm:justify-center w-full">
           {filtered.map((item) => (
             <DishesCard
               key={item._id}

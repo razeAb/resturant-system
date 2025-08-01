@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import Button from "../components/common/Button";
 import Modal from "../components/common/Modal";
 import WeightedModal from "../components/modals/WeightModal";
+import CommentModal from "../components/modals/CommentModal";
 import AlertModal from "../components/common/AlertModal"; // Import AlertModal
 import "./DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
@@ -20,6 +21,8 @@ const DishesCard = (props) => {
       setIsModalOpen(true); // Weighted modal
     } else if (props.category === "Sandwiches") {
       setIsModalOpen(true); // Sandwich modal
+    } else if (props.category === "Starters") {
+      setIsModalOpen(true); // Salad/comment modal
     } else {
       // Direct add to cart
       const itemToAdd = {
@@ -73,7 +76,7 @@ const DishesCard = (props) => {
       </div>
 
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats") && (
+      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats" || props.category === "Starters") && (
         <>
           {props.category === "Meats" ? (
             <WeightedModal
@@ -97,6 +100,16 @@ const DishesCard = (props) => {
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
+            />
+          ) : props.category === "Starters" ? (
+            <CommentModal
+              _id={props.id}
+              img={props.img}
+              title={props.title}
+              price={props.price}
+              description={props.description}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
             />
           ) : null}
         </>
