@@ -1,20 +1,26 @@
 import { useEffect } from "react";
 
 const PaymentSuccess = () => {
-  useEffect(() => {
+  const notifyParent = () => {
     const params = Object.fromEntries(new URLSearchParams(window.location.search));
     if (window.opener) {
       window.opener.postMessage({ type: "tranzila-payment-success", payload: params }, "*");
-      window.close(); // ✅ Auto-close the tab if opened in a new window
-    } else if (window.parent) {
+      window.close();
       window.parent.postMessage({ type: "tranzila-payment-success", payload: params }, "*");
     }
+  };
+
+  useEffect(() => {
+    notifyParent();
   }, []);
 
   return (
     <div style={{ textAlign: "center", padding: "40px" }}>
-      <h2>התשלום הצליח</h2>
-      <p>ניתן לסגור חלון זה.</p>
+      <h2>Thank you for your order!</h2>
+      <p>Your payment was accepted. Press the button below if your order doesn't start automatically.</p>
+      <button onClick={notifyParent} style={{ marginTop: "20px" }}>
+        Start Preparing Order
+      </button>
     </div>
   );
 };
