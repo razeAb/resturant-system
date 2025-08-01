@@ -31,9 +31,9 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
     const handler = (e) => {
       console.log("Tranzila iframe message:", e.data); // Debug log
       if (e.data?.type === "tranzila-payment-success") {
-        onSuccess?.();
+        onSuccess?.(e.data.payload);
       } else if (e.data?.type === "tranzila-payment-failure") {
-        onFailure?.();
+        onFailure?.(e.data.payload);
       }
     };
     window.addEventListener("message", handler);

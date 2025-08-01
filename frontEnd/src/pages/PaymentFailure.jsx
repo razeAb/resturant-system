@@ -2,11 +2,12 @@ import { useEffect } from "react";
 
 const PaymentFailure = () => {
   useEffect(() => {
+    const params = Object.fromEntries(new URLSearchParams(window.location.search));
     if (window.opener) {
-      window.opener.postMessage({ type: "tranzila-payment-failure" }, "*");
+      window.opener.postMessage({ type: "tranzila-payment-failure", payload: params }, "*");
       window.close(); // ✅ Close failure tab too if needed
     } else if (window.parent) {
-      window.parent.postMessage({ type: "tranzila-payment-failure" }, "*");
+      window.parent.postMessage({ type: "tranzila-payment-failure", payload: params }, "*");
     }
   }, []);
 

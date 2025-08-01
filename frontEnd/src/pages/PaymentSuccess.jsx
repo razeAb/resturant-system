@@ -2,11 +2,12 @@ import { useEffect } from "react";
 
 const PaymentSuccess = () => {
   useEffect(() => {
+    const params = Object.fromEntries(new URLSearchParams(window.location.search));
     if (window.opener) {
-      window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
+      window.opener.postMessage({ type: "tranzila-payment-success", payload: params }, "*");
       window.close(); // ✅ Auto-close the tab if opened in a new window
     } else if (window.parent) {
-      window.parent.postMessage({ type: "tranzila-payment-success" }, "*");
+      window.parent.postMessage({ type: "tranzila-payment-success", payload: params }, "*");
     }
   }, []);
 
