@@ -75,7 +75,6 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
         <input type="hidden" name="tranmode" value="A" />
 
         {/* ✅ Pass order_id to Tranzila */}
-        <input type="hidden" name="order_id" value={orderId} />
       </form>
 
       {/* 🟩 iFrame Display */}
