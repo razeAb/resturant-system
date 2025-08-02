@@ -781,7 +781,7 @@ const CartPage = () => {
                     }}
                   >
                     שלח הזמנה
-                    {orderSubmitted ? "הזמנה נשלחה" : "שלח הזמנה"}
+                    {orderSubmitted ? "הזמנה נשלחה" : ""}
                   </button>
 
                   <button

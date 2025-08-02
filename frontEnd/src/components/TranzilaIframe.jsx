@@ -8,8 +8,8 @@ const TranzilaIframe = ({ amount, onSuccess, onFailure }) => {
   const terminal = "hungryvisa";
 
   const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-  const successUrl = `${window.location.origin}${basePath}/payment-success`;
-  const failUrl = `${window.location.origin}${basePath}/payment-failure`;
+  const successUrl = `${window.location.origin}/payment-success`;
+  const failUrl = `${window.location.origin}/payment-failure`;
 
   // Load Apple Pay JS
   useEffect(() => {
