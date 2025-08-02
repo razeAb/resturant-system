@@ -7,22 +7,23 @@ const path = require("path");
 // 📦 Load environment variables
 dotenv.config();
 
-// ✅ Initialize app FIRST before using it
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// ✅ Import routes
-const tranzilaRoute = require("./routes/TranzillaRoutes.js");
-app.use("/api", tranzilaRoute);
-const authRoutes = require("./routes/authRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-const userRoutes = require("./routes/userRoutes");
-const productRoutes = require("./routes/productRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const uploadRoute = require("./uploadRoute");
-const paymentRoutes = require("./routes/paymentRoutes");
-// ✅ CORS setup
+// ✅ MongoDB Connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected..."))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
+// ✅ Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ CORS config
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
 
 app.use(
@@ -38,53 +39,86 @@ app.use(
   })
 );
 
-// webHook
-app.use(express.urlencoded({ extended: true }));
-
-// ✅ JSON middleware
-app.use(express.json());
-
-// ✅ Serve uploaded files from local folder (for backward compatibility)
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// ✅ Register routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/upload", uploadRoute);
-app.use("/api/payments", paymentRoutes);
-app.use("/api", require("./routes/tranzila")); // ✅ Add this line
+// ✅ Routes
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/products", require("./routes/productRoutes"));
+app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/upload", require("./uploadRoute"));
+app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/tranzila", require("./routes/TranzillaRoutes")); // ✅ Only one Tranzila route
 app.use("/api/config", require("./routes/config"));
-// ✅ Tranzila Webhook Route
-app.post("/api/tranzila-webhook", (req, res) => {
-  const data = req.body;
 
-  console.log("📩 Webhook from Tranzila:", data);
+// ✅ Tranzila Webhook Handler
+const Order = require("./models/Order");
 
-  if (data.Response === "000") {
-    console.log("✅ Payment successful for token:", data.token);
-    // TODO: Save payment, confirm order, etc.
-  } else {
-    console.log("❌ Payment failed. Code:", data.Response);
+app.post("/api/tranzila-webhook", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log("📩 Webhook from Tranzila:", data);
+
+    // Optional: Basic token check (set TRANZILA_WEBHOOK_TOKEN in .env)
+    const receivedToken = req.headers["x-tranzila-token"];
+    if (process.env.TRANZILA_WEBHOOK_TOKEN && receivedToken !== process.env.TRANZILA_WEBHOOK_TOKEN) {
+      console.warn("⚠️ Webhook rejected: invalid token");
+      return res.status(403).send("Forbidden");
+    }
+
+    if (data.Response === "000") {
+      console.log("✅ Payment successful for token:", data.token);
+
+      let orderData = data.order || data.orderData;
+      if (typeof orderData === "string") {
+        try {
+          orderData = JSON.parse(orderData);
+        } catch (err) {
+          console.error("❌ Failed to parse order data:", err.message);
+          orderData = null;
+        }
+      }
+
+      if (orderData && orderData.items && orderData.totalPrice && orderData.deliveryOption) {
+        const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed } = orderData;
+
+        try {
+          const newOrder = new Order({
+            user: user || undefined,
+            phone: phone || undefined,
+            customerName: customerName || undefined,
+            paymentDetails: paymentDetails || {},
+            couponUsed: couponUsed || undefined,
+            items,
+            totalPrice: parseFloat(totalPrice),
+            deliveryOption,
+            status: status || "pending",
+            createdAt: createdAt || new Date(),
+          });
+
+          await newOrder.save();
+          console.log("✅ Order saved from webhook:", newOrder._id);
+        } catch (err) {
+          console.error("❌ Error saving order from webhook:", err);
+        }
+      } else {
+        console.log("⚠️ Webhook missing order details, no order created");
+      }
+    } else {
+      console.log("❌ Payment failed. Code:", data.Response);
+    }
+
+    res.send("OK");
+  } catch (error) {
+    console.error("❌ Error processing Tranzila webhook:", error);
+    res.status(500).send("Error");
   }
-
-  res.send("OK");
 });
 
-// ✅ Health Check
+// ✅ Health check
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
 });
-
-// ✅ Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected..."))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // ✅ Start server
 app.listen(PORT, () => {
