@@ -15,9 +15,9 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background: #ecfdf5; /* soft green background */
+        background: #ecfdf5;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        color: #065f46; /* dark green text */
+        color: #065f46;
         text-align: center;
         direction: rtl;
       }
@@ -57,6 +57,17 @@
     </style>
     <script>
       window.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get("orderId");
+
+        if (orderId) {
+          fetch("https://resturant-system-3f33.onrender.com/api/orders/success", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId }),
+          });
+        }
+
         if (window.opener) {
           window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
           window.close();
