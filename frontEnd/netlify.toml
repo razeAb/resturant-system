@@ -7,16 +7,14 @@
 
 [[redirects]]
   from = "/payment-success"
-  to = "/payment-success.html"
+  to = "/index.html"
   status = 200
-[redirects.query]
-    orderId = ":orderId"
+
 [[redirects]]
   from = "/payment-failure"
-  to = "/payment-failure.html"
+  to = "/index.html"
   status = 200
-[redirects.query]
-    orderId = ":orderId"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
