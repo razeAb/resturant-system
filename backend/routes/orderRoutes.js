@@ -52,6 +52,25 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// ✅ Tranzila payment success callback
+router.post("/success", async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    console.log("💳 Payment success received for orderId:", orderId);
+
+    // In this flow the order itself is created on the client after a
+    // successful payment, so we simply acknowledge the callback here.
+    // If in the future you persist temporary IDs you can update the order
+    // status or store additional payment details at this point.
+
+    res.status(200).json({ message: "Payment success recorded" });
+  } catch (err) {
+    console.error("❌ Error handling payment success:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ✅ Update order status + estimatedTime if provided
 router.put("/:id/status", async (req, res) => {
   const { id } = req.params;
