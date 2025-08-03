@@ -1,14 +1,11 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount, orderId }) => {
+const TranzilaIframe = ({ amount, orderId, orderData }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
-  // (Optional) supplier not used by iframenew.php directly
-  const supplier = "0054874";
   const terminal = "hungryvisa";
 
-  // Load Apple Pay JS
   useEffect(() => {
     const script = document.createElement("script");
     script.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`;
@@ -17,7 +14,6 @@ const TranzilaIframe = ({ amount, orderId }) => {
     console.log("✅ Tranzila Apple Pay script loaded");
   }, []);
 
-  // Auto-submit the form
   useEffect(() => {
     if (formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
@@ -27,7 +23,7 @@ const TranzilaIframe = ({ amount, orderId }) => {
     }
   }, []);
 
-  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId });
+  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId, orderData });
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -57,11 +53,14 @@ const TranzilaIframe = ({ amount, orderId }) => {
         <input type="hidden" name="trBgColor" value="#ffffff" />
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
 
-        {/* Order identifier */}
+        {/* Order tracking */}
         <input type="hidden" name="order_id" value={orderId} />
+        <input type="hidden" name="notify_url" value="https://resturant-system-3f33.onrender.com/api/tranzila-webhook" />
+
+        {/* ✅ Send orderData to backend via webhook */}
+        <input type="hidden" name="order" value={JSON.stringify(orderData)} />
       </form>
 
-      {/* Iframe */}
       <div
         style={{
           width: "100%",

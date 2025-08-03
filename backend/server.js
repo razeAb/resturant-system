@@ -3,37 +3,31 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const Order = require("./models/Order");
 
-// 📦 Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// ✅ MongoDB Connection
+// ✅ MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected..."))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err));
 
 // ✅ Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ✅ Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ CORS config
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+      else callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
@@ -48,79 +42,63 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/upload", require("./uploadRoute"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
-app.use("/api/tranzila", require("./routes/TranzillaRoutes")); // ✅ Only one Tranzila route
+app.use("/api/tranzila", require("./routes/TranzillaRoutes"));
 app.use("/api/config", require("./routes/config"));
 
-// ✅ Tranzila Webhook Handler
-const Order = require("./models/Order");
-
+// ✅ Tranzila Webhook Endpoint
 app.post("/api/tranzila-webhook", async (req, res) => {
   try {
     const data = req.body;
-    console.log("📩 Webhook from Tranzila:", data);
+    console.log("📩 Webhook received:", data);
 
-    // Optional: Basic token check (set TRANZILA_WEBHOOK_TOKEN in .env)
-    const receivedToken = req.headers["x-tranzila-token"];
-    if (process.env.TRANZILA_WEBHOOK_TOKEN && receivedToken !== process.env.TRANZILA_WEBHOOK_TOKEN) {
-      console.warn("⚠️ Webhook rejected: invalid token");
+    const token = req.headers["x-tranzila-token"];
+    if (process.env.TRANZILA_WEBHOOK_TOKEN && token !== process.env.TRANZILA_WEBHOOK_TOKEN) {
+      console.warn("⚠️ Invalid token");
       return res.status(403).send("Forbidden");
     }
 
     if (data.Response === "000") {
-      console.log("✅ Payment successful for token:", data.token);
-
       let orderData = data.order || data.orderData;
+
       if (typeof orderData === "string") {
         try {
           orderData = JSON.parse(orderData);
         } catch (err) {
-          console.error("❌ Failed to parse order data:", err.message);
-          orderData = null;
+          console.error("❌ Could not parse order JSON");
+          return res.send("Invalid order data");
         }
       }
 
-      if (orderData && orderData.items && orderData.totalPrice && orderData.deliveryOption) {
-        const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed } = orderData;
+      if (!orderData || !orderData.items) return res.send("No valid order");
 
-        try {
-          const newOrder = new Order({
-            user: user || undefined,
-            phone: phone || undefined,
-            customerName: customerName || undefined,
-            paymentDetails: paymentDetails || {},
-            couponUsed: couponUsed || undefined,
-            items,
-            totalPrice: parseFloat(totalPrice),
-            deliveryOption,
-            status: status || "pending",
-            createdAt: createdAt || new Date(),
-          });
+      const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed } = orderData;
 
-          await newOrder.save();
-          console.log("✅ Order saved from webhook:", newOrder._id);
-        } catch (err) {
-          console.error("❌ Error saving order from webhook:", err);
-        }
-      } else {
-        console.log("⚠️ Webhook missing order details, no order created");
-      }
+      const newOrder = new Order({
+        user,
+        phone,
+        customerName,
+        paymentDetails,
+        couponUsed,
+        items,
+        totalPrice: parseFloat(totalPrice),
+        deliveryOption,
+        status: status || "pending",
+        createdAt: createdAt || new Date(),
+      });
+
+      await newOrder.save();
+      console.log("✅ Order saved from webhook:", newOrder._id);
     } else {
-      console.log("❌ Payment failed. Code:", data.Response);
+      console.log("❌ Payment failed:", data.Response);
     }
 
     res.send("OK");
-  } catch (error) {
-    console.error("❌ Error processing Tranzila webhook:", error);
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
     res.status(500).send("Error");
   }
 });
 
-// ✅ Health check
-app.get("/", (req, res) => {
-  res.send("🚀 Server is running...");
-});
-
-// ✅ Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+// ✅ Server Ready
+app.get("/", (req, res) => res.send("🚀 Server Running"));
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));

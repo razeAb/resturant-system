@@ -28,7 +28,27 @@ const CartPage = () => {
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId] = useState(() => Date.now().toString());
   const [orderSubmitted, setOrderSubmitted] = useState(false);
+const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
 
+useEffect(() => {
+  let interval;
+  if (paymentMethod === "Card" && !orderSubmitted && !isPaymentConfirmed) {
+    interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/api/orders/${orderId}`);
+        if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
+          console.log("✅ Payment confirmed via webhook");
+          setIsPaymentConfirmed(true);
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.warn("❌ Error checking payment status:", err.response?.data || err.message);
+      }
+    }, 3000); // Poll every 3 seconds
+  }
+
+  return () => clearInterval(interval); // Cleanup
+}, [paymentMethod, orderId, orderSubmitted, isPaymentConfirmed]);
   const deliveryFee = 25;
 
   //state to track in the order is ready to got to backend
@@ -760,11 +780,13 @@ const CartPage = () => {
                 )}
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-                  <button
-                    onClick={handleFinalSubmit}
-                    disabled={
-                      orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
-                    }
+                  disabled={
+  orderSubmitted ||
+  !paymentMethod ||
+  !deliveryOption ||
+  (paymentMethod === "Card" && !isPaymentConfirmed)
+}
+
                     style={{
                       padding: "12px 24px",
                       backgroundColor:
@@ -781,7 +803,7 @@ const CartPage = () => {
                           : "pointer",
                       border: "none",
                     }}
-                  >
+                  
                     שלח הזמנה
                     {orderSubmitted ? "הזמנה נשלחה" : ""}
                   </button>
@@ -805,7 +827,7 @@ const CartPage = () => {
               </div>
             </div>
           </>
-        )}
+        )
       </div>
 
       <style>{`
