@@ -27,6 +27,7 @@ const CartPage = () => {
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId] = useState(() => Date.now().toString());
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
 
   const deliveryFee = 25;
 
