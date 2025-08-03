@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount, orderId }) => {
+const TranzilaIframe = ({ amount, orderId, onSuccess, onFailure }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -9,8 +9,8 @@ const TranzilaIframe = ({ amount, orderId }) => {
   const terminal = "hungryvisa";
 
   const base = window.location.origin;
-  const successUrl = `${base}/payment-success.html?orderId=${encodeURIComponent(orderId)}`;
-  const failUrl = `${base}/payment-failure.html`;
+  const successUrl = `${base}/payment-success?orderId=${encodeURIComponent(orderId)}`;
+  const failUrl = `${base}/payment-failure?orderId=${encodeURIComponent(orderId)}`;
 
   // Load Apple Pay JS
   useEffect(() => {
@@ -31,12 +31,14 @@ const TranzilaIframe = ({ amount, orderId }) => {
   useEffect(() => {
     const handleMessage = (e) => {
       if (e.data?.type === "tranzila-payment-success") {
-        window.parent.postMessage({ type: "tranzila-payment-success", orderId }, "*");      } else if (e.data?.type === "tranzila-payment-failure") {
-          window.parent.postMessage({ type: "tranzila-payment-failure", orderId }, "*");      }
+        onSuccess?.(e.data.orderId);
+      } else if (e.data?.type === "tranzila-payment-failure") {
+        onFailure?.(e.data.orderId);
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [orderId]);
+  }, [onSuccess, onFailure]);
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -70,6 +72,8 @@ const TranzilaIframe = ({ amount, orderId }) => {
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
 
         {/* ✅ Pass order_id to Tranzila */}
+        <input type="hidden" name="order_id" value={orderId} />
+
       </form>
 
       {/* 🟩 iFrame Display */}

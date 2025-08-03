@@ -26,7 +26,7 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [orderId] = useState(() => Date.now().toString());
 
   const deliveryFee = 25;
 
@@ -712,6 +712,7 @@ const CartPage = () => {
                 {paymentMethod === "Card" && showCardPayment && !paymentResult && (
                   <TranzilaIframe
                     amount={calculateFinalTotal()}
+                    orderId={orderId}
                     onSuccess={() => {
                       setPaymentResult("success");
                       setShowCardPayment(false);

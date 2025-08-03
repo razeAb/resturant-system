@@ -69,10 +69,10 @@
         }
 
         if (window.opener) {
-          window.opener.postMessage({ type: "tranzila-payment-success" }, "*");
+          window.opener.postMessage({ type: "tranzila-payment-success", orderId }, "*");
           window.close();
         } else if (window.parent) {
-          window.parent.postMessage({ type: "tranzila-payment-success" }, "*");
+          window.parent.postMessage({ type: "tranzila-payment-success", orderId }, "*");
         }
       });
     </script>
