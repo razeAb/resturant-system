@@ -153,11 +153,9 @@ const CartPage = () => {
       }
     }
 
-    if (paymentMethod === "Card") {
-      if (paymentResult !== "success") {
-        alert("אנא השלם את התשלום לפני שליחת ההזמנה");
-        return;
-      }
+    if (paymentMethod === "Card" && !isPaymentConfirmed) {
+      alert("אנא המתן לאישור התשלום לפני שליחת ההזמנה");
+      return;
     }
 
     submitOrderToBackend(deliveryOption);
@@ -642,9 +640,6 @@ const CartPage = () => {
                   <button
                     onClick={() => {
                       setDeliveryOption("Pickup");
-                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
-                        handleFinalSubmit();
-                      }
                     }}
                     style={{
                       flex: "1",
@@ -670,9 +665,6 @@ const CartPage = () => {
                   <button
                     onClick={() => {
                       setDeliveryOption("Delivery");
-                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
-                        handleFinalSubmit();
-                      }
                     }}
                     style={{
                       flex: "1",
@@ -698,9 +690,6 @@ const CartPage = () => {
                   <button
                     onClick={() => {
                       setDeliveryOption("EatIn");
-                      if (paymentMethod === "Card" && paymentResult === "success" && !orderSubmitted) {
-                        handleFinalSubmit();
-                      }
                     }}
                     style={{
                       flex: "1",
@@ -735,10 +724,6 @@ const CartPage = () => {
                     onSuccess={() => {
                       setPaymentResult("success");
                       setShowCardPayment(false);
-                      // if delivery option already selected, submit the order
-                      if (deliveryOption && !orderSubmitted) {
-                        handleFinalSubmit();
-                      }
                     }}
                     onFailure={() => {
                       setPaymentResult("failure");
