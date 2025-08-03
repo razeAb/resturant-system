@@ -28,31 +28,30 @@ const CartPage = () => {
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId] = useState(() => Date.now().toString());
   const [orderSubmitted, setOrderSubmitted] = useState(false);
-const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
 
-useEffect(() => {
-  let interval;
-  if (paymentMethod === "Card" && !orderSubmitted && !isPaymentConfirmed) {
-    interval = setInterval(async () => {
-      try {
-        const res = await api.get(`/api/orders/${orderId}`);
-        if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
-          console.log("✅ Payment confirmed via webhook");
-          setIsPaymentConfirmed(true);
-          clearInterval(interval);
+  useEffect(() => {
+    let interval;
+    if (paymentMethod === "Card" && !orderSubmitted && !isPaymentConfirmed) {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.get(`/api/orders/${orderId}`);
+          if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
+            console.log("✅ Payment confirmed via webhook");
+            setIsPaymentConfirmed(true);
+            clearInterval(interval);
+          }
+        } catch (err) {
+          console.warn("❌ Error checking payment status:", err.response?.data || err.message);
         }
-      } catch (err) {
-        console.warn("❌ Error checking payment status:", err.response?.data || err.message);
-      }
-    }, 3000); // Poll every 3 seconds
-  }
+      }, 3000); // Poll every 3 seconds
+    }
 
-  return () => clearInterval(interval); // Cleanup
-}, [paymentMethod, orderId, orderSubmitted, isPaymentConfirmed]);
-  const deliveryFee = 25;
+    return () => clearInterval(interval); // Cleanup
+  }, [paymentMethod, orderId, orderSubmitted, isPaymentConfirmed]);
 
   //state to track in the order is ready to got to backend
-  const [isOrderReady, setIsOrderReady] = useState(false);
+  const [, setIsOrderReady] = useState(false);
   const { user, updateUser } = useContext(AuthContext); // ✅ get user and updater
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
@@ -327,7 +326,7 @@ useEffect(() => {
     return base.toFixed(2); // Removed + deliveryFee
   };
 
-  const sendWhatsAppOrder = (deliveryOption) => {
+  const _sendWhatsAppOrder = (deliveryOption) => {
     const currentDay = new Date().getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 3 = Wednesday)
 
     // If it's Wednesday (day 3), show the modal instead of sending the message
@@ -484,8 +483,7 @@ useEffect(() => {
           </table>
         </div>
         <div className="cart-total">
-          סה"כ: {calculateFinalTotal()} ILS
-          <br />
+          סה&quot;כ: {calculateFinalTotal()} ILS <br />
         </div>{" "}
         <div style={{ marginTop: "20px" }}>
           <button
@@ -584,7 +582,7 @@ useEffect(() => {
                       </li>
                     ))}
                   </ul>
-                  <p>סה"כ לתשלום: {calculateFinalTotal()} ILS</p>
+                  <p>סה&quot;כ לתשלום: {calculateFinalTotal()} ILS</p>{" "}
                   <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
                 </div>
                 <div style={{ marginTop: "5px" }}>
@@ -780,17 +778,13 @@ useEffect(() => {
                 )}
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-                  disabled={
-  orderSubmitted ||
-  !paymentMethod ||
-  !deliveryOption ||
-  (paymentMethod === "Card" && !isPaymentConfirmed)
-}
-
+                  <button
+                    onClick={handleFinalSubmit}
+                    disabled={orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)}
                     style={{
                       padding: "12px 24px",
                       backgroundColor:
-                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)
                           ? "gray"
                           : "green",
                       color: "white",
@@ -798,12 +792,12 @@ useEffect(() => {
                       fontWeight: "bold",
                       borderRadius: "8px",
                       cursor:
-                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && paymentResult !== "success")
+                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)
                           ? "not-allowed"
                           : "pointer",
                       border: "none",
                     }}
-                  
+                  >
                     שלח הזמנה
                     {orderSubmitted ? "הזמנה נשלחה" : ""}
                   </button>
@@ -827,7 +821,7 @@ useEffect(() => {
               </div>
             </div>
           </>
-        )
+        )}
       </div>
 
       <style>{`
