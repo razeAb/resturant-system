@@ -1,15 +1,12 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount, orderId, onSuccess, onFailure }) => {
+const TranzilaIframe = ({ amount, orderId }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
+  // (Optional) supplier not used by iframenew.php directly
   const supplier = "0054874";
   const terminal = "hungryvisa";
-
-  const base = window.location.origin;
-  const successUrl = `${base}/payment-success.html?orderId=${encodeURIComponent(orderId)}`;
-  const failUrl = `${base}/payment-failure.html?orderId=${encodeURIComponent(orderId)}`;
 
   // Load Apple Pay JS
   useEffect(() => {
@@ -30,23 +27,7 @@ const TranzilaIframe = ({ amount, orderId, onSuccess, onFailure }) => {
     }
   }, []);
 
-  // Listen for result from iframe
-  useEffect(() => {
-    const handleMessage = (e) => {
-      console.log("📩 Received postMessage:", e.data);
-      if (e.data?.type === "tranzila-payment-success") {
-        console.log("✅ Payment successful for Order ID:", e.data.orderId);
-        onSuccess?.(e.data.orderId);
-      } else if (e.data?.type === "tranzila-payment-failure") {
-        console.error("❌ Payment failed for Order ID:", e.data.orderId);
-        onFailure?.(e.data.orderId);
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [onSuccess, onFailure]);
-
-  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId, successUrl, failUrl });
+  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId });
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -59,22 +40,28 @@ const TranzilaIframe = ({ amount, orderId, onSuccess, onFailure }) => {
         autoComplete="off"
         style={{ textAlign: "center" }}
       >
+        {/* Amount & currency */}
         <input type="hidden" name="sum" value={amount} />
         <input type="hidden" name="currency" value="1" />
+
+        {/* Terminal & options */}
         <input type="hidden" name="terminal" value={terminal} />
         <input type="hidden" name="cred_type" value="1" />
         <input type="hidden" name="apple_pay" value="1" />
         <input type="hidden" name="google_pay" value="1" />
         <input type="hidden" name="tranmode" value="A" />
-        <input type="hidden" name="success_url_address" value={successUrl} />
-        <input type="hidden" name="fail_url_address" value={failUrl} />
+
+        {/* Appearance */}
         <input type="hidden" name="lang" value="il" />
         <input type="hidden" name="nologo" value="1" />
         <input type="hidden" name="trBgColor" value="#ffffff" />
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
+
+        {/* Order identifier */}
         <input type="hidden" name="order_id" value={orderId} />
       </form>
 
+      {/* Iframe */}
       <div
         style={{
           width: "100%",
