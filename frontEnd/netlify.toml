@@ -8,12 +8,12 @@
 
 [[redirects]]
   from = "/payment-success"
-  to = "/payment-success/index.html"
-  status = 200
+ to = "/payment-success.html"
+   status = 200
 
 [[redirects]]
   from = "/payment-failure"
-  to = "/payment-failure/index.html"
+to = "/payment-failure.html"
   status = 200
 
 
