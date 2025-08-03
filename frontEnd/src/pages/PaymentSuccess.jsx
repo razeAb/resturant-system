@@ -11,7 +11,7 @@ const PaymentSuccess = () => {
 
   const notifyBackend = async (params) => {
     try {
-      const res = await fetch("https://resturant-system-3f33.onrender.com/api/order/success", {
+      const res = await fetch("https://resturant-system-3f33.onrender.com/api/orders/success", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
