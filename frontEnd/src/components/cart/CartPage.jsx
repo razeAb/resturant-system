@@ -32,7 +32,7 @@ const CartPage = () => {
 
   useEffect(() => {
     let interval;
-    if (paymentMethod === "Card" && !orderSubmitted && !isPaymentConfirmed) {
+    if (paymentMethod === "Card" && orderSubmitted && orderId && !isPaymentConfirmed) {
       interval = setInterval(async () => {
         try {
           const res = await api.get(`/api/orders/${orderId}`);
@@ -151,11 +151,6 @@ const CartPage = () => {
         alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
         return;
       }
-    }
-
-    if (paymentMethod === "Card" && !isPaymentConfirmed) {
-      alert("אנא המתן לאישור התשלום לפני שליחת ההזמנה");
-      return;
     }
 
     submitOrderToBackend(deliveryOption);
@@ -774,21 +769,15 @@ const CartPage = () => {
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)}
+                    disabled={orderSubmitted || !paymentMethod || !deliveryOption}
                     style={{
                       padding: "12px 24px",
-                      backgroundColor:
-                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)
-                          ? "gray"
-                          : "green",
+                      backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption ? "gray" : "green",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "bold",
                       borderRadius: "8px",
-                      cursor:
-                        orderSubmitted || !paymentMethod || !deliveryOption || (paymentMethod === "Card" && !isPaymentConfirmed)
-                          ? "not-allowed"
-                          : "pointer",
+                      cursor: orderSubmitted || !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
                       border: "none",
                     }}
                   >
