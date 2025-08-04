@@ -191,6 +191,20 @@ router.get("/phone/:phone", async (req, res) => {
   }
 });
 
+// ✅ Get order by MongoDB _id
+router.get("/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("user", "name phone").populate("items.product", "name");
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    res.json(order);
+  } catch (error) {
+    console.error("❌ Error fetching order by ID:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ✅ Get All Orders (Admin)
 router.get("/", async (req, res) => {
   try {

@@ -5,6 +5,8 @@ const Order = require("../models/Order");
 
 router.post("/tranzila-webhook", async (req, res) => {
   try {
+    console.log("📬 HEADERS:", req.headers);
+    console.log("📩 BODY:", JSON.stringify(req.body, null, 2)); // formatted output
     const data = req.body;
     console.log("📩 Tranzila Webhook Received:", data);
 

@@ -26,7 +26,7 @@ const CartPage = () => {
   const [guestName, setGuestName] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
-  const [orderId] = useState(() => Date.now().toString());
+  const [orderId, setOrderId] = useState(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
 
@@ -206,11 +206,19 @@ const CartPage = () => {
     try {
       const response = await api.post(`/api/orders`, payload);
       console.log("✅ Order submitted:", response.data);
-      setOrderSubmitted(true);
 
+      const createdOrder = response.data.order; // ✅ Get full order object
+      const orderId = createdOrder._id; // ✅ This is the MongoDB _id
+      console.log("📦 Order ID (MongoDB _id):", orderId);
+
+      // Optional: save to state or localStorage if needed for payment checks
+      setOrderId(orderId); // You need to define `orderId` state with useState()
+
+      setOrderSubmitted(true);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
+
       if (loggedInUserId) {
         try {
           const token = localStorage.getItem("token");
@@ -222,6 +230,7 @@ const CartPage = () => {
           console.error("❌ Failed to refresh user:", e.response?.data || e.message);
         }
       }
+
       setShowConfirmationModal(false);
       setGuestName("");
     } catch (error) {
