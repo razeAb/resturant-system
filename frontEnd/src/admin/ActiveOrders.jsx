@@ -73,6 +73,19 @@ const ActiveOrdersPage = () => {
     document.addEventListener("click", unlock);
   }, []);
 
+  const translatePaymentMethod = (method) => {
+    switch (method) {
+      case "Card":
+        return "כרטיס אשראי חיט תתרכז";
+      case "Cash":
+        return "מזומן";
+      case "Bit":
+        return "ביט";
+      default:
+        return method || "לא ידוע";
+    }
+  };
+
   const prevOrderCountRef = useRef(0);
 
   const fetchOrders = async () => {
@@ -325,9 +338,10 @@ const ActiveOrdersPage = () => {
                               ))}
                             </ul>
 
-                            <pc className="text-lg">
-                              <strong>אמצעי תשלום:</strong> {order.paymentDetails?.method || "לא ידוע"}
-                            </pc>
+                            <p className="text-lg">
+                              <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
+                            </p>
+
                             <p>
                               <strong>סכום לתשלום:</strong> {order.totalPrice ? `${order.totalPrice} ₪` : "לא זמין"}
                             </p>

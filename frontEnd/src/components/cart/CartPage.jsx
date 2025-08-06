@@ -621,7 +621,7 @@ const CartPage = () => {
                     </button>
                     <button
                       onClick={() => {
-                        setPaymentMethod("כרטיס אשראי חיט תתרכז");
+                        setPaymentMethod("Card"); // 🔥 This triggers the iframe
                         setShowCardPayment(true);
                         setPaymentResult(null);
                       }}
