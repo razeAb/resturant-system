@@ -56,6 +56,8 @@ const KitchenOrders = () => {
     }
   };
 
+  const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
+
   const updateStatus = async (id, status) => {
     try {
       await api.put(`/api/orders/${id}/status`, { status });
@@ -150,7 +152,7 @@ const KitchenOrders = () => {
                     </tr>
                     {expandedOrderId === order._id && (
                       <tr className="bg-white/5">
-                        <td colSpan="6" className="p-4">
+                        <td colSpan="6" className="p-4 text-lg">
                           <div className="space-y-4">
                             <div>
                               <p>
@@ -162,11 +164,23 @@ const KitchenOrders = () => {
                             </div>
 
                             <h4 className="text-lg font-bold">פרטי הזמנה</h4>
-                            <ul className="text-sm space-y-2">
+                            <ul className="text-lg space-y-4">
                               {order.items.map((item, idx) => (
                                 <li key={idx}>
-                                  <strong>{item.product?.name || item.title || "פריט"}</strong> - כמות: {item.quantity}
+                                  <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}
                                   {item.isWeighted ? " גרם" : ""}
+                                  <br />
+                                  ירקות:{" "}
+                                  {Array.isArray(item.vegetables) && item.vegetables.length
+                                    ? VEGETABLES_ORDER.filter((v) => item.vegetables.includes(v)).join(", ")
+                                    : "כל הירקות"}
+                                  <br />
+                                  תוספות:{" "}
+                                  {Array.isArray(item.additions) && item.additions.length
+                                    ? item.additions.map((a) => a.addition).join(", ")
+                                    : "אין"}
+                                  <br />
+                                  הערות: {item.comment || "אין הערות"}
                                 </li>
                               ))}
                             </ul>

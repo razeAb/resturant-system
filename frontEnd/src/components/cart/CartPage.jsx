@@ -73,6 +73,8 @@ const CartPage = () => {
 
     setIsOrderReady(false);
   };
+  //vegetables Order
+  const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
 
   //isguest component
   const isGuest = () => !user;
@@ -458,7 +460,12 @@ const CartPage = () => {
                     <td data-label="כמות">{item.isWeighted ? `${item.quantity} גרם` : item.quantity}</td>
 
                     {/* Show vegetables and additions for all items */}
-                    <td data-label="ירקות">{item.selectedOptions?.vegetables?.join(", ") || "אין"}</td>
+                    <td data-label="ירקות">
+                      {Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
+                        ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
+                        : "כל הירקות"}
+                    </td>
+
                     <td data-label="תוספות">{item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || "אין"}</td>
 
                     <td data-label="מחיר ליחידה">{item.price} ILS</td>
@@ -614,7 +621,7 @@ const CartPage = () => {
                     </button>
                     <button
                       onClick={() => {
-                        setPaymentMethod("Card");
+                        setPaymentMethod("כרטיס אשראי חיט תתרכז");
                         setShowCardPayment(true);
                         setPaymentResult(null);
                       }}

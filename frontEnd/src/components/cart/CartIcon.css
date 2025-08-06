@@ -7,7 +7,7 @@
   padding: 15px; /* Padding for the icon */
   border-radius: 50%; /* Makes it circular */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds some shadow */
-  z-index: 1000; /* Ensures it appears above other content */
+  z-index: 50; /* Ensures it appears above other content */
   cursor: pointer;
 }
 

@@ -325,9 +325,9 @@ const ActiveOrdersPage = () => {
                               ))}
                             </ul>
 
-                            <p>
+                            <pc className="text-lg">
                               <strong>אמצעי תשלום:</strong> {order.paymentDetails?.method || "לא ידוע"}
-                            </p>
+                            </pc>
                             <p>
                               <strong>סכום לתשלום:</strong> {order.totalPrice ? `${order.totalPrice} ₪` : "לא זמין"}
                             </p>
