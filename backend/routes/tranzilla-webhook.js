@@ -1,29 +1,41 @@
 // routes/tranzilaWebhook.js
 const express = require("express");
+const mongoose = require("mongoose"); // ✅ Import mongoose
 const router = express.Router();
 const Order = require("../models/Order");
 
-router.post("/tranzila-webhook", async (req, res) => {
+// ✅ Use express.text() to parse raw body (Tranzila sends raw URL-encoded text)
+router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     console.log("📬 HEADERS:", req.headers);
-    console.log("📩 BODY:", JSON.stringify(req.body, null, 2)); // formatted output
-    const data = req.body;
-    console.log("📩 Tranzila Webhook Received:", data);
+    console.log("📩 RAW BODY:", req.body);
 
+    // ✅ Parse Tranzila's body (which comes as x-www-form-urlencoded string)
+    const parsed = new URLSearchParams(req.body);
+    const data = Object.fromEntries(parsed.entries());
+
+    console.log("📩 Parsed Tranzila Webhook Data:", data);
+
+    const orderId = data.orderId;
+    console.log("🧾 Received orderId:", orderId);
+    console.log("🧾 Is valid ObjectId:", mongoose.Types.ObjectId.isValid(orderId));
+
+    // ✅ Optional: verify Tranzila secret token (if used)
     const receivedToken = req.headers["x-tranzila-token"];
     if (process.env.TRANZILA_WEBHOOK_TOKEN && receivedToken !== process.env.TRANZILA_WEBHOOK_TOKEN) {
       console.warn("❌ Invalid webhook token");
       return res.status(403).send("Forbidden");
     }
 
+    // ✅ Check that it's a successful payment
     if (data.Response === "000") {
-      const orderId = data.orderId;
-
-      if (!orderId) {
-        console.warn("⚠️ Missing orderId in webhook");
-        return res.status(400).send("Missing orderId");
+      // ✅ Validate the format of orderId
+      if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        console.warn("⚠️ Invalid orderId format:", orderId);
+        return res.status(400).send("Invalid orderId");
       }
 
+      // ✅ Find and update the order
       const updated = await Order.findByIdAndUpdate(orderId, {
         paymentStatus: "paid",
         status: "paid",
@@ -36,7 +48,7 @@ router.post("/tranzila-webhook", async (req, res) => {
         return res.status(200).send("OK");
       } else {
         console.warn("❌ Order not found:", orderId);
-        return res.status(404).send("Order not found");
+        return res.status(404).send("No valid order");
       }
     }
 
