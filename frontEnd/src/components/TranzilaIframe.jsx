@@ -17,7 +17,7 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
   useEffect(() => {
     if (formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
-      formRef.current.submit();
+      formRef.current.submit(); 
     } else {
       console.warn("⚠️ formRef is null, cannot submit form");
     }
