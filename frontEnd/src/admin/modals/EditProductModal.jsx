@@ -52,7 +52,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
 
       if (!res.ok) throw new Error("Failed to update product");
       const updated = await res.json();
-      onUpdate(updated);
+      onUpdate(updated.product);
       onClose();
     } catch (err) {
       alert("❌ שגיאה בעדכון מוצר");
