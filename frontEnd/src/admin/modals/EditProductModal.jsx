@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../../api";
 
 const EditProductModal = ({ product, onClose, onUpdate }) => {
   const [form, setForm] = useState({ ...product });
@@ -18,16 +19,15 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const res = await fetch(`/api/upload`, {
-        method: "POST",
+      const res = await api.post(`/api/upload`, formData, {
         headers: {
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
-        body: formData,
       });
 
-      const data = await res.json();
-      setForm((prev) => ({ ...prev, image: data.imageUrl }));
+      setForm((prev) => ({ ...prev, image: res.data.imageUrl }));
+
       alert("✅ תמונה הועלתה בהצלחה");
     } catch (err) {
       alert("❌ שגיאה בהעלאת תמונה");
@@ -41,18 +41,17 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`/api/products/${product._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await api.put(
+        `/api/products/${product._id}`,
+        {
+          ...form,
+          price: Number(form.price),
+          stock: Number(form.stock),
         },
-        body: JSON.stringify(form),
-      });
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onUpdate(response.data.product);
 
-      if (!res.ok) throw new Error("Failed to update product");
-      const updated = await res.json();
-      onUpdate(updated.product);
       onClose();
     } catch (err) {
       alert("❌ שגיאה בעדכון מוצר");
