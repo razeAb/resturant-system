@@ -21,6 +21,7 @@
     "globals": "^16.3.0"
   },
   "dependencies": {
+    "framer-motion": "^12.23.12",
     "jquery": "^3.7.1"
   }
 }
