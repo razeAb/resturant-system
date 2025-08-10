@@ -113,7 +113,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות על המנה</h3>
-          {[" חסה", " מלפפון חמוץ", " עגבניה", " בצל", " סלט קרוב", " צימצורי "].map((vegetable, index) => (
+          {[" 🥬 חסה", " 🥒 מלפפון חמוץ", " 🍅 עגבניה", " 🧅 בצל", " 🥗 סלט קרוב", " 🌿 צימצורי"].map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
@@ -134,11 +134,11 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
           {/* Gram-based additions */}
           {[
-            { name: "צלי כתף", prices: { 50: 13, 100: 26 } },
-            { name: "אונטרייב", prices: { 50: 13, 100: 26 } },
-            { name: "אסאדו", prices: { 50: 15, 100: 30 } },
-            { name: "צוואר טלה", prices: { 50: 15, 100: 30 } },
-            { name: "בריסקת", prices: { 50: 13, 100: 26 } },
+            { name: "🥩 צלי כתף", prices: { 50: 13, 100: 26 } },
+            { name: "🥩 אונטרייב", prices: { 50: 13, 100: 26 } },
+            { name: "🥩 אסאדו", prices: { 50: 15, 100: 30 } },
+            { name: "🥩 צוואר טלה", prices: { 50: 15, 100: 30 } },
+            { name: "🥩 בריסקת", prices: { 50: 13, 100: 26 } },
           ].map((addition, index) => (
             <div key={index} className="addition-buttons">
               <span>{addition.name}</span>
@@ -162,7 +162,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           ))}
 
           {/* Fixed-price additions */}
-          {["ביקון טלה 10", "רוטב גבינה 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
+          {["🥓 ביקון טלה 10", "🧀 רוטב גבינה 8", "🍄 פטריות 5", "🥖 ג׳בטה 5"].map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input

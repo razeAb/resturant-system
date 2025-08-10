@@ -93,7 +93,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות בצד למנה</h3>
-          {["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט קרוב", "צימצורי"].map((vegetable, index) => (
+          {["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"].map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
@@ -111,7 +111,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["רוטב גבינה בצד 8", "פטריות 5", "ג׳בטה 5"].map((addition, index) => (
+          {["🧀 רוטב גבינה בצד 8", "🍄 פטריות 5", "🥖 ג׳בטה 5"].map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
