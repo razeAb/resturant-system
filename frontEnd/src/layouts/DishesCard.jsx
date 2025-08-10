@@ -68,7 +68,7 @@ const DishesCard = (props) => {
       <div className="space-y-4">
         <h3 className="font-semibold text-center text-xl pt-6">{props.title}</h3>
         {!isActive && <p className="text-red-600 text-center text-sm font-semibold">❌ אזל מהמלאי</p>}
-
+        {props.description && <p className="text-center text-sm text-gray-600">{props.description}</p>}
         <div className="flex flex-row justify-center"></div>
         <div className="flex flex-col items-center justify-center gap-2">
           {" "}

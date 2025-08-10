@@ -47,6 +47,7 @@ const Menu = () => {
               img={item.image}
               title={item.name}
               price={item.price}
+              description={item.description}
               category={item.category}
               isWeighted={item.isWeighted}
               isActive={item.isActive}
