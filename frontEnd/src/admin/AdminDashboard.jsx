@@ -4,8 +4,8 @@ import { ORDER_STATUS } from "../../constants/orderStatus";
 import Button from "../components/common/Button";
 import { motion } from "framer-motion";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
-import { Menu } from "lucide-react";
-import SideMenu from "../layouts/SideMenu"; // <-- adjust path if different
+import { Menu, Calendar } from "lucide-react";
+import SideMenu from "../layouts/SideMenu";
 
 /** Utils **/
 const ILS = new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 2 });
@@ -42,6 +42,14 @@ export default function AdminDashboard() {
     const from = addDays(to, -29); // last 30 days
     return { from: toYMD(from), to: toYMD(to) };
   });
+
+  const selectedDateLabel = useMemo(() => {
+    try {
+      return new Date(selectedDate).toLocaleDateString("he-IL", { year: "numeric", month: "2-digit", day: "2-digit" });
+    } catch {
+      return selectedDate;
+    }
+  }, [selectedDate]);
 
   // revenue view
   const [revenueView, setRevenueView] = useState("year"); // "year" | "week" | "day"
@@ -85,6 +93,7 @@ export default function AdminDashboard() {
     const from = period.from;
     const to = period.to;
     return dashboardData.orders.filter((o) => {
+      // keep only completed orders in the period (matches your current logic)
       if (o.status !== ORDER_STATUS.DONE) return false;
       const ymd = toYMD(o?.createdAt);
       return ymd >= from && ymd <= to;
@@ -109,19 +118,17 @@ export default function AdminDashboard() {
   }, [dashboardData, selectedDate]);
 
   /** Charts data (period) **/
-
-  // ✅ Completed orders per weekday (count, not revenue)  const weeklyBar = useMemo(() => {
-  const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // Sunday..Saturday
-  const counts = new Array(7).fill(0);
-  (ordersInPeriod ?? []).forEach(
-    (o) => {
+  // ✅ Completed orders per weekday (count, not revenue)
+  const weeklyBar = useMemo(() => {
+    const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // Sunday..Saturday
+    const counts = new Array(7).fill(0);
+    (ordersInPeriod ?? []).forEach((o) => {
       const d = new Date(o.createdAt);
       const idx = d.getDay(); // 0..6
-      counts[idx] += 1; // count every completed order created that day    });
-      return labels.map((name, i) => ({ name, count: counts[i] }));
-    },
-    [ordersInPeriod]
-  );
+      counts[idx] += 1; // count every completed order created that day
+    });
+    return labels.map((name, i) => ({ name, count: counts[i] }));
+  }, [ordersInPeriod]);
 
   const monthlyRevenue = useMemo(() => {
     const map = new Map();
@@ -283,15 +290,22 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <label className="bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2 text-[11px] text-[#c7cfdd] flex items-center gap-2 min-w-[170px]">
-                <span className="shrink-0">תאריך יומי</span>
+              {/* Easier click date picker */}
+              <label className="relative cursor-pointer select-none">
+                <div className="flex items-center gap-2 bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2.5 h-11 min-w-[220px] text-[13px] text-[#c7cfdd]">
+                  <Calendar size={16} className="opacity-80" />
+                  <span className="shrink-0">תאריך יומי:</span>
+                  <span className="truncate text-white/90">{selectedDateLabel}</span>
+                </div>
+                {/* Invisible input covers the whole control */}
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent outline-none text-white/80 w-full"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
                 />
               </label>
+
               <Button
                 title={restaurantOpen ? "סגור מסעדה" : "פתח מסעדה"}
                 onClick={() => handleToggleRestaurant(!restaurantOpen)}
@@ -316,8 +330,8 @@ export default function AdminDashboard() {
             <KPI icon="₪" title="הכנסה" desc={`הכנסה ל-${selectedDate}`} value={ILS.format(daily.revenue)} trend="-12.0% (30 ימים)" />
           </motion.div>
 
-          {/* Weekly Orders Bar (COUNT) */}
-          <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Weekly Orders Bar (COUNT) — full width like the revenue section */}
+          <div className="mt-4 grid grid-cols-1">
             <SectionCard title="כמות הזמנות לפי יום בשבוע (בטווח)" subtitle="מספר הזמנות שבוצעו בכל יום">
               <div className="mt-2 h-[220px] sm:h-48">
                 <ResponsiveContainer width="100%" height="100%">
