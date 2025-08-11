@@ -1,69 +1,103 @@
 import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
-import OrderListTitle from "../components/OrderListTitle";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
+import { Menu } from "lucide-react";
+
+/* ----------------- helpers ----------------- */
 const formatTime = (timestamp) => {
-  const date = new Date(new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+  const date = new Date(
+    new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })
+  );
   const now = new Date();
   const diffMs = now - date;
   const diffMinutes = Math.floor(diffMs / 60000);
-
   if (diffMinutes < 1) return "רגע עכשיו";
   if (diffMinutes < 60) return `${diffMinutes} דקות`;
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} שעות`;
-  return date.toLocaleTimeString("he-IL", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 };
 
-const ActiveOrdersPage = () => {
+const badgeClasses = (status) => {
+  if (status === ORDER_STATUS?.DELIVERING) return "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20";
+  if (status === ORDER_STATUS?.PREPARING)  return "bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/20";
+  if (status === ORDER_STATUS?.DONE)       return "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20";
+  return "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/20"; // pending/unknown
+};
+
+const translateDeliveryOption = (option) =>
+  option === "EatIn" ? "אכילה במקום" : option === "Delivery" ? "משלוח" : option === "Pickup" ? "איסוף עצמי" : option;
+
+const translatePaymentMethod = (method) =>
+  method === "Card" ? "כרטיס אשראי" : method === "Cash" ? "מזומן" : method === "Bit" ? "ביט" : method || "לא ידוע";
+
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+const endOfToday = () => {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+const isToday = (createdAt) => {
+  const d = new Date(createdAt);
+  return d >= startOfToday() && d <= endOfToday();
+};
+
+/* ----------------- page ----------------- */
+export default function ActiveOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+
+  // sidebar (mobile)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [addOrderId, setAddOrderId] = useState(null);
 
+  // polling + new order sound
+  const prevOrderCountRef = useRef(0);
   useEffect(() => {
     fetchOrders();
-
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 5000);
-
-    return () => clearInterval(interval);
+    const id = setInterval(fetchOrders, 5000);
+    return () => clearInterval(id);
   }, []);
 
   const playNotificationSound = () => {
     let count = 0;
-
     const play = () => {
       if (count >= 3) return;
       const audio = new Audio(notificationSound);
-      audio.play().catch((e) => console.warn("Audio error:", e));
+      audio.play().catch(() => {});
       count++;
       audio.onended = () => setTimeout(play, 1000);
     };
-
     play();
   };
 
-  const translateDeliveryOption = (option) => {
-    switch (option) {
-      case "EatIn":
-        return "אכילה במקום";
-      case "Delivery":
-        return "משלוח";
-      case "Pickup":
-        return "איסוף עצמי";
-      default:
-        return option;
+  const fetchOrders = async () => {
+    try {
+      const res = await api.get("/api/orders");
+      // Keep everything except DONE; we'll filter to today below
+      const newOrderList = res.data.orders.filter((o) => o.status !== ORDER_STATUS?.DONE);
+
+      if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
+        playNotificationSound();
+      }
+      prevOrderCountRef.current = newOrderList.length;
+      setOrders(newOrderList);
+    } catch (err) {
+      console.error("❌ שגיאה בקבלת הזמנות:", err);
+      setOrders([]);
     }
   };
 
+  // unlock audio (mobile)
   useEffect(() => {
     const unlock = () => {
       const a = new Audio();
@@ -73,49 +107,7 @@ const ActiveOrdersPage = () => {
     document.addEventListener("click", unlock);
   }, []);
 
-  const translatePaymentMethod = (method) => {
-    switch (method) {
-      case "Card":
-        return "כרטיס אשראי חיט תתרכז";
-      case "Cash":
-        return "מזומן";
-      case "Bit":
-        return "ביט";
-      default:
-        return method || "לא ידוע";
-    }
-  };
-
-  const prevOrderCountRef = useRef(0);
-
-  const fetchOrders = async () => {
-    try {
-      const res = await api.get("/api/orders");
-
-      // ✅ Only hide DONE orders — keep DELIVERING visible
-      const newOrderList = res.data.orders.filter((order) => order.status !== ORDER_STATUS.DONE);
-
-      const currentCount = newOrderList.length;
-      const prevCount = prevOrderCountRef.current;
-
-      // ✅ Play sound if count increased (and not on first load)
-      if (prevCount !== 0 && currentCount > prevCount) {
-        console.log("🔔 New order received — playing sound!");
-        playNotificationSound();
-      }
-
-      prevOrderCountRef.current = currentCount;
-      setOrders(newOrderList);
-    } catch (err) {
-      console.error("❌ שגיאה בקבלת הזמנות:", err);
-      setOrders([]);
-    }
-  };
-
-  const formatPhoneNumber = (phone) => {
-    if (!phone) return null;
-    return phone.startsWith("0") ? `+972${phone.slice(1)}` : phone;
-  };
+  const formatPhoneNumber = (phone) => (phone ? (phone.startsWith("0") ? `+972${phone.slice(1)}` : phone) : null);
 
   const updateOrderStatus = async (orderId, data) => {
     try {
@@ -130,9 +122,8 @@ const ActiveOrdersPage = () => {
     if (!window.confirm("האם אתה בטוח שברצונך למחוק את ההזמנה?")) return;
     try {
       await api.delete(`/api/orders/${orderId}`);
-
       fetchOrders();
-    } catch (err) {
+    } catch {
       alert("שגיאה במחיקת ההזמנה");
     }
   };
@@ -141,220 +132,267 @@ const ActiveOrdersPage = () => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
 
-    await updateOrderStatus(orderId, { status: ORDER_STATUS.PREPARING, estimatedTime: time });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS?.PREPARING, estimatedTime: time });
 
+    // ✅ WhatsApp stays intact
     const formattedPhone = formatPhoneNumber(phone);
     const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttps://hungryresturant.netlify.app/order-status`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-
-    // open WhatsApp in new tab
-    window.open(whatsappUrl, "_blank");
-
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, "_blank");
     alert(`הלקוח יקבל הודעה בוואטסאפ`);
   };
 
   const markAsDone = async (orderId) => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
-
-    await updateOrderStatus(orderId, { status: ORDER_STATUS.DONE });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS?.DONE });
     alert("ההזמנה מוכנה!");
 
     if (phone && order.deliveryOption !== "EatIn") {
       const lastSixDigits = orderId.slice(-6);
-      // send WhatsApp
-    } else if (order.deliveryOption === "EatIn") {
-      console.log("🍽 Dine-in order marked as done — no WhatsApp message sent.");
-      // 🧾 Generate receipt
-      const receipt = order.items
-        .map((item, i) => {
-          const name = item.product?.name || item.title || "פריט";
-          const qty = item.quantity;
-          const unit = item.isWeighted ? "גרם" : "יח'";
-          const additions =
-            Array.isArray(item.additions) && item.additions.length
-              ? `\n  ➕ תוספות: ${item.additions.map((a) => a.addition).join(", ")}`
-              : "";
-          const veggies = Array.isArray(item.vegetables) && item.vegetables.length ? `\n  🥗 ירקות: ${item.vegetables.join(", ")}` : "";
-          const comment = item.comment ? `\n  📝 הערות: ${item.comment}` : "";
-
-          return `• ${name} - ${qty} ${unit}${additions}${veggies}${comment}`;
-        })
-        .join("\n");
-
-      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה! ניתן להגיע לאסוף אותה.\n\n🧾 פירוט ההזמנה:\n${receipt}\n\n💵 סכום לתשלום: ${
-        order.totalPrice || "לא זמין"
-      } ₪\n\nתודה שהזמנת מאיתנו ❤️`;
-
-      const encodedMessage = encodeURIComponent(message);
-      const formattedPhone = formatPhoneNumber(phone);
-      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-      window.open(whatsappUrl, "_blank");
-    } else {
-      alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
+      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה!`;
+      window.open(`https://wa.me/${formatPhoneNumber(phone)}?text=${encodeURIComponent(message)}`, "_blank");
     }
   };
 
   const markAsDelivering = async (orderId) => {
     const order = orders.find((o) => o._id === orderId);
     const phone = order?.user?.phone || order?.phone;
-
-    await updateOrderStatus(orderId, { status: ORDER_STATUS.DELIVERING });
+    await updateOrderStatus(orderId, { status: ORDER_STATUS?.DELIVERING });
     alert("המשלוח יצא לדרך!");
     if (phone) {
       const lastSixDigits = orderId.slice(-6);
       const message = `ההזמנה שלך (${lastSixDigits}) בדרך אליך!`;
-      const encoded = encodeURIComponent(message);
-      const formattedPhone = formatPhoneNumber(phone);
-      const url = `https://wa.me/${formattedPhone}?text=${encoded}`;
-      window.open(url, "_blank");
-    } else {
-      alert("לא נמצא מספר טלפון לשליחת הודעה בוואטסאפ");
+      window.open(`https://wa.me/${formatPhoneNumber(phone)}?text=${encodeURIComponent(message)}`, "_blank");
     }
   };
 
+  // only today's orders
+  const filtered = orders.filter((o) => isToday(o.createdAt));
+
+  /* ----------------- UI ----------------- */
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative overflow-x-hidden">
-      {/* כפתור תפריט מובייל */}
-      <button onClick={() => setIsSidebarOpen(true)} className="md:hidden bg-[#2c2c2e] text-white px-4 py-3">
-        ☰ תפריט
-      </button>
-
-      {/* תפריט צד - דסקטופ */}
-      <aside className="w-60 bg-[#2c2c2e] hidden md:block">
-        <SideMenu />
-      </aside>
-
-      {/* תפריט צד - מובייל */}
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-[#2c2c2e] z-50 transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:hidden`}
-      >
-        <div className="flex justify-end p-4">
-          <button onClick={() => setIsSidebarOpen(false)} className="text-white text-lg">
-            ❌
-          </button>
-        </div>
-        <SideMenu />
+    <div className="min-h-screen bg-[#0f1415] text-white flex" dir="rtl">
+      {/* Sidebar desktop */}
+      <div className="hidden md:block">
+        <SideMenu logoSrc="/developerTag.jpeg" brand="Hungry" />
       </div>
 
-      {/* רקע כהה כאשר תפריט פתוח */}
-      {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+      {/* Mobile overlay + drawer */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      {isSidebarOpen && (
+        <div className="md:hidden">
+          <SideMenu onClose={() => setIsSidebarOpen(false)} logoSrc="/developerTag.jpeg" brand="Hungry" />
+        </div>
+      )}
 
-      {/* תוכן ראשי - RTL */}
-      <main className="flex-1 p-5 overflow-x-auto text-right" dir="rtl">
-        <OrderListTitle title="הזמנות פעילות" />
-        {orders.length === 0 ? (
-          <p className="text-white/70 p-4">אין הזמנות פעילות כרגע</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm bg-[#2a2a2a] border-collapse">
-              <thead>
-                <tr className="text-white/50 border-b border-white/20">
-                  <th className="text-right p-3">מספר הזמנה</th>
-                  <th className="text-right p-3">שם משתמש</th>
-                  <th className="text-right p-3">סטטוס</th>
-                  <th className="text-right p-3">סוג משלוח</th>
-                  <th className="text-right p-3">זמן יצירה</th>
-                  <th className="text-right p-3">פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <React.Fragment key={order._id}>
-                    <tr className="border-b border-white/10">
-                      <td className="p-3">{order._id.slice(-6)}</td>
-                      <td className="p-3">
-                        {order.user?.name
-                          ? `${order.user.name} - ${order.user.phone}`
-                          : order.customerName
-                          ? `${order.customerName} - ${order.phone}`
-                          : `אורח - ${order.phone}`}
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            order.status === ORDER_STATUS.PREPARING
-                              ? "bg-purple-500"
-                              : order.status === ORDER_STATUS.DELIVERING
-                              ? "bg-blue-500"
-                              : order.status === ORDER_STATUS.DONE
-                              ? "bg-green-500"
-                              : "bg-orange-500"
-                          }`}
-                        >
-                          {order.status === ORDER_STATUS.PREPARING
-                            ? "בהכנה"
-                            : order.status === ORDER_STATUS.DELIVERING
-                            ? "במשלוח"
-                            : order.status === ORDER_STATUS.DONE
-                            ? "אוכל מוכן"
-                            : "מחכה אישור"}
-                        </span>
-                      </td>
-                      <td className="p-3">{translateDeliveryOption(order.deliveryOption)}</td>
-                      <td className="p-3">{formatTime(order.createdAt)}</td>
-                      <td className="p-3">
-                        <button
-                          className="text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-sm"
-                          onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
-                        >
-                          {expandedOrderId === order._id ? "הסתר פרטים" : "הצג פרטים"}
-                        </button>
-                      </td>
-                    </tr>
+      {/* Main */}
+      <div className="flex-1 flex flex-col">
+        {/* Top bar */}
+        <header className="h-16 bg-[#11131a] border-b border-white/10 sticky top-0 z-20">
+          <div className="h-full px-4 md:px-6 flex items-center gap-3">
+            <button
+              className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="פתח תפריט"
+            >
+              <Menu size={20} />
+            </button>
 
-                    {expandedOrderId === order._id && (
-                      <tr className="bg-white/5">
-                        <td colSpan="6" className="p-4">
-                          <div className="space-y-4">
+            <div className="flex-1">
+              <h1 className="text-base md:text-lg font-semibold">הזמנות פעילות (היום)</h1>
+              <p className="text-white/50 text-xs">מציג רק הזמנות מהיום</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Table card */}
+        <div className="px-4 md:px-6 mt-4">
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-white/10">
+            {/* Desktop header */}
+            <div className="hidden md:grid bg-emerald-500 text-emerald-50 text-sm font-semibold grid-cols-12 px-4 py-3">
+              <div className="col-span-2">מס׳ הזמנה</div>
+              <div className="col-span-3">תאריך</div>
+              <div className="col-span-3">שם לקוח</div>
+              <div className="col-span-2">סוג משלוח</div>
+              <div className="col-span-1">סכום</div>
+              <div className="col-span-1 text-left">סטטוס</div>
+            </div>
+
+            {/* rows block */}
+            <div className="bg-[#17181d]">
+              {filtered.length === 0 ? (
+                <div className="px-5 py-8 text-white/60 text-sm">אין הזמנות להצגה.</div>
+              ) : (
+                filtered.map((order) => {
+                  const customer = order.user?.name
+                    ? `${order.user.name}`
+                    : order.customerName
+                    ? `${order.customerName}`
+                    : "אורח";
+                  const phone = order.user?.phone || order.phone || "";
+
+                  return (
+                    <div key={order._id} className="px-3 md:px-4">
+                      {/* Desktop row */}
+                      <div className="hidden md:grid grid-cols-12 items-center gap-2 py-4 border-b border-white/10">
+                        <div className="col-span-2 text-white/80">#{order._id.slice(-6)}</div>
+                        <div className="col-span-3 text-white/60">
+                          {new Date(order.createdAt).toLocaleString("he-IL")}
+                        </div>
+                        <div className="col-span-3 truncate">
+                          <span className="text-white/90">{customer}</span>
+                          {phone && <span className="text-white/40"> · {phone}</span>}
+                        </div>
+                        <div className="col-span-2 text-white/70">
+                          {translateDeliveryOption(order.deliveryOption)}
+                        </div>
+                        <div className="col-span-1 text-white/80">
+                          {order.totalPrice ? `₪${order.totalPrice}` : "-"}
+                        </div>
+
+                        {/* status + details button */}
+                        <div className="col-span-1 flex items-center justify-end gap-2">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] ${badgeClasses(order.status)}`}>
+                            {order.status === ORDER_STATUS?.PREPARING
+                              ? "בהכנה"
+                              : order.status === ORDER_STATUS?.DELIVERING
+                              ? "במשלוח"
+                              : order.status === ORDER_STATUS?.DONE
+                              ? "הושלם"
+                              : "ממתין"}
+                          </span>
+
+                          <button
+                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs"
+                            onClick={() =>
+                              setExpandedOrderId(expandedOrderId === order._id ? null : order._id)
+                            }
+                          >
+                            {expandedOrderId === order._id ? "הסתר פרטים" : "הצג פרטים"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile card */}
+                      <div className="md:hidden py-4 border-b border-white/10">
+                        <div className="flex items-center justify-between">
+                          <div className="text-white/80 font-semibold">#{order._id.slice(-6)}</div>
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] ${badgeClasses(order.status)}`}>
+                            {order.status === ORDER_STATUS?.PREPARING
+                              ? "בהכנה"
+                              : order.status === ORDER_STATUS?.DELIVERING
+                              ? "במשלוח"
+                              : order.status === ORDER_STATUS?.DONE
+                              ? "הושלם"
+                              : "ממתין"}
+                          </span>
+                        </div>
+                        <div className="text-white/60 text-xs mt-1">
+                          {new Date(order.createdAt).toLocaleString("he-IL")}
+                        </div>
+                        <div className="mt-2 text-sm">
+                          <span className="text-white/90">{customer}</span>
+                          {phone && <span className="text-white/40"> · {phone}</span>}
+                        </div>
+                        <div className="text-white/70 text-sm mt-1">
+                          {translateDeliveryOption(order.deliveryOption)} · {order.totalPrice ? `₪${order.totalPrice}` : "-"}
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs"
+                            onClick={() =>
+                              setExpandedOrderId(expandedOrderId === order._id ? null : order._id)
+                            }
+                          >
+                            {expandedOrderId === order._id ? "הסתר פרטים" : "הצג פרטים"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* expanded details (both views) */}
+                      {expandedOrderId === order._id && (
+                        <div className="mx-0 md:mx-4 mb-4 rounded-xl bg-white/5 border border-white/10 p-4 text-sm">
+                          <div className="grid md:grid-cols-3 gap-4">
                             <div>
-                              <p>
-                                <strong>שם משתמש:</strong> {order.user ? order.user.name : order.customerName || "אורח"}
-                              </p>
-                              <p>
-                                <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone}
-                              </p>
+                              <div>
+                                <strong>שם משתמש:</strong>{" "}
+                                {order.user ? order.user.name : order.customerName || "אורח"}
+                              </div>
+                              <div>
+                                <strong>טלפון:</strong>{" "}
+                                {order.user ? order.user.phone : order.phone}
+                              </div>
+                              <div>
+                                <strong>אמצעי תשלום:</strong>{" "}
+                                {translatePaymentMethod(order.paymentDetails?.method)}
+                              </div>
+                              <div>
+                                <strong>נוצר:</strong> {formatTime(order.createdAt)}
+                              </div>
                             </div>
 
-                            <h4 className="text-lg font-bold">פרטי הזמנה</h4>
-                            <ul className="text-sm space-y-2">
-                              {order.items.map((item, idx) => (
-                                <li key={idx}>
-                                  <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}{" "}
-                                  {item.isWeighted ? "גרם" : ""}
-                                  <br />
-                                  ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                  <br />
-                                  תוספות:{" "}
-                                  {Array.isArray(item.additions) && item.additions.length
-                                    ? item.additions.map((a) => a.addition).join(", ")
-                                    : "אין"}
-                                  <br />
-                                  הערות: {item.comment || "אין הערות"}
-                                </li>
-                              ))}
-                            </ul>
+                            <div className="md:col-span-2">
+                              <h4 className="font-semibold mb-2">פרטי הזמנה</h4>
+                              <ul className="space-y-2">
+                                {order.items.map((item, idx) => (
+                                  <li key={idx} className="leading-6">
+                                    <strong>{item.product?.name || item.title || "פריט"}</strong>{" "}
+                                    — כמות: {item.quantity} {item.isWeighted ? "גרם" : ""}
+                                    <div className="text-white/70">
+                                      ירקות:{" "}
+                                      {Array.isArray(item.vegetables) && item.vegetables.length
+                                        ? item.vegetables.join(", ")
+                                        : "אין"}{" "}
+                                      · תוספות:{" "}
+                                      {Array.isArray(item.additions) && item.additions.length
+                                        ? item.additions.map((a) => a.addition).join(", ")
+                                        : "אין"}
+                                      {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
 
-                            <p className="text-lg">
-                              <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
-                            </p>
+                          {/* actions */}
+                          <div className="mt-4 flex flex-wrap gap-3">
+                            {order.deliveryOption === "Delivery" &&
+                              order.status === ORDER_STATUS?.PREPARING && (
+                                <button
+                                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
+                                  onClick={() => markAsDelivering(order._id)}
+                                >
+                                  במשלוח
+                                </button>
+                              )}
 
-                            <p>
-                              <strong>סכום לתשלום:</strong> {order.totalPrice ? `${order.totalPrice} ₪` : "לא זמין"}
-                            </p>
+                            {((order.deliveryOption === "Delivery" &&
+                              order.status === ORDER_STATUS?.DELIVERING) ||
+                              order.deliveryOption !== "Delivery") && (
+                              <button
+                                className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg"
+                                onClick={() => markAsDone(order._id)}
+                              >
+                                סמן כהושלם
+                              </button>
+                            )}
 
                             {order.deliveryOption !== "EatIn" && (
-                              <div>
-                                <label className="block mb-1">בחר זמן הכנה:</label>
+                              <div className="flex items-center gap-2">
+                                <label className="text-white/70">זמן הכנה:</label>
                                 <select
                                   value={order.estimatedTime || ""}
                                   onChange={(e) => handleTimeChange(order._id, e.target.value)}
-                                  className="bg-[#2a2a2a] border border-white/20 text-white rounded px-3 py-2"
+                                  className="bg-[#15171c] border border-white/10 rounded-lg px-3 py-2"
                                 >
-                                  <option value="">בחר זמן</option>
+                                  <option value="">בחר</option>
                                   {[15, 20, 25, 30, 35, 40, 45].map((t) => (
                                     <option key={t} value={t}>
                                       {t} דקות
@@ -364,55 +402,47 @@ const ActiveOrdersPage = () => {
                               </div>
                             )}
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                              {/* Show “Start Delivery” button if preparing and delivery */}
-                              {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.PREPARING && (
-                                <button
-                                  className="bg-blue-600 text-white font-bold rounded px-4 py-2"
-                                  onClick={() => markAsDelivering(order._id)}
-                                >
-                                  במשלוח
-                                </button>
-                              )}
+                            <button
+                              className="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg"
+                              onClick={() => {
+                                setAddOrderId(order._id);
+                                setShowAddModal(true);
+                              }}
+                            >
+                              הוסף פריט
+                            </button>
 
-                              {/* Show “Mark as Done” if already in delivery OR not a delivery order */}
-                              {((order.deliveryOption === "Delivery" && order.status === ORDER_STATUS.DELIVERING) ||
-                                order.deliveryOption !== "Delivery") && (
-                                <button
-                                  className="bg-green-500 text-white font-bold rounded px-4 py-2"
-                                  onClick={() => markAsDone(order._id)}
-                                >
-                                  סמן כהושלם
-                                </button>
-                              )}
-
-                              <button
-                                className="bg-yellow-600 text-white font-bold rounded px-4 py-2"
-                                onClick={() => {
-                                  setAddOrderId(order._id);
-                                  setShowAddModal(true);
-                                }}
-                              >
-                                הוסף פריט
-                              </button>
-                              <button className="bg-red-500 text-white font-bold rounded px-4 py-2" onClick={() => deleteOrder(order._id)}>
-                                מחק הזמנה
-                              </button>
-                            </div>
+                            <button
+                              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
+                              onClick={() => deleteOrder(order._id)}
+                            >
+                              מחק הזמנה
+                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-        )}
-      </main>
-      {showAddModal && <AddItemModal orderId={addOrderId} onClose={() => setShowAddModal(false)} onItemAdded={fetchOrders} />}
+
+          {/* footer: simple count */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-white/50 text-xs mt-4">
+            <div>סה״כ להיום: {filtered.length} הזמנות פעילות</div>
+            <div className="text-white/40">מועדון Hungry</div>
+          </div>
+        </div>
+      </div>
+
+      {showAddModal && (
+        <AddItemModal
+          orderId={addOrderId}
+          onClose={() => setShowAddModal(false)}
+          onItemAdded={fetchOrders}
+        />
+      )}
     </div>
   );
-};
-
-export default ActiveOrdersPage;
+}
