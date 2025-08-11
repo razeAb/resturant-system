@@ -5,30 +5,18 @@ import AddProductModal from "./modals/AddProductMoadl"; // keep your original fi
 import EditProductModal from "./modals/EditProductModal";
 import Button from "../components/common/Button";
 import { Menu, Pencil, Trash2, Power } from "lucide-react";
-import { ResponsiveContainer, PieChart, Pie, Tooltip } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Tooltip, Label } from "recharts";
 
 /** Small section wrapper like on other pages */
 function SectionCard({ title, children, extra }) {
   return (
-    <section className="bg-[#111824] border border-[#1f2a36] rounded-xl p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="text-[16px] font-bold truncate">{title}</h3>
+    <section className="bg-[#111824] border border-[#1f2a36] rounded-2xl p-4 sm:p-6">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <h3 className="text-[15px] sm:text-[16px] font-semibold tracking-tight">{title}</h3>
         {extra}
       </div>
       {children}
     </section>
-  );
-}
-
-/** Center label for donut */
-function CenterLabel({ viewBox, value }) {
-  const { cx, cy } = viewBox || {};
-  return (
-    <g>
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="fill-white" style={{ fontSize: 18, fontWeight: 800 }}>
-        {value}%
-      </text>
-    </g>
   );
 }
 
@@ -71,7 +59,7 @@ export default function AdminProducts() {
         setLoading(false);
       }
 
-      // Stats (global percentages by category – current month)
+      // Stats (global counts by category – current month)
       try {
         setStatsLoading(true);
         const token = localStorage.getItem("token");
@@ -102,16 +90,32 @@ export default function AdminProducts() {
           list = Object.entries(byCat).map(([name, count]) => ({ name, count }));
         }
 
+        // Ensure ALL categories appear (even with 0)
+        const allCats = new Set(normalized.map((p) => p.category || "לא מקוטלג"));
+        list = Array.from(allCats).map((name) => {
+          const found = (list || []).find((x) => x.name === name);
+          return { name, count: found ? Number(found.count) || 0 : 0 };
+        });
+
         setCategoryStats(list);
       } catch (e) {
         console.warn("טעינת סטטיסטיקות נכשלה, מעבר לחישוב מקומי…", e);
         const byCat = {};
- const source = normalized.length ? normalized : products;
-        for (const p of source) {          const cat = p.category || "לא מקוטלג";
+        const source = normalized.length ? normalized : products;
+        for (const p of source) {
+          const cat = p.category || "לא מקוטלג";
           const c = Number(p.orderCount ?? p.timesOrdered ?? p.totalOrders ?? 0);
           byCat[cat] = (byCat[cat] || 0) + (isFinite(c) ? c : 0);
         }
-        const list = Object.entries(byCat).map(([name, count]) => ({ name, count }));
+        let list = Object.entries(byCat).map(([name, count]) => ({ name, count }));
+
+        // Ensure ALL categories appear (even with 0)
+        const allCats = new Set((normalized.length ? normalized : products).map((p) => p.category || "לא מקוטלג"));
+        list = Array.from(allCats).map((name) => {
+          const found = (list || []).find((x) => x.name === name);
+          return { name, count: found ? Number(found.count) || 0 : 0 };
+        });
+
         setCategoryStats(list);
       } finally {
         setStatsLoading(false);
@@ -128,25 +132,20 @@ export default function AdminProducts() {
     return ["הכל", ...Array.from(set)];
   }, [products]);
 
- /** derived: products filtered by search only */
+  /** derived: products filtered by search only */
   const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        !q ||
-        (p.name || "").toLowerCase().includes(q) ||
-        (p.description || "").toLowerCase().includes(q)
-    );
+    return products.filter((p) => !q || (p.name || "").toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q));
   }, [products, query]);
 
   /** derived: final visible list (search + category) */
   const visibleProducts = useMemo(() => {
     return searchFiltered.filter((p) => {
-    
       const cat = p.category || "לא מקוטלג";
-     return activeCategory === "הכל" || cat === activeCategory;
+      return activeCategory === "הכל" || cat === activeCategory;
     });
   }, [searchFiltered, activeCategory]);
+
   /** derived: grouped (AFTER filter/search) */
   const groupedByCategory = useMemo(() => {
     return visibleProducts.reduce((acc, product) => {
@@ -157,18 +156,24 @@ export default function AdminProducts() {
     }, {});
   }, [visibleProducts]);
 
-  /** derived: GLOBAL donut data (does NOT follow filter) */
+  /** donut data (GLOBAL; shows ALL categories) */
   const donutData = useMemo(() => {
     const total = categoryStats.reduce((s, i) => s + (Number(i.count) || 0), 0);
-    if (!total) return [];
-    const top = [...categoryStats]
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 6)
-      .map((i) => {
-        const pct = Math.round(((Number(i.count) || 0) / total) * 100);
-        return { name: i.name, value: Number(i.count) || 0, pct };
-      });
-    return top;
+    const ordered = [...categoryStats].sort((a, b) => {
+      const ca = Number(a.count) || 0;
+      const cb = Number(b.count) || 0;
+      if (cb !== ca) return cb - ca;
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    if (total === 0) {
+      return ordered.map((i) => ({ name: i.name, value: 0, pct: 0, total: 0 }));
+    }
+    return ordered.map((i) => {
+      const value = Number(i.count) || 0;
+      const pct = Math.round((value / total) * 100);
+      return { name: i.name, value, pct, total };
+    });
   }, [categoryStats]);
 
   /** actions */
@@ -215,6 +220,10 @@ export default function AdminProducts() {
       </div>
     );
   }
+
+  // palette for highlighted segments (cycles)
+  const COLORS = ["#22c3e6", "#ef476f", "#f7c948", "#10b981", "#a78bfa", "#fb923c", "#60a5fa"];
+  const REST = "rgba(255,255,255,0.08)";
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#0f141c] text-white flex">
@@ -265,27 +274,12 @@ export default function AdminProducts() {
         <main className="px-4 sm:px-6 pb-10">
           {/* Filters */}
           <div className="mt-6">
-            <SectionCard
-              title="סינון מוצרים"
-              extra={
-                <div className="w-full sm:w-64">
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="חיפוש לפי שם/תיאור…"
-                    className="w-full bg-[#0f141c] border border-[#1f2a36] text-sm rounded-lg px-3 py-2 outline-none focus:border-white/30"
-                  />
-                </div>
-              }
-            >
+            <SectionCard title="סינון מוצרים">
               <div className="flex flex-wrap gap-2">
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat;
                   const count =
-                    cat === "הכל"
-                      ? searchFiltered.length
-                      : searchFiltered.filter((p) => (p.category || "לא מקוטלג") === cat).length;
-
+                    cat === "הכל" ? searchFiltered.length : searchFiltered.filter((p) => (p.category || "לא מקוטלג") === cat).length;
 
                   return (
                     <button
@@ -387,47 +381,60 @@ export default function AdminProducts() {
 
           {/* ===== Menu Comparison (GLOBAL donuts) ===== */}
           <div className="mt-6">
-            <SectionCard
-              title="השוואת תפריט (אחוז הזמנות לפי קטגוריה – החודש)"
-              extra={<span className="text-xs text-white/50">{statsLoading ? "טוען…" : "נתונים גלובליים"}</span>}
-            >
-              {!donutData.length && !statsLoading ? (
+            <SectionCard title="Menu Comparison">
+              {statsLoading ? (
+                <div className="text-[#8b93a7] text-sm py-6 text-center">טוען…</div>
+              ) : !donutData.length ? (
                 <div className="text-[#8b93a7] text-sm py-6 text-center">אין נתונים להצגה.</div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {donutData.map((d) => (
-                    <div key={d.name} className="bg-[#0f141c] border border-[#1f2a36] rounded-xl p-4 flex flex-col items-center">
-                      <div className="w-full h-52">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={[
-                                { name: d.name, value: d.value },
-                                { name: "Other", value: Math.max(1, 100 - d.pct) }, // dummy remainder
-                              ]}
-                              dataKey="value"
-                              innerRadius="65%"
-                              outerRadius="90%"
-                              stroke="none"
-                              label={<CenterLabel value={d.pct} />}
-                              isAnimationActive
-                            />
-                            <Tooltip
-                              formatter={(val, name) => (name === d.name ? [`${d.value}`, d.name] : null)}
-                              contentStyle={{
-                                background: "#0f141c",
-                                border: "1px solid #1f2a36",
-                                borderRadius: 8,
-                              }}
-                              itemStyle={{ color: "#fff" }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                  {donutData.map((d, idx) => {
+                    const color = COLORS[idx % COLORS.length];
+                    const restValue = d.total === 0 ? 1 : Math.max(0, d.total - d.value); // keep ring visible when total=0
+
+                    return (
+                      <div key={d.name} className="bg-[#111824] border border-[#1f2a36] rounded-2xl p-5 flex flex-col items-center">
+                        <div className="w-full" style={{ height: 220 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: d.name, value: d.value, fill: color },
+                                  { name: "שאר", value: restValue, fill: REST },
+                                ]}
+                                dataKey="value"
+                                innerRadius="65%"
+                                outerRadius="90%"
+                                stroke="none"
+                                labelLine={false}
+                              >
+                                <Label value={`${d.pct}%`} position="center" fill="#ffffff" style={{ fontSize: 20, fontWeight: 800 }} />
+                              </Pie>
+
+                              <Tooltip
+                                formatter={(val, name) => {
+                                  if (name === d.name) {
+                                    const pct = d.total ? Math.round((d.value / d.total) * 100) : 0;
+                                    return [`${val} (${pct}%)`, d.name];
+                                  }
+                                  const rest = d.total ? d.total - d.value : 0;
+                                  const pct = d.total ? Math.round((rest / d.total) * 100) : 0;
+                                  return [`${rest} (${pct}%)`, "שאר"];
+                                }}
+                                contentStyle={{
+                                  background: "#0f141c",
+                                  border: "1px solid #1f2a36",
+                                  borderRadius: 8,
+                                }}
+                                itemStyle={{ color: "#fff" }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="mt-3 text-sm sm:text-base font-semibold text-white/90 text-center">{d.name}</div>
                       </div>
-                      <div className="mt-2 text-sm font-semibold">{d.name}</div>
-                      <div className="text-xs text-white/50">({d.pct}% מכלל ההזמנות)</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </SectionCard>
