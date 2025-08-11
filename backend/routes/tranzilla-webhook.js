@@ -49,6 +49,7 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
       order.paymentStatus = "paid";
       order.status = "paid";
       order.tranzilaToken = data.TranzilaTK || "";
+            order.paidAt = new Date();
     } else {
       order.paymentStatus = "failed";
       order.status = "failed";

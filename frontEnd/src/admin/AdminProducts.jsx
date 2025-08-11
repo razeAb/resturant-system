@@ -40,9 +40,7 @@ export default function AdminProducts() {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+
   // ---- filter/search state
   const [activeCategory, setActiveCategory] = useState("הכל");
   const [query, setQuery] = useState("");
@@ -53,13 +51,14 @@ export default function AdminProducts() {
   /** fetch products + stats */
   useEffect(() => {
     const fetchAll = async () => {
+      let normalized = [];
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
         const res = await api.get(`/api/admin/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const normalized = (res.data?.products ?? []).map((p) => ({
+        normalized = (res.data?.products ?? []).map((p) => ({
           ...p,
           isActive: Boolean(p.isActive),
         }));
@@ -107,8 +106,8 @@ export default function AdminProducts() {
       } catch (e) {
         console.warn("טעינת סטטיסטיקות נכשלה, מעבר לחישוב מקומי…", e);
         const byCat = {};
-        for (const p of products) {
-          const cat = p.category || "לא מקוטלג";
+ const source = normalized.length ? normalized : products;
+        for (const p of source) {          const cat = p.category || "לא מקוטלג";
           const c = Number(p.orderCount ?? p.timesOrdered ?? p.totalOrders ?? 0);
           byCat[cat] = (byCat[cat] || 0) + (isFinite(c) ? c : 0);
         }
@@ -129,17 +128,25 @@ export default function AdminProducts() {
     return ["הכל", ...Array.from(set)];
   }, [products]);
 
-  /** derived: search + category filtered list */
-  const visibleProducts = useMemo(() => {
+ /** derived: products filtered by search only */
+  const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
-      const cat = p.category || "לא מקוטלג";
-      const matchCategory = activeCategory === "הכל" || cat === activeCategory;
-      const matchQuery = !q || (p.name || "").toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q);
-      return matchCategory && matchQuery;
-    });
-  }, [products, activeCategory, query]);
+    return products.filter(
+      (p) =>
+        !q ||
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q)
+    );
+  }, [products, query]);
 
+  /** derived: final visible list (search + category) */
+  const visibleProducts = useMemo(() => {
+    return searchFiltered.filter((p) => {
+    
+      const cat = p.category || "לא מקוטלג";
+     return activeCategory === "הכל" || cat === activeCategory;
+    });
+  }, [searchFiltered, activeCategory]);
   /** derived: grouped (AFTER filter/search) */
   const groupedByCategory = useMemo(() => {
     return visibleProducts.reduce((acc, product) => {
@@ -275,7 +282,10 @@ export default function AdminProducts() {
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat;
                   const count =
-                    cat === "הכל" ? visibleProducts.length : visibleProducts.filter((p) => (p.category || "לא מקוטלג") === cat).length;
+                    cat === "הכל"
+                      ? searchFiltered.length
+                      : searchFiltered.filter((p) => (p.category || "לא מקוטלג") === cat).length;
+
 
                   return (
                     <button
