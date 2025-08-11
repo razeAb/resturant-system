@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import api from "../api";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import Button from "../components/common/Button";
@@ -202,6 +202,19 @@ export default function AdminDashboard() {
 
     return labels.map((name, i) => ({ name, current: cur[i], last: prev[i] }));
   }, [dashboardData, selectedDate]);
+  const dateRef = useRef(null);
+  const openCalendar = () => {
+    const el = dateRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      // Chrome/Edge
+      el.showPicker();
+    } else {
+      // Safari/Firefox fallback
+      el.focus();
+      el.click();
+    }
+  };
 
   const hourlyRevenue = useMemo(() => {
     const hours = Array.from({ length: 24 }, (_, h) => ({ name: String(h).padStart(2, "0"), revenue: 0 }));
@@ -290,21 +303,30 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Easier click date picker */}
-              <label className="relative cursor-pointer select-none">
-                <div className="flex items-center gap-2 bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2.5 h-11 min-w-[220px] text-[13px] text-[#c7cfdd]">
+              {/* Date picker button (opens native calendar) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={openCalendar}
+                  className="flex items-center gap-2 bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2.5 h-11 min-w-[220px] text-[13px] text-[#c7cfdd] hover:bg-white/5 transition"
+                  aria-label="בחר תאריך"
+                >
                   <Calendar size={16} className="opacity-80" />
                   <span className="shrink-0">תאריך יומי:</span>
                   <span className="truncate text-white/90">{selectedDateLabel}</span>
-                </div>
-                {/* Invisible input covers the whole control */}
+                </button>
+
+                {/* Real input (hidden but functional) */}
                 <input
+                  ref={dateRef}
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  className="absolute inset-0 opacity-0 pointer-events-none -z-10"
+                  aria-hidden="true"
+                  tabIndex={-1}
                 />
-              </label>
+              </div>
 
               <Button
                 title={restaurantOpen ? "סגור מסעדה" : "פתח מסעדה"}
