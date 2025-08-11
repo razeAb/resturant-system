@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import api from "../api";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import Button from "../components/common/Button";
-import { motion, AnimatePresence } from "framer-motion";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
+import { motion } from "framer-motion";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
 
 /** Utils **/
 const ILS = new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 2 });
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [restaurantOpen, setRestaurantOpen] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
 
-  // filters
+  // filters (keep only daily + period values for charts that remain)
   const todayYMD = toYMD(new Date());
   const [selectedDate, setSelectedDate] = useState(todayYMD);
   const [period, setPeriod] = useState(() => {
@@ -37,8 +37,9 @@ export default function AdminDashboard() {
     const from = addDays(to, -29); // last 30 days
     return { from: toYMD(from), to: toYMD(to) };
   });
-  const [showPeriod, setShowPeriod] = useState(false);
-  const popRef = useRef(null);
+
+  // revenue view (month/year compare | week compare | day hourly)
+  const [revenueView, setRevenueView] = useState("year"); // "year" | "week" | "day"
 
   /** Fetch **/
   const fetchDashboard = useCallback(async (signal) => {
@@ -73,21 +74,6 @@ export default function AdminDashboard() {
     return () => controller.abort();
   }, [fetchDashboard, selectedDate, period]);
 
-  // close popover on outside click / Esc (mobile friendly)
-  useEffect(() => {
-    const onClick = (e) => {
-      if (!showPeriod) return;
-      if (popRef.current && !popRef.current.contains(e.target)) setShowPeriod(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setShowPeriod(false);
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [showPeriod]);
-
   /** Derived helpers **/
   const ordersInPeriod = useMemo(() => {
     if (!dashboardData?.orders) return [];
@@ -117,43 +103,98 @@ export default function AdminDashboard() {
   }, [dashboardData, selectedDate]);
 
   /** Charts data (period) **/
-  const pieData = useMemo(() => {
-    const total = ordersInPeriod.length || 1;
-    const done = ordersInPeriod.filter((o) => o.status === ORDER_STATUS.DONE).length;
-    const canceled = ordersInPeriod.filter((o) => o.status === ORDER_STATUS.CANCELED).length;
-    const other = Math.max(total - done - canceled, 0);
-    return [
-      { name: "בוצעו", value: done, color: "#10b981" },
-      { name: "בוטלו", value: canceled, color: "#ef4444" },
-      { name: "אחר", value: other, color: "#60a5fa" },
-    ];
-  }, [ordersInPeriod]);
-
   const weeklyBar = useMemo(() => {
-    // group by weekday Sunday(0) -> Saturday(6)
-    const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // match getDay order (0..6)
+    const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // Sunday..Saturday
     const counts = new Array(7).fill(0);
     ordersInPeriod.forEach((o) => {
       const d = new Date(o.createdAt);
       const idx = d.getDay();
-      counts[idx]++;
+      if (o.status === ORDER_STATUS.DONE) counts[idx] += Number(o.totalPrice) || 0; // revenue per weekday
     });
-    return labels.map((name, i) => ({ name, orders: counts[i] }));
+    return labels.map((name, i) => ({ name, revenue: counts[i] }));
   }, [ordersInPeriod]);
 
   const monthlyRevenue = useMemo(() => {
     const map = new Map();
-    ordersInPeriod.forEach((o) => {
+    (dashboardData?.orders ?? []).forEach((o) => {
       if (o.status !== ORDER_STATUS.DONE) return;
       const d = new Date(o.createdAt);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const key = `${y}-${m}`;
       const label = d.toLocaleDateString("he-IL", { month: "short" });
-      const cur = map.get(key) || { name: label, revenue: 0 };
+      const cur = map.get(key) || { name: label, revenue: 0, year: y, month: m };
       cur.revenue += Number(o.totalPrice) || 0;
       map.set(key, cur);
     });
-    return Array.from(map.values());
-  }, [ordersInPeriod]);
+    // ensure 12 months exist for current & last year
+    const baseDate = new Date(selectedDate);
+    const currentYear = baseDate.getFullYear();
+    const years = [currentYear - 1, currentYear];
+    const filled = [];
+    years.forEach((y) => {
+      for (let m = 0; m < 12; m++) {
+        const k = `${y}-${m}`;
+        const exist = map.get(k) || { name: new Date(y, m, 1).toLocaleDateString("he-IL", { month: "short" }), revenue: 0, year: y, month: m };
+        filled.push(exist);
+      }
+    });
+    return filled;
+  }, [dashboardData, selectedDate]);
+
+  // Year compare (months): current year vs last year
+  const monthlyCompare = useMemo(() => {
+    const baseDate = new Date(selectedDate);
+    const currentYear = baseDate.getFullYear();
+    const lastYear = currentYear - 1;
+    const months = Array.from({ length: 12 }, (_, m) => new Date(currentYear, m, 1).toLocaleDateString("he-IL", { month: "short" }));
+
+    const cur = new Array(12).fill(0);
+    const prev = new Array(12).fill(0);
+    monthlyRevenue.forEach((row) => {
+      if (row.year === currentYear) cur[row.month] += row.revenue;
+      if (row.year === lastYear) prev[row.month] += row.revenue;
+    });
+    return months.map((name, i) => ({ name, current: cur[i], last: prev[i] }));
+  }, [monthlyRevenue, selectedDate]);
+
+  // Week compare (by weekday) for the week of selectedDate vs previous week
+  const weeklyCompare = useMemo(() => {
+    const orders = (dashboardData?.orders ?? []).filter((o) => o.status === ORDER_STATUS.DONE);
+    const base = new Date(selectedDate);
+    const day = base.getDay(); // 0=Sun
+    const startCurrent = new Date(base);
+    startCurrent.setDate(base.getDate() - day); // Sunday
+    const startPrev = addDays(startCurrent, -7);
+
+    const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
+    const cur = new Array(7).fill(0);
+    const prev = new Array(7).fill(0);
+
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const bucket = (arr, start) => {
+        const diff = Math.floor((d - start) / 86400000);
+        if (diff >= 0 && diff < 7) arr[new Date(d).getDay()] += Number(o.totalPrice) || 0;
+      };
+      bucket(cur, startCurrent);
+      bucket(prev, startPrev);
+    });
+
+    return labels.map((name, i) => ({ name, current: cur[i], last: prev[i] }));
+  }, [dashboardData, selectedDate]);
+
+  // Day hourly revenue for selectedDate
+  const hourlyRevenue = useMemo(() => {
+    const hours = Array.from({ length: 24 }, (_, h) => ({ name: String(h).padStart(2, "0"), revenue: 0 }));
+    (dashboardData?.orders ?? []).forEach((o) => {
+      if (o.status !== ORDER_STATUS.DONE) return;
+      if (toYMD(o.createdAt) !== selectedDate) return;
+      const h = new Date(o.createdAt).getHours();
+      if (h >= 0 && h < 24) hours[h].revenue += Number(o.totalPrice) || 0;
+    });
+    return hours;
+  }, [dashboardData, selectedDate]);
 
   /** Actions **/
   const handleToggleRestaurant = async (open) => {
@@ -199,214 +240,108 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0f141c] text-white" dir="rtl">
-      {/* Sticky Top Bar on mobile */}
+      {/* Top Bar (minimal) */}
       <div className="sticky top-0 z-20 bg-[#0f141c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f141c]/80 border-b border-[#1f2a36]">
         <div className="px-4 sm:px-6 pt-4 pb-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* Search */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 bg-[#111824] border border-[#1f2a36] rounded-lg px-3 sm:px-4 h-10 text-[#8e98aa]">
-                <span className="text-xs shrink-0">🔎</span>
-                <input className="w-full bg-transparent outline-none text-[12px] placeholder-[#6f788c]" placeholder="חיפוש…" />
-              </div>
-            </div>
-
-            {/* Right actions */}
-            <div className="hidden xs:flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:grid place-items-center bg-[#111824] border border-[#1f2a36] w-8 h-8 rounded-lg">🔔</div>
-              <div className="hidden sm:grid place-items-center bg-[#111824] border border-[#1f2a36] w-8 h-8 rounded-lg">✉️</div>
-              <div className="hidden sm:grid place-items-center bg-[#111824] border border-[#1f2a36] w-8 h-8 rounded-lg">⚙️</div>
-              <div className="w-8 h-8 rounded-full bg-[#1c2532]" />
-            </div>
-          </div>
-
-          {/* Page title + filters */}
-          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-[18px] font-bold tracking-tight truncate">לוח בקרה</h2>
               <p className="text-[11px] text-[#8b93a7] mt-1">ברוך/ה הבא/ה למערכת הניהול</p>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 relative">
-              {/* Filter Period Popover (Sedap-like) */}
-              <button
-                onClick={() => setShowPeriod((s) => !s)}
-                className="bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2 text-[11px] text-[#c7cfdd] flex items-center gap-2"
-                aria-haspopup="dialog"
-                aria-expanded={showPeriod}
-              >
-                <span>טווח זמן</span>
-                <span className="text-[#8b93a7] hidden sm:inline">
-                  {period.from} – {period.to}
-                </span>
-                <span className="text-[#8b93a7] sm:hidden">בחירה</span>
-                <span className="text-[#8b93a7]">▾</span>
-              </button>
-
-              <AnimatePresence>
-                {showPeriod && (
-                  <>
-                    {/* touch overlay for outside click on mobile */}
-                    <motion.button
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.4 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => setShowPeriod(false)}
-                      className="fixed inset-0 bg-black/60 z-20 sm:hidden"
-                      aria-hidden="true"
-                    />
-                    <motion.div
-                      ref={popRef}
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute sm:top-12 top-11 right-0 w-[min(92vw,320px)] bg-[#0f141c] border border-[#1f2a36] rounded-xl p-3 shadow-xl z-30"
-                      role="dialog"
-                      aria-label="בחירת טווח זמן"
-                    >
-                      <div className="text-[12px] text-[#c7cfdd]">בחר טווח</div>
-                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] text-white/80">
-                        <label className="bg-[#111824] border border-[#1f2a36] rounded-lg px-2 py-1 flex items-center gap-2">
-                          <span className="text-[#8b93a7] shrink-0">מ-</span>
-                          <input
-                            type="date"
-                            value={period.from}
-                            onChange={(e) => setPeriod((p) => ({ ...p, from: e.target.value }))}
-                            className="bg-transparent outline-none flex-1"
-                          />
-                        </label>
-                        <label className="bg-[#111824] border border-[#1f2a36] rounded-lg px-2 py-1 flex items-center gap-2">
-                          <span className="text-[#8b93a7] shrink-0">עד</span>
-                          <input
-                            type="date"
-                            value={period.to}
-                            onChange={(e) => setPeriod((p) => ({ ...p, to: e.target.value }))}
-                            className="bg-transparent outline-none flex-1"
-                          />
-                        </label>
-                      </div>
-                      <div className="mt-3 flex justify-end gap-2">
-                        <button
-                          onClick={() => setShowPeriod(false)}
-                          className="text-[12px] px-3 py-2 rounded-md border border-[#1f2a36] bg-[#111824] text-[#c7cfdd] w-full sm:w-auto"
-                        >
-                          סגור
-                        </button>
-                        <button
-                          onClick={() => setShowPeriod(false)}
-                          className="text-[12px] px-3 py-2 rounded-md bg-[#14b98a] text-white w-full sm:w-auto"
-                        >
-                          החל
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-
-              {/* Daily date (kept for your daily KPIs) */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <label className="bg-[#111824] border border-[#1f2a36] rounded-lg px-3 py-2 text-[11px] text-[#c7cfdd] flex items-center gap-2 min-w-[170px]">
                 <span className="shrink-0">תאריך יומי</span>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent outline-none text-white/80 w-full"
-                />
+                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent outline-none text-white/80 w-full" />
               </label>
-
-              <Button
-                title={restaurantOpen ? "סגור מסעדה" : "פתח מסעדה"}
-                onClick={() => handleToggleRestaurant(!restaurantOpen)}
-                disabled={isToggling}
-              />
+              <Button title={restaurantOpen ? "סגור מסעדה" : "פתח מסעדה"} onClick={() => handleToggleRestaurant(!restaurantOpen)} disabled={isToggling} />
             </div>
           </div>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="px-4 sm:px-6 mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="px-4 sm:px-6 mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPI icon="🧾" title="סה" desc="כמות הזמנות היום" value={String(daily.totalOrders)} trend="+4.1% (30 ימים)" trendUp />
         <KPI icon="📦" title="סופקו" desc="הזמנות שנמסרו" value={String(daily.delivered)} trend="+3.2% (30 ימים)" trendUp />
         <KPI icon="✖️" title="בוטלו" desc="הזמנות שבוטלו" value={String(daily.canceled)} trend="-2.3% (30 ימים)" />
         <KPI icon="₪" title="הכנסה" desc={`הכנסה ל-${selectedDate}`} value={ILS.format(daily.revenue)} trend="-12.0% (30 ימים)" />
       </motion.div>
 
-      {/* Charts row */}
+      {/* Weekly Orders Bar (revenue per weekday in period) */}
       <div className="px-4 sm:px-6 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Pie (real) */}
-        <SectionCard className="lg:col-span-2" title="פילוח סטטוסים בטווח">
-          <div className="mt-2 h-[260px] sm:h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={2}>
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </SectionCard>
-
-        {/* Weekly Orders Bar */}
-        <SectionCard title="הזמנות בשבוע (בטווח)" subtitle="מבוסס על ההזמנות בתוך הטווח">
+        <SectionCard title="הכנסות לפי יום בשבוע (בטווח)" subtitle="סכום הכנסות להזמנות שבוצעו">
           <div className="mt-2 h-[220px] sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyBar} barCategoryGap={8}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
                 <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
-                <Bar dataKey="orders" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                <Tooltip formatter={(v) => ILS.format(v)} contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
+                <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </SectionCard>
       </div>
 
-      {/* Revenue + Segment */}
-      <div className="px-4 sm:px-6 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue line */}
-        <SectionCard className="lg:col-span-2" title="הכנסה לפי חודש">
-          <div className="mt-2 h-[260px] sm:h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyRevenue} margin={{ left: 8, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
-                <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(v) => ILS.format(v)}
-                  contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }}
-                />
-                <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </SectionCard>
+      {/* Revenue views */}
+      <div className="px-4 sm:px-6 mt-4 grid grid-cols-1">
+        <SectionCard
+          title="הכנסה לפי טווח"
+          rightBadge={
+            <div className="flex items-center gap-1 bg-[#0f141c] border border-[#1f2a36] rounded-lg p-1 text-[11px]">
+              <TabButton active={revenueView === "year"} onClick={() => setRevenueView("year")}>השוואה לשנה קודמת</TabButton>
+              <TabButton active={revenueView === "week"} onClick={() => setRevenueView("week")}>השוואת שבוע</TabButton>
+              <TabButton active={revenueView === "day"} onClick={() => setRevenueView("day")}>שעתי (יומי)</TabButton>
+            </div>
+          }
+        >
+          {/* Year compare: current vs last (months) */}
+          {revenueView === "year" && (
+            <div className="mt-2 h-[260px] sm:h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyCompare} margin={{ left: 8, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
+                  <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 11 }} />
+                  <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                  <Tooltip formatter={(v) => ILS.format(v)} contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
+                  <Line type="monotone" dataKey="current" name="שנה נוכחית" stroke="#22c55e" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="last" name="שנה קודמת" stroke="#60a5fa" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
-        {/* Segment bar (simple by status in period) */}
-        <SectionCard title="פילוח לקוחות (דוגמה)" rightBadge="בטווח">
-          <div className="mt-2 h-[240px] sm:h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pieData.map((p) => ({ name: p.name, value: p.value }))} barCategoryGap={12}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
-                <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
-                <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Week compare: current week vs previous */}
+          {revenueView === "week" && (
+            <div className="mt-2 h-[260px] sm:h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weeklyCompare} margin={{ left: 8, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
+                  <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 11 }} />
+                  <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                  <Tooltip formatter={(v) => ILS.format(v)} contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
+                  <Line type="monotone" dataKey="current" name="שבוע נוכחי" stroke="#22c55e" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="last" name="שבוע קודם" stroke="#60a5fa" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Day hourly: selectedDate hours */}
+          {revenueView === "day" && (
+            <div className="mt-2 h-[260px] sm:h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={hourlyRevenue} margin={{ left: 8, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#223047" />
+                  <XAxis dataKey="name" stroke="#8b93a7" tick={{ fontSize: 10 }} />
+                  <YAxis stroke="#8b93a7" tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                  <Tooltip formatter={(v) => ILS.format(v)} contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }} />
+                  <Line type="monotone" dataKey="revenue" name={`הכנסות (${selectedDate})`} stroke="#22c55e" strokeWidth={2} dot={{ r: 1.5 }} activeDot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </SectionCard>
       </div>
 
@@ -468,48 +403,41 @@ export default function AdminDashboard() {
   );
 }
 
-/** Reusable section shell with mobile-friendly paddings **/
+/** Reusable section shell **/
 function SectionCard({ title, subtitle, rightBadge, className = "", children }) {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.25 }}
-      className={`bg-[#111824] border border-[#1f2a36] rounded-xl p-3 sm:p-4 ${className}`}
-    >
+    <motion.section initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.25 }} className={`bg-[#111824] border border-[#1f2a36] rounded-xl p-3 sm:p-4 ${className}`}>
       <div className="flex items-start sm:items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-[15px] sm:text-[16px] font-bold truncate">{title}</h3>
           {subtitle && <p className="text-[11px] text-[#8b93a7] mt-0.5">{subtitle}</p>}
         </div>
-        {rightBadge && (
-          <div className="text-[11px] text-[#8b93a7] bg-[#0f141c] border border-[#1f2a36] rounded px-2 py-0.5 shrink-0">{rightBadge}</div>
-        )}
+        {rightBadge && <div className="shrink-0">{rightBadge}</div>}
       </div>
       {children}
     </motion.section>
   );
 }
 
+function TabButton({ active, onClick, children }) {
+  return (
+    <button onClick={onClick} className={`px-2.5 py-1 rounded-md transition-colors ${active ? "bg-[#14b98a] text-white" : "text-[#c7cfdd] hover:bg-white/5"}`}>
+      {children}
+    </button>
+  );
+}
+
 /** Small UI atoms **/
 function KPI({ icon, title, desc, value, trend, trendUp }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="bg-[#111824] border border-[#1f2a36] rounded-xl p-3 sm:p-4"
-    >
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="bg-[#111824] border border-[#1f2a36] rounded-xl p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <div className="w-9 h-9 rounded-lg bg-white/5 grid place-items-center text-white/90 text-base">{icon}</div>
         <span className="text-[#6f788c]">⋮</span>
       </div>
       <div className="mt-3">
         <p className="text-[20px] sm:text-[22px] font-extrabold leading-none">{value}</p>
-        <p className="text-[11px] text-[#8b93a7] mt-0.5">
-          {title} · {desc}
-        </p>
+        <p className="text-[11px] text-[#8b93a7] mt-0.5">{title} · {desc}</p>
         <p className={`text-[10px] mt-1 ${trendUp ? "text-[#22c55e]" : "text-[#ef4444]"}`}>{trend}</p>
       </div>
     </motion.div>
