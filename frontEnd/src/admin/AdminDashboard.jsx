@@ -85,6 +85,7 @@ export default function AdminDashboard() {
     const from = period.from;
     const to = period.to;
     return dashboardData.orders.filter((o) => {
+      if (o.status !== ORDER_STATUS.DONE) return false;
       const ymd = toYMD(o?.createdAt);
       return ymd >= from && ymd <= to;
     });
@@ -109,17 +110,18 @@ export default function AdminDashboard() {
 
   /** Charts data (period) **/
 
-  // ✅ Orders per weekday (count, not revenue)
-  const weeklyBar = useMemo(() => {
-    const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // Sunday..Saturday
-    const counts = new Array(7).fill(0);
-    (ordersInPeriod ?? []).forEach((o) => {
+  // ✅ Completed orders per weekday (count, not revenue)  const weeklyBar = useMemo(() => {
+  const labels = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"]; // Sunday..Saturday
+  const counts = new Array(7).fill(0);
+  (ordersInPeriod ?? []).forEach(
+    (o) => {
       const d = new Date(o.createdAt);
       const idx = d.getDay(); // 0..6
-      counts[idx] += 1; // count every order created that day
-    });
-    return labels.map((name, i) => ({ name, count: counts[i] }));
-  }, [ordersInPeriod]);
+      counts[idx] += 1; // count every completed order created that day    });
+      return labels.map((name, i) => ({ name, count: counts[i] }));
+    },
+    [ordersInPeriod]
+  );
 
   const monthlyRevenue = useMemo(() => {
     const map = new Map();
