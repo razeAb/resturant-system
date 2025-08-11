@@ -111,4 +111,45 @@ router.get("/collections", protect, async (req, res) => {
   }
 });
 
+// ✅ Category stats (orders per category)
+router.get("/category-stats", protect, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "❌ Unauthorized access." });
+    }
+
+    const { period = "month" } = req.query;
+    const now = new Date();
+    let start;
+
+    if (period === "week") {
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+    } else if (period === "year") {
+      start = new Date(now.getFullYear(), 0, 1);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const orders = await Order.find({
+      createdAt: { $gte: start },
+    }).populate("items.product", "category");
+
+    const counts = {};
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        const cat = item.product?.category || "Unknown";
+        const qty = item.isWeighted ? 1 : item.quantity || 0;
+        counts[cat] = (counts[cat] || 0) + qty;
+      });
+    });
+
+    const categories = Object.entries(counts).map(([name, count]) => ({ name, count }));
+    res.json({ categories });
+  } catch (error) {
+    console.error("❌ Error calculating category stats:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+});
+
 module.exports = router;
