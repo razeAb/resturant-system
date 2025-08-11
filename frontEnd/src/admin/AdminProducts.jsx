@@ -7,7 +7,30 @@ import Button from "../components/common/Button";
 import { Menu, Pencil, Trash2, Power } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Tooltip, Label } from "recharts";
 
-/** Small section wrapper like on other pages */
+/** Spinner (ring) */
+function Spinner({ size = 40 }) {
+  return (
+    <div
+      className="animate-spin rounded-full border-2 border-white/20 border-t-white/80"
+      style={{ width: size, height: size }}
+      aria-label="Loading"
+    />
+  );
+}
+
+/** Full-page loading screen */
+function LoadingScreen({ label = "טוען…" }) {
+  return (
+    <div className="min-h-screen bg-[#0f141c] text-[#aab2c4] grid place-items-center px-4">
+      <div className="flex flex-col items-center gap-3">
+        <Spinner size={48} />
+        <div className="text-sm text-white/70">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+/** מעטפת מקטע */
 function SectionCard({ title, children, extra }) {
   return (
     <section className="bg-[#111824] border border-[#1f2a36] rounded-2xl p-4 sm:p-6">
@@ -29,14 +52,14 @@ export default function AdminProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // ---- filter/search state
+  // ---- סינון/חיפוש
   const [activeCategory, setActiveCategory] = useState("הכל");
   const [query, setQuery] = useState("");
 
-  // ---- stats
+  // ---- סטטיסטיקות
   const [categoryStats, setCategoryStats] = useState([]); // [{name, count}]
 
-  /** fetch products + stats */
+  /** טעינת מוצרים + סטטיסטיקות */
   useEffect(() => {
     const fetchAll = async () => {
       let normalized = [];
@@ -59,7 +82,7 @@ export default function AdminProducts() {
         setLoading(false);
       }
 
-      // Stats (global counts by category – current month)
+      // סטטיסטיקות (סכום פריטים מוזמנים לפי קטגוריה – החודש)
       try {
         setStatsLoading(true);
         const token = localStorage.getItem("token");
@@ -79,7 +102,7 @@ export default function AdminProducts() {
             .map(([name, count]) => ({ name, count }));
         }
 
-        // Fallback to local aggregation if API missing
+        // נפילה לחישוב מקומי אם ה‑API לא מחזיר כלום
         if (!list?.length) {
           const byCat = {};
           for (const p of normalized) {
@@ -90,7 +113,7 @@ export default function AdminProducts() {
           list = Object.entries(byCat).map(([name, count]) => ({ name, count }));
         }
 
-        // Ensure ALL categories appear (even with 0)
+        // להבטיח שכל הקטגוריות יופיעו (גם אם 0)
         const allCats = new Set(normalized.map((p) => p.category || "לא מקוטלג"));
         list = Array.from(allCats).map((name) => {
           const found = (list || []).find((x) => x.name === name);
@@ -109,7 +132,7 @@ export default function AdminProducts() {
         }
         let list = Object.entries(byCat).map(([name, count]) => ({ name, count }));
 
-        // Ensure ALL categories appear (even with 0)
+        // להבטיח שכל הקטגוריות יופיעו (גם אם 0)
         const allCats = new Set((normalized.length ? normalized : products).map((p) => p.category || "לא מקוטלג"));
         list = Array.from(allCats).map((name) => {
           const found = (list || []).find((x) => x.name === name);
@@ -126,19 +149,24 @@ export default function AdminProducts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** derived: categories list */
+  /** קטגוריות למסננים */
   const categories = useMemo(() => {
     const set = new Set(products.map((p) => p.category || "לא מקוטלג"));
     return ["הכל", ...Array.from(set)];
   }, [products]);
 
-  /** derived: products filtered by search only */
+  /** חיפוש בלבד */
   const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => !q || (p.name || "").toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q));
+    return products.filter(
+      (p) =>
+        !q ||
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q)
+    );
   }, [products, query]);
 
-  /** derived: final visible list (search + category) */
+  /** חיפוש + קטגוריה */
   const visibleProducts = useMemo(() => {
     return searchFiltered.filter((p) => {
       const cat = p.category || "לא מקוטלג";
@@ -146,7 +174,7 @@ export default function AdminProducts() {
     });
   }, [searchFiltered, activeCategory]);
 
-  /** derived: grouped (AFTER filter/search) */
+  /** קיבוץ לתצוגה */
   const groupedByCategory = useMemo(() => {
     return visibleProducts.reduce((acc, product) => {
       const cat = product.category || "לא מקוטלג";
@@ -156,7 +184,7 @@ export default function AdminProducts() {
     }, {});
   }, [visibleProducts]);
 
-  /** donut data (GLOBAL; shows ALL categories) */
+  /** דאטה לדונאט (גלובלי) */
   const donutData = useMemo(() => {
     const total = categoryStats.reduce((s, i) => s + (Number(i.count) || 0), 0);
     const ordered = [...categoryStats].sort((a, b) => {
@@ -176,7 +204,7 @@ export default function AdminProducts() {
     });
   }, [categoryStats]);
 
-  /** actions */
+  /** פעולות על מוצר */
   const handleToggleActive = async (productId, currentStatus) => {
     try {
       const token = localStorage.getItem("token");
@@ -185,7 +213,9 @@ export default function AdminProducts() {
         { isActive: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setProducts((prev) => prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p)));
+      setProducts((prev) =>
+        prev.map((p) => (p._id === productId ? { ...p, isActive: !currentStatus } : p))
+      );
     } catch (err) {
       console.error("שגיאה בשינוי סטטוס מוצר:", err);
       alert("לא ניתן לעדכן את סטטוס המוצר.");
@@ -206,9 +236,9 @@ export default function AdminProducts() {
     }
   };
 
-  /** top-level states */
+  /** מצבים עליונים */
   if (loading) {
-    return <div className="min-h-screen bg-[#0f141c] text-[#aab2c4] grid place-items-center px-4">טוען מוצרים…</div>;
+    return <LoadingScreen label="טוען מוצרים…" />;
   }
   if (error) {
     return (
@@ -221,18 +251,18 @@ export default function AdminProducts() {
     );
   }
 
-  // palette for highlighted segments (cycles)
+  // צבע לסגמנט מודגש + צבע לשאר הטבעת
   const COLORS = ["#22c3e6", "#ef476f", "#f7c948", "#10b981", "#a78bfa", "#fb923c", "#60a5fa"];
   const REST = "rgba(255,255,255,0.08)";
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#0f141c] text-white flex">
-      {/* Sidebar (desktop) */}
+      {/* תפריט צד לשולחן עבודה */}
       <div className="hidden md:block">
         <SideMenu logoSrc="/developerTag.jpeg" brand="Hungry" />
       </div>
 
-      {/* Mobile overlay + drawer */}
+      {/* חפיפה + מגירה בנייד */}
       {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
       {isSidebarOpen && (
         <div className="md:hidden">
@@ -242,14 +272,10 @@ export default function AdminProducts() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col">
-        {/* Top bar */}
+        {/* סרגל עליון */}
         <header className="sticky top-0 z-20 bg-[#11131a] border-b border-white/10">
           <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-            <button
-              className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
-              onClick={() => setIsSidebarOpen(true)}
-              aria-label="פתח תפריט"
-            >
+            <button className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition" onClick={() => setIsSidebarOpen(true)} aria-label="פתח תפריט">
               <Menu size={20} />
             </button>
 
@@ -270,9 +296,9 @@ export default function AdminProducts() {
           </div>
         </header>
 
-        {/* Content */}
+        {/* תוכן */}
         <main className="px-4 sm:px-6 pb-10">
-          {/* Filters */}
+          {/* מסננים */}
           <div className="mt-6">
             <SectionCard title="סינון מוצרים">
               <div className="flex flex-wrap gap-2">
@@ -301,7 +327,7 @@ export default function AdminProducts() {
             </SectionCard>
           </div>
 
-          {/* Products */}
+          {/* מוצרים */}
           {Object.keys(groupedByCategory).length === 0 ? (
             <SectionCard title="מוצרים">
               <div className="text-[#8b93a7] text-sm py-6 text-center">לא נמצאו מוצרים בהתאם לסינון.</div>
@@ -314,25 +340,18 @@ export default function AdminProducts() {
                     {groupedByCategory[category].map((product) => {
                       const inactive = !product.isActive;
                       return (
-                        <div
-                          key={product._id}
-                          className={`bg-[#0f141c] border border-[#1f2a36] rounded-xl overflow-hidden hover:border-white/20 transition`}
-                        >
-                          {/* image */}
+                        <div key={product._id} className={`bg-[#0f141c] border border-[#1f2a36] rounded-xl overflow-hidden hover:border-white/20 transition`}>
+                          {/* תמונה */}
                           <div className="relative h-40 bg-[#0d1219]">
                             {product.image ? (
                               <img src={product.image} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
                             ) : (
                               <div className="w-full h-full grid place-items-center text-white/30 text-sm">אין תמונה</div>
                             )}
-                            {inactive && (
-                              <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] grid place-items-center text-[12px]">
-                                ❌ לא זמין
-                              </div>
-                            )}
+                            {inactive && <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] grid place-items-center text-[12px]">❌ לא זמין</div>}
                           </div>
 
-                          {/* body */}
+                          {/* גוף הכרטיס */}
                           <div className="p-3 space-y-2">
                             <div className="flex items-start justify-between gap-3">
                               <h3 className="text-sm font-semibold leading-tight line-clamp-2">{product.name}</h3>
@@ -340,29 +359,19 @@ export default function AdminProducts() {
                             </div>
                             <div className="text-[12px] text-white/50">מלאי: {product.stock ?? "אין"}</div>
 
-                            {/* actions */}
+                            {/* פעולות */}
                             <div className="grid grid-cols-3 gap-2 pt-1">
-                              <button
-                                onClick={() => setSelectedProduct(product)}
-                                className="flex items-center justify-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2 py-2 text-[12px]"
-                                title="ערוך מוצר"
-                              >
+                              <button onClick={() => setSelectedProduct(product)} className="flex items-center justify-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2 py-2 text-[12px]" title="ערוך מוצר">
                                 <Pencil size={14} />
                                 ערוך
                               </button>
-                              <button
-                                onClick={() => handleDelete(product._id)}
-                                className="flex items-center justify-center gap-1 bg-rose-600/90 hover:bg-rose-600 rounded-lg px-2 py-2 text-[12px]"
-                                title="מחק מוצר"
-                              >
+                              <button onClick={() => handleDelete(product._id)} className="flex items-center justify-center gap-1 bg-rose-600/90 hover:bg-rose-600 rounded-lg px-2 py-2 text-[12px]" title="מחק מוצר">
                                 <Trash2 size={14} />
                                 מחק
                               </button>
                               <button
                                 onClick={() => handleToggleActive(product._id, product.isActive)}
-                                className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[12px] ${
-                                  product.isActive ? "bg-amber-500/90 hover:bg-amber-500" : "bg-emerald-600/90 hover:bg-emerald-600"
-                                }`}
+                                className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[12px] ${product.isActive ? "bg-amber-500/90 hover:bg-amber-500" : "bg-emerald-600/90 hover:bg-emerald-600"}`}
                                 title={product.isActive ? "השבת מוצר" : "הפעל מוצר"}
                               >
                                 <Power size={14} />
@@ -379,18 +388,26 @@ export default function AdminProducts() {
             ))
           )}
 
-          {/* ===== Menu Comparison (GLOBAL donuts) ===== */}
+          {/* ===== השוואת תפריט (דונאט גלובלי) ===== */}
           <div className="mt-6">
-            <SectionCard title="Menu Comparison">
+            <SectionCard title="השוואת תפריט">
+              {/* תיאור קצר של המטרה */}
+              <p className="text-xs text-white/60 mb-4">
+                כל טבעת מציגה את <strong className="text-white/80">אחוז הפריטים שהוזמנו</strong> בקטגוריה מתוך כלל הפריטים שהוזמנו החודש.
+                הנתון מבוסס על <em className="text-white/70">כמות פריטים</em> (לא על הכנסות).
+              </p>
+
               {statsLoading ? (
-                <div className="text-[#8b93a7] text-sm py-6 text-center">טוען…</div>
+                <div className="py-10 flex items-center justify-center">
+                  <Spinner size={40} />
+                </div>
               ) : !donutData.length ? (
                 <div className="text-[#8b93a7] text-sm py-6 text-center">אין נתונים להצגה.</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                   {donutData.map((d, idx) => {
                     const color = COLORS[idx % COLORS.length];
-                    const restValue = d.total === 0 ? 1 : Math.max(0, d.total - d.value); // keep ring visible when total=0
+                    const restValue = d.total === 0 ? 1 : Math.max(0, d.total - d.value); // להשאיר טבעת גם כש‑total=0
 
                     return (
                       <div key={d.name} className="bg-[#111824] border border-[#1f2a36] rounded-2xl p-5 flex flex-col items-center">
@@ -408,24 +425,36 @@ export default function AdminProducts() {
                                 stroke="none"
                                 labelLine={false}
                               >
-                                <Label value={`${d.pct}%`} position="center" fill="#ffffff" style={{ fontSize: 20, fontWeight: 800 }} />
+                                <Label
+                                  content={({ viewBox }) => {
+                                    const { cx, cy } = viewBox || {};
+                                    return (
+                                      <text
+                                        x={cx}
+                                        y={cy}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fill="#fff"
+                                        style={{ fontSize: 20, fontWeight: 800 }}
+                                      >
+                                        {`${d.pct}%`}
+                                      </text>
+                                    );
+                                  }}
+                                />
                               </Pie>
 
                               <Tooltip
                                 formatter={(val, name) => {
                                   if (name === d.name) {
                                     const pct = d.total ? Math.round((d.value / d.total) * 100) : 0;
-                                    return [`${val} (${pct}%)`, d.name];
+                                    return [`${val} פריטים (${pct}%)`, d.name];
                                   }
                                   const rest = d.total ? d.total - d.value : 0;
                                   const pct = d.total ? Math.round((rest / d.total) * 100) : 0;
-                                  return [`${rest} (${pct}%)`, "שאר"];
+                                  return [`${rest} פריטים (${pct}%)`, "שאר"];
                                 }}
-                                contentStyle={{
-                                  background: "#0f141c",
-                                  border: "1px solid #1f2a36",
-                                  borderRadius: 8,
-                                }}
+                                contentStyle={{ background: "#0f141c", border: "1px solid #1f2a36", borderRadius: 8 }}
                                 itemStyle={{ color: "#fff" }}
                               />
                             </PieChart>
@@ -442,7 +471,7 @@ export default function AdminProducts() {
         </main>
       </div>
 
-      {/* Modals */}
+      {/* מודלים */}
       {showModal && !selectedProduct && (
         <AddProductModal
           onClose={() => setShowModal(false)}
