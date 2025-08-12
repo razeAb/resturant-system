@@ -8,9 +8,7 @@ import { Menu } from "lucide-react";
 
 /* ----------------- helpers ----------------- */
 const formatTime = (timestamp) => {
-  const date = new Date(
-    new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })
-  );
+  const date = new Date(new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
   const now = new Date();
   const diffMs = now - date;
   const diffMinutes = Math.floor(diffMs / 60000);
@@ -22,8 +20,8 @@ const formatTime = (timestamp) => {
 
 const badgeClasses = (status) => {
   if (status === ORDER_STATUS?.DELIVERING) return "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20";
-  if (status === ORDER_STATUS?.PREPARING)  return "bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/20";
-  if (status === ORDER_STATUS?.DONE)       return "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20";
+  if (status === ORDER_STATUS?.PREPARING) return "bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/20";
+  if (status === ORDER_STATUS?.DONE) return "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20";
   return "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/20"; // pending/unknown
 };
 
@@ -178,12 +176,7 @@ export default function ActiveOrdersPage() {
       </div>
 
       {/* Mobile overlay + drawer */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
       {isSidebarOpen && (
         <div className="md:hidden">
           <SideMenu onClose={() => setIsSidebarOpen(false)} logoSrc="/developerTag.jpeg" brand="Hungry" />
@@ -229,11 +222,7 @@ export default function ActiveOrdersPage() {
                 <div className="px-5 py-8 text-white/60 text-sm">אין הזמנות להצגה.</div>
               ) : (
                 filtered.map((order) => {
-                  const customer = order.user?.name
-                    ? `${order.user.name}`
-                    : order.customerName
-                    ? `${order.customerName}`
-                    : "אורח";
+                  const customer = order.user?.name ? `${order.user.name}` : order.customerName ? `${order.customerName}` : "אורח";
                   const phone = order.user?.phone || order.phone || "";
 
                   return (
@@ -241,19 +230,13 @@ export default function ActiveOrdersPage() {
                       {/* Desktop row */}
                       <div className="hidden md:grid grid-cols-12 items-center gap-2 py-4 border-b border-white/10">
                         <div className="col-span-2 text-white/80">#{order._id.slice(-6)}</div>
-                        <div className="col-span-3 text-white/60">
-                          {new Date(order.createdAt).toLocaleString("he-IL")}
-                        </div>
+                        <div className="col-span-3 text-white/60">{new Date(order.createdAt).toLocaleString("he-IL")}</div>
                         <div className="col-span-3 truncate">
                           <span className="text-white/90">{customer}</span>
                           {phone && <span className="text-white/40"> · {phone}</span>}
                         </div>
-                        <div className="col-span-2 text-white/70">
-                          {translateDeliveryOption(order.deliveryOption)}
-                        </div>
-                        <div className="col-span-1 text-white/80">
-                          {order.totalPrice ? `₪${order.totalPrice}` : "-"}
-                        </div>
+                        <div className="col-span-2 text-white/70">{translateDeliveryOption(order.deliveryOption)}</div>
+                        <div className="col-span-1 text-white/80">{order.totalPrice ? `₪${order.totalPrice}` : "-"}</div>
 
                         {/* status + details button */}
                         <div className="col-span-1 flex items-center justify-end gap-2">
@@ -269,19 +252,21 @@ export default function ActiveOrdersPage() {
 
                           <button
                             className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs"
-                            onClick={() =>
-                              setExpandedOrderId(expandedOrderId === order._id ? null : order._id)
-                            }
+                            onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
                           >
                             {expandedOrderId === order._id ? "הסתר פרטים" : "הצג פרטים"}
                           </button>
                         </div>
                       </div>
 
-                      {/* Mobile card */}
+                      {/* Mobile card (UPDATED ORDER) */}
                       <div className="md:hidden py-4 border-b border-white/10">
+                        {/* Name + phone on top */}
                         <div className="flex items-center justify-between">
-                          <div className="text-white/80 font-semibold">#{order._id.slice(-6)}</div>
+                          <div className="text-white/90 font-semibold">
+                            {customer}
+                            {phone && <span className="text-white/40"> · {phone}</span>}
+                          </div>
                           <span className={`px-2 py-0.5 rounded-full text-[11px] ${badgeClasses(order.status)}`}>
                             {order.status === ORDER_STATUS?.PREPARING
                               ? "בהכנה"
@@ -292,23 +277,22 @@ export default function ActiveOrdersPage() {
                               : "ממתין"}
                           </span>
                         </div>
+
+                        {/* Order number under in smaller text */}
                         <div className="text-white/60 text-xs mt-1">
-                          {new Date(order.createdAt).toLocaleString("he-IL")}
+                          #{order._id.slice(-6)} · {new Date(order.createdAt).toLocaleString("he-IL")}
                         </div>
-                        <div className="mt-2 text-sm">
-                          <span className="text-white/90">{customer}</span>
-                          {phone && <span className="text-white/40"> · {phone}</span>}
-                        </div>
+
+                        {/* Delivery type + total */}
                         <div className="text-white/70 text-sm mt-1">
                           {translateDeliveryOption(order.deliveryOption)} · {order.totalPrice ? `₪${order.totalPrice}` : "-"}
                         </div>
 
+                        {/* Expand button */}
                         <div className="mt-3 flex items-center gap-2">
                           <button
                             className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs"
-                            onClick={() =>
-                              setExpandedOrderId(expandedOrderId === order._id ? null : order._id)
-                            }
+                            onClick={() => setExpandedOrderId(expandedOrderId === order._id ? null : order._id)}
                           >
                             {expandedOrderId === order._id ? "הסתר פרטים" : "הצג פרטים"}
                           </button>
@@ -321,16 +305,13 @@ export default function ActiveOrdersPage() {
                           <div className="grid md:grid-cols-3 gap-4">
                             <div>
                               <div>
-                                <strong>שם משתמש:</strong>{" "}
-                                {order.user ? order.user.name : order.customerName || "אורח"}
+                                <strong>שם משתמש:</strong> {order.user ? order.user.name : order.customerName || "אורח"}
                               </div>
                               <div>
-                                <strong>טלפון:</strong>{" "}
-                                {order.user ? order.user.phone : order.phone}
+                                <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone}
                               </div>
                               <div>
-                                <strong>אמצעי תשלום:</strong>{" "}
-                                {translatePaymentMethod(order.paymentDetails?.method)}
+                                <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
                               </div>
                               <div>
                                 <strong>נוצר:</strong> {formatTime(order.createdAt)}
@@ -342,13 +323,10 @@ export default function ActiveOrdersPage() {
                               <ul className="space-y-2">
                                 {order.items.map((item, idx) => (
                                   <li key={idx} className="leading-6">
-                                    <strong>{item.product?.name || item.title || "פריט"}</strong>{" "}
-                                    — כמות: {item.quantity} {item.isWeighted ? "גרם" : ""}
+                                    <strong>{item.product?.name || item.title || "פריט"}</strong> — כמות: {item.quantity}{" "}
+                                    {item.isWeighted ? "גרם" : ""}
                                     <div className="text-white/70">
-                                      ירקות:{" "}
-                                      {Array.isArray(item.vegetables) && item.vegetables.length
-                                        ? item.vegetables.join(", ")
-                                        : "אין"}{" "}
+                                      ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}{" "}
                                       · תוספות:{" "}
                                       {Array.isArray(item.additions) && item.additions.length
                                         ? item.additions.map((a) => a.addition).join(", ")
@@ -363,18 +341,16 @@ export default function ActiveOrdersPage() {
 
                           {/* actions */}
                           <div className="mt-4 flex flex-wrap gap-3">
-                            {order.deliveryOption === "Delivery" &&
-                              order.status === ORDER_STATUS?.PREPARING && (
-                                <button
-                                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
-                                  onClick={() => markAsDelivering(order._id)}
-                                >
-                                  במשלוח
-                                </button>
-                              )}
+                            {order.deliveryOption === "Delivery" && order.status === ORDER_STATUS?.PREPARING && (
+                              <button
+                                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
+                                onClick={() => markAsDelivering(order._id)}
+                              >
+                                במשלוח
+                              </button>
+                            )}
 
-                            {((order.deliveryOption === "Delivery" &&
-                              order.status === ORDER_STATUS?.DELIVERING) ||
+                            {((order.deliveryOption === "Delivery" && order.status === ORDER_STATUS?.DELIVERING) ||
                               order.deliveryOption !== "Delivery") && (
                               <button
                                 className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg"
@@ -412,10 +388,7 @@ export default function ActiveOrdersPage() {
                               הוסף פריט
                             </button>
 
-                            <button
-                              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-                              onClick={() => deleteOrder(order._id)}
-                            >
+                            <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg" onClick={() => deleteOrder(order._id)}>
                               מחק הזמנה
                             </button>
                           </div>
@@ -436,13 +409,7 @@ export default function ActiveOrdersPage() {
         </div>
       </div>
 
-      {showAddModal && (
-        <AddItemModal
-          orderId={addOrderId}
-          onClose={() => setShowAddModal(false)}
-          onItemAdded={fetchOrders}
-        />
-      )}
+      {showAddModal && <AddItemModal orderId={addOrderId} onClose={() => setShowAddModal(false)} onItemAdded={fetchOrders} />}
     </div>
   );
 }
