@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
 import { Menu, Calendar } from "lucide-react";
 import SideMenu from "../layouts/SideMenu";
+import { useTranslation } from "../i18n";
 
 /** Utils **/
 const ILS = new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 2 });
@@ -24,6 +25,7 @@ const addDays = (date, days) => {
 };
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   // data
   const [dashboardData, setDashboardData] = useState(null);
   const [error, setError] = useState("");
@@ -74,12 +76,12 @@ export default function AdminDashboard() {
     } catch (err) {
       if (err?.name !== "CanceledError" && err?.message !== "canceled") {
         console.error("Error fetching admin data:", err);
-        setError("שגיאה בטעינת לוח הבקרה");
+        setError(t("admin.errorLoadingDashboard"));
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -298,8 +300,8 @@ export default function AdminDashboard() {
             </button>
 
             <div className="min-w-0">
-              <h2 className="text-[18px] font-bold tracking-tight truncate">לוח בקרה</h2>
-              <p className="text-[11px] text-[#8b93a7] mt-1">ברוך/ה הבא/ה למערכת הניהול</p>
+              <h2 className="text-[18px] font-bold tracking-tight truncate">{t("admin.dashboardTitle")}</h2>
+              <p className="text-[11px] text-[#8b93a7] mt-1">{t("admin.welcome")}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">

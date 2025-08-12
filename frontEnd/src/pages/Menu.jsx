@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
 import axios from "axios";
-
-const categoriesList = [
-  { id: "all", label: "הכל" },
-  { id: "starters", label: "מנות פתיחה", filter: ["Starters"] },
-  { id: "sandwiches", label: "כריכים", filter: ["Sandwiches"] },
-  { id: "meats", label: "בשרים במשקל", filter: ["Meats", "premium Meat"] },
-  { id: "sides", label: "תוספות בצד", filter: ["Side Dishes"] },
-  { id: "drinks", label: "שתיה", filter: ["Drinks"] },
-];
+import { useTranslation } from "../i18n";
 
 const Menu = () => {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const categoriesList = [
+    { id: "all", label: t("menu.categories.all") },
+    { id: "starters", label: t("menu.categories.starters"), filter: ["Starters"] },
+    { id: "sandwiches", label: t("menu.categories.sandwiches"), filter: ["Sandwiches"] },
+    { id: "meats", label: t("menu.categories.meats"), filter: ["Meats", "premium Meat"] },
+    { id: "sides", label: t("menu.categories.sides"), filter: ["Side Dishes"] },
+    { id: "drinks", label: t("menu.categories.drinks"), filter: ["Drinks"] },
+  ];
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -63,7 +65,7 @@ const Menu = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center lg:px-32 px-5">
-      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">התפריט שלנו</h1>
+      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">{t("menu.title")}</h1>
 
       {/* ✅ CATEGORY FILTER BUTTONS */}
       <div className="w-full overflow-x-auto mb-10">
@@ -87,11 +89,11 @@ const Menu = () => {
       {/* ✅ RENDER SECTIONS */}
       {selectedCategory === "all" ? (
         <>
-          {renderSection("מנות פתיחה", ["Starters"])}
-          {renderSection("כריכים", ["Sandwiches"])}
-          {renderSection("בשרים במשקל", ["Meats", "premium Meat"])}
-          {renderSection("תוספות בצד", ["Side Dishes"])}
-          {renderSection("שתיה", ["Drinks"])}
+          {renderSection(t("menu.categories.starters"), ["Starters"])}
+          {renderSection(t("menu.categories.sandwiches"), ["Sandwiches"])}
+          {renderSection(t("menu.categories.meats"), ["Meats", "premium Meat"])}
+          {renderSection(t("menu.categories.sides"), ["Side Dishes"])}
+          {renderSection(t("menu.categories.drinks"), ["Drinks"])}
         </>
       ) : (
         (() => {
