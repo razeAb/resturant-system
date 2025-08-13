@@ -65,8 +65,8 @@ const AddProductModal = ({ onClose, onAdd }) => {
         },
       });
 
-      const cloudinaryUrl = uploadRes.data.imageUrl;
-      setForm((prev) => ({ ...prev, image: cloudinaryUrl }));
+      const imageUrl = uploadRes.data.imageUrl;
+      setForm((prev) => ({ ...prev, image: imageUrl }));
 
       alert("✅ Image uploaded successfully!");
     } catch (err) {
