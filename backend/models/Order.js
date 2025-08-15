@@ -52,7 +52,7 @@ const OrderSchema = new mongoose.Schema({
   status: {
     type: String,
     // Unified set of order statuses used across the app
-    enum: ["pending", "preparing", "delivering", "done"],
+    enum: ["pending", "preparing", "delivering", "done", "paid", "failed"],
     default: "pending",
   },
   estimatedTime: {

@@ -4,7 +4,7 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
-  const terminal = "hungryvisa";
+  const terminal = "hungryvisatok";
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -17,7 +17,7 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
   useEffect(() => {
     if (formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
-      formRef.current.submit(); 
+      formRef.current.submit();
     } else {
       console.warn("⚠️ formRef is null, cannot submit form");
     }

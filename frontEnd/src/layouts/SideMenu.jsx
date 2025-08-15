@@ -1,7 +1,7 @@
 // SideMenu.jsx
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListChecks, ClipboardList, ChefHat, History, LayoutGrid, Store, ArrowRight } from "lucide-react";
+import { Home, ListChecks, ClipboardList, ChefHat, History, LayoutGrid, Store, ArrowRight, BarChart3 } from "lucide-react";
 
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/kitchen", label: "מסך מטבח", icon: ChefHat },
   { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
+  { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
