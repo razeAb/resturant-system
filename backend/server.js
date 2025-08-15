@@ -45,6 +45,7 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/tranzila", require("./routes/TranzillaRoutes"));
 app.use("/api/config", require("./routes/config"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
+app.use("/api/shifts", require("./routes/shiftRoutes"));
 // ✅ Tranzila Webhook Endpoint
 app.post("/api/tranzila-webhook", async (req, res) => {
   try {
