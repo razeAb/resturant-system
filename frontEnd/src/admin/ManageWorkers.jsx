@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import { Menu } from "lucide-react";
@@ -14,6 +15,27 @@ const Anim = () => (
   `}</style>
 );
 
+// --- helpers to make data robust ---
+const toBool = (v) => {
+  // normalize potentially string/number booleans from backend
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") return v.toLowerCase() === "true";
+  return !!v;
+};
+
+// get the worker id from a shift object in a defensive way
+const getShiftWorkerId = (s) =>
+  s?.user?._id ||
+  s?.userId ||
+  s?.user ||
+  s?.worker?._id ||
+  s?.workerId ||
+  s?.worker ||
+  s?.employee?._id ||
+  s?.employeeId ||
+  s?.employee ||
+  null;
+
 const ManageWorkers = () => {
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({ username: "", password: "", role: "cook" });
@@ -21,12 +43,24 @@ const ManageWorkers = () => {
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [expanded, setExpanded] = useState(null);
+  const [shiftsMap, setShiftsMap] = useState({});
+  const [shiftsLoading, setShiftsLoading] = useState({}); // { [workerId]: true/false }
+
   const fetchWorkers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const res = await api.get("/api/workers", { headers: { Authorization: `Bearer ${token}` } });
-      setWorkers(Array.isArray(res.data?.workers) ? res.data.workers : []);
+      const list = Array.isArray(res.data?.workers) ? res.data.workers : [];
+
+      // ✅ normalize onShift to a true boolean
+      const normalized = list.map((w) => ({
+        ...w,
+        onShift: toBool(w?.onShift),
+      }));
+
+      setWorkers(normalized);
     } catch (err) {
       console.error("Error fetching workers", err);
       setMsg({ text: "שגיאה בטעינת העובדים", tone: "error" });
@@ -52,6 +86,64 @@ const ManageWorkers = () => {
       fetchWorkers();
     } catch (err) {
       setMsg({ text: err.response?.data?.message || "שגיאה בהוספת עובד", tone: "error" });
+    }
+  };
+
+  const fetchShiftsForWorker = async (id) => {
+    try {
+      setShiftsLoading((m) => ({ ...m, [id]: true }));
+      const token = localStorage.getItem("token");
+
+      // If your backend supports filtering by query, prefer this:
+      // const res = await api.get(`/api/shifts?user=${id}`, { headers: { Authorization: `Bearer ${token}` } });
+
+      // Fallback: get all shifts, then filter on client:
+      const res = await api.get("/api/shifts/all", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const all = Array.isArray(res.data) ? res.data : [];
+      const workerShifts = all.filter((s) => {
+        const sid = getShiftWorkerId(s);
+        return sid && String(sid) === String(id);
+      });
+
+      setShiftsMap((p) => ({ ...p, [id]: workerShifts }));
+    } catch (err) {
+      console.error("Failed to load shifts", err);
+      setMsg({ text: "שגיאה בטעינת משמרות לעובד", tone: "error" });
+      setShiftsMap((p) => ({ ...p, [id]: [] }));
+    } finally {
+      setShiftsLoading((m) => ({ ...m, [id]: false }));
+    }
+  };
+
+  const toggleShifts = (id) => {
+    if (expanded === id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(id);
+    if (!shiftsMap[id]) fetchShiftsForWorker(id);
+  };
+
+  const adjustHours = async (shiftId, workerId) => {
+    const hoursStr = prompt("Enter new hours");
+    if (hoursStr == null || hoursStr === "") return;
+    const hours = Number(hoursStr);
+    if (Number.isNaN(hours)) {
+      alert("Hours must be a number");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      await api.put(`/api/shifts/${shiftId}`, { hours }, { headers: { Authorization: `Bearer ${token}` } });
+      // refresh that worker's shifts
+      fetchShiftsForWorker(workerId);
+      setMsg({ text: "שעות עודכנו בהצלחה", tone: "success" });
+    } catch (err) {
+      console.error("Update failed", err);
+      setMsg({ text: "שגיאה בעדכון שעות", tone: "error" });
     }
   };
 
@@ -182,26 +274,68 @@ const ManageWorkers = () => {
               <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/60">אין עובדים להצגה.</div>
             ) : (
               <ul className="space-y-2">
-                {workers.map((w) => (
-                  <li
-                    key={w._id}
-                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 flex items-center justify-between card-hover"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-600/20 grid place-items-center text-xs text-emerald-200">
-                        {w.username?.charAt(0)?.toUpperCase() || "U"}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">{w.username}</div>
-                        <div className="text-[12px] text-white/50 flex items-center gap-2">
-                          <RoleBadge role={w.role} />
+                {workers.map((w) => {
+                  const isOnShift = toBool(w.onShift); // ✅ use normalized boolean
+                  const isExp = expanded === w._id;
+                  const isShiftsLoading = !!shiftsLoading[w._id];
+
+                  return (
+                    <li key={w._id} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 card-hover">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-600/20 grid place-items-center text-xs text-emerald-200">
+                            {w.username?.charAt(0)?.toUpperCase() || "U"}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{w.username}</div>
+                            <div className="text-[12px] text-white/50 flex items-center gap-2">
+                              <RoleBadge role={w.role} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => toggleShifts(w._id)} className="text-xs bg-blue-600 hover:bg-blue-700 rounded px-2 py-1">
+                            {isExp ? "סגור" : "שעות"}
+                          </button>
+                          {isOnShift && <ShiftBadge />}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">{w.onShift && <ShiftBadge />}</div>
-                  </li>
-                ))}
+                      {isExp && (
+                        <div className="mt-2">
+                          {isShiftsLoading ? (
+                            <div className="text-xs text-white/60">טוען משמרות…</div>
+                          ) : (
+                            <ul className="space-y-1">
+                              {Array.isArray(shiftsMap[w._id]) && shiftsMap[w._id].length > 0 ? (
+                                shiftsMap[w._id].map((s) => (
+                                  <li
+                                    key={s._id}
+                                    className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs"
+                                  >
+                                    <span>
+                                      {new Date(s.start).toLocaleDateString("he-IL")} — {(s.hours || 0).toFixed(2)}h
+                                      {s.adjustedByManager && <span className="ml-1 text-orange-400">(עודכן)</span>}
+                                    </span>
+                                    <button
+                                      onClick={() => adjustHours(s._id, w._id)}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-[2px]"
+                                    >
+                                      עדכון
+                                    </button>
+                                  </li>
+                                ))
+                              ) : (
+                                <li className="text-xs text-white/60">אין משמרות.</li>
+                              )}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -227,6 +361,10 @@ function RoleBadge({ role }) {
     </span>
   );
 }
+
+RoleBadge.propTypes = {
+  role: PropTypes.string,
+};
 
 function ShiftBadge() {
   return (

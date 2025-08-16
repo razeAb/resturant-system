@@ -116,19 +116,14 @@ export default function WorkingHoursPage() {
     const s = new Date(start);
     const e = end ? new Date(end) : s;
 
-    const from =
-      range.from ? startOfDayLocal(parseYMDLocal(range.from)) : new Date(-8640000000000000);
-    const to =
-      range.to ? endOfDayLocal(parseYMDLocal(range.to)) : new Date(8640000000000000);
+    const from = range.from ? startOfDayLocal(parseYMDLocal(range.from)) : new Date(-8640000000000000);
+    const to = range.to ? endOfDayLocal(parseYMDLocal(range.to)) : new Date(8640000000000000);
 
     return s <= to && e >= from;
   };
 
   /* ---------- Derived data ---------- */
-  const filtered = useMemo(
-    () => (range.from || range.to ? shifts.filter((s) => overlapsRange(s.start, s.end)) : shifts),
-    [shifts, range]
-  );
+  const filtered = useMemo(() => (range.from || range.to ? shifts.filter((s) => overlapsRange(s.start, s.end)) : shifts), [shifts, range]);
 
   const formatH = (h) => Number(h || 0).toFixed(2);
 
@@ -146,8 +141,7 @@ export default function WorkingHoursPage() {
   }, [filtered]);
 
   const toDateStr = (v) => (v ? new Date(v).toLocaleDateString("he-IL") : "");
-  const toTime = (v) =>
-    v ? new Date(v).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--";
+  const toTime = (v) => (v ? new Date(v).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--");
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] p-6" dir="rtl">
@@ -181,9 +175,7 @@ export default function WorkingHoursPage() {
 
         {/* shift buttons + worker name */}
         <div className="flex items-center gap-4">
-          <span className="text-base font-semibold text-gray-800">
-            {worker.name || worker.username || "עובד"}
-          </span>
+          <span className="text-base font-semibold text-gray-800">{worker.name || worker.username || "עובד"}</span>
 
           {worker.onShift ? (
             <button onClick={handleEndShift} className="bg-red-500 text-white rounded-full px-4 py-2 shadow-sm">
@@ -205,12 +197,8 @@ export default function WorkingHoursPage() {
             <div className="flex-1 md:max-w-xs">
               <div className="bg-[#cfe5ff] rounded-xl h-full p-4 flex items-center gap-4">
                 <div>
-                  <div className="font-semibold text-slate-900">
-                    {worker.name || worker.username || "שם העובד"}
-                  </div>
-                  <div className="text-sm text-slate-700">
-                    {roleOptions[worker.role] || worker.role || "תפקיד"}
-                  </div>
+                  <div className="font-semibold text-slate-900">{worker.name || worker.username || "שם העובד"}</div>
+                  <div className="text-sm text-slate-700">{roleOptions[worker.role] || worker.role || "תפקיד"}</div>
                 </div>
               </div>
             </div>
@@ -299,8 +287,18 @@ export default function WorkingHoursPage() {
                   <td className="py-3 px-4">{toTime(s.start)}</td>
                   <td className="py-3 px-4">{toTime(s.end)}</td>
                   <td className="py-3 px-4">{s.breakMinutes ? (s.breakMinutes / 60).toFixed(2) : "00.00"}</td>
-                  <td className="py-3 px-4">{formatH(s.overtimeHours)}</td>
-                  <td className="py-3 px-4">{formatH(s.hours)}</td>
+                  <td className="py-3 px-4">
+                    <span className={s.adjustedByManager ? "border border-orange-400 text-orange-600 rounded px-1" : ""}>
+                      {formatH(s.hours)}
+                    </span>
+                    {s.adjustedByManager && <span className="ml-1 text-orange-500 text-xs">עודכן</span>}
+                  </td>{" "}
+                  <td className="py-3 px-4">
+                    <span className={s.adjustedByManager ? "border border-orange-400 text-orange-600 rounded px-1" : ""}>
+                      {formatH(s.hours)}
+                    </span>
+                    {s.adjustedByManager && <span className="ml-1 text-orange-500 text-xs">עודכן</span>}
+                  </td>{" "}
                   <td className="py-3 px-4">{s.leaveCreditHours ? s.leaveCreditHours.toFixed(2) : "00.00"}</td>
                   <td className="py-3 px-4">
                     {s.status === "P" ? (
