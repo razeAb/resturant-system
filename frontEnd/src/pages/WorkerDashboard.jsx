@@ -14,17 +14,28 @@ export default function WorkingHoursPage() {
       return (
         JSON.parse(localStorage.getItem("worker")) || {
           name: "",
+          username: "",
           role: "",
           avatar: "",
           onShift: false,
         }
       );
     } catch {
-      return { name: "", role: "", avatar: "", onShift: false };
+      return { name: "", username: "", role: "", avatar: "", onShift: false };
     }
   });
 
   const [range, setRange] = useState({ from: null, to: null });
+
+  /** role translations */
+  const roleOptions = {
+    cook: "טבח",
+    waiter: "מלצר",
+    dishwasher: "שוטף כלים",
+    cashier: "קופאי",
+    delivery: "שליח",
+    admin: "מנהל",
+  };
 
   /** Fetch shifts and sync onShift by active record (start w/o end) */
   const fetchShifts = useCallback(async () => {
@@ -82,16 +93,42 @@ export default function WorkingHoursPage() {
     }
   };
 
-  /** ---------- Helpers ---------- */
-  const inRange = (date) => {
-    if (!date) return false;
-    const d = new Date(date);
-    if (range.from && d < new Date(range.from)) return false;
-    if (range.to && d > new Date(range.to)) return false;
-    return true;
+  /* ======================= Date helpers (local, inclusive) ======================= */
+  // parse "YYYY-MM-DD" as a LOCAL date (avoid UTC shift)
+  const parseYMDLocal = (ymd) => {
+    const [y, m, d] = ymd.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+  const startOfDayLocal = (d) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const endOfDayLocal = (d) => {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
   };
 
-  const filtered = useMemo(() => (range.from || range.to ? shifts.filter((s) => inRange(s.start)) : shifts), [shifts, range]);
+  // include any shift that OVERLAPS the selected range
+  const overlapsRange = (start, end) => {
+    if (!start) return false;
+    const s = new Date(start);
+    const e = end ? new Date(end) : s;
+
+    const from =
+      range.from ? startOfDayLocal(parseYMDLocal(range.from)) : new Date(-8640000000000000);
+    const to =
+      range.to ? endOfDayLocal(parseYMDLocal(range.to)) : new Date(8640000000000000);
+
+    return s <= to && e >= from;
+  };
+
+  /* ---------- Derived data ---------- */
+  const filtered = useMemo(
+    () => (range.from || range.to ? shifts.filter((s) => overlapsRange(s.start, s.end)) : shifts),
+    [shifts, range]
+  );
 
   const formatH = (h) => Number(h || 0).toFixed(2);
 
@@ -109,21 +146,45 @@ export default function WorkingHoursPage() {
   }, [filtered]);
 
   const toDateStr = (v) => (v ? new Date(v).toLocaleDateString("he-IL") : "");
-  const toTime = (v) => (v ? new Date(v).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--");
+  const toTime = (v) =>
+    v ? new Date(v).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--";
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] p-6" dir="rtl">
       {/* Header */}
       <header className="max-w-7xl mx-auto flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200" title="חזרה">
-            ⬅️
+          {/* Nicer RTL back button (no external deps) */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 bg-slate-800 text-white rounded-full px-4 py-2 shadow hover:bg-slate-700 transition"
+            title="חזור"
+          >
+            {/* arrow pointing RIGHT (fits RTL “back”) */}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="shrink-0"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path d="M10 7l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 12h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="text-sm font-medium">חזור</span>
           </button>
+
           <h1 className="text-3xl font-extrabold text-[#101010]">שעות עבודה</h1>
         </div>
 
-        {/* Only the shift buttons (avatar/name/settings removed) */}
-        <div className="flex items-center gap-3">
+        {/* shift buttons + worker name */}
+        <div className="flex items-center gap-4">
+          <span className="text-base font-semibold text-gray-800">
+            {worker.name || worker.username || "עובד"}
+          </span>
+
           {worker.onShift ? (
             <button onClick={handleEndShift} className="bg-red-500 text-white rounded-full px-4 py-2 shadow-sm">
               סיום משמרת
@@ -143,16 +204,13 @@ export default function WorkingHoursPage() {
             {/* Worker card */}
             <div className="flex-1 md:max-w-xs">
               <div className="bg-[#cfe5ff] rounded-xl h-full p-4 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-white shadow">
-                  {worker.avatar ? (
-                    <img src={worker.avatar} alt="avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full grid place-items-center text-lg">👤</div>
-                  )}
-                </div>
                 <div>
-                  <div className="font-semibold text-slate-900">{worker.name || "שם העובד"}</div>
-                  <div className="text-sm text-slate-700">{worker.role || "תפקיד"}</div>
+                  <div className="font-semibold text-slate-900">
+                    {worker.name || worker.username || "שם העובד"}
+                  </div>
+                  <div className="text-sm text-slate-700">
+                    {roleOptions[worker.role] || worker.role || "תפקיד"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -178,26 +236,38 @@ export default function WorkingHoursPage() {
           </div>
 
           {/* Date range */}
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <input
-              type="date"
-              className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              value={range.from || ""}
-              onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
-            />
-            <span className="text-gray-500 text-sm">–</span>
-            <input
-              type="date"
-              className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              value={range.to || ""}
-              onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
-            />
-            <button
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
-              onClick={() => setRange({ from: null, to: null })}
-            >
-              ניקוי טווח
-            </button>
+          <div className="mt-4">
+            <div className="text-sm text-slate-600 mb-2">מתאריך עד תאריך</div>
+            <div className="flex items-center justify-end gap-2">
+              <label className="text-xs text-slate-600 flex flex-col">
+                <span className="mb-1">מתאריך</span>
+                <input
+                  type="date"
+                  className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={range.from || ""}
+                  onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
+                />
+              </label>
+
+              <span className="text-gray-500 text-sm">–</span>
+
+              <label className="text-xs text-slate-600 flex flex-col">
+                <span className="mb-1">עד תאריך</span>
+                <input
+                  type="date"
+                  className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={range.to || ""}
+                  onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
+                />
+              </label>
+
+              <button
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                onClick={() => setRange({ from: null, to: null })}
+              >
+                ניקוי טווח
+              </button>
+            </div>
           </div>
         </div>
       </section>
