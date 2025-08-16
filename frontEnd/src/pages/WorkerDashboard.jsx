@@ -1,21 +1,34 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 export default function WorkingHoursPage() {
   const navigate = useNavigate();
+
+  // read token once
+  const token = localStorage.getItem("workerToken");
+
   const [shifts, setShifts] = useState([]);
   const [worker, setWorker] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("worker")) || { name: "", role: "", avatar: "", onShift: false };
+      return (
+        JSON.parse(localStorage.getItem("worker")) || {
+          name: "",
+          role: "",
+          avatar: "",
+          onShift: false,
+        }
+      );
     } catch {
       return { name: "", role: "", avatar: "", onShift: false };
     }
   });
-  const [range, setRange] = useState({ from: null, to: null });
-  const token = localStorage.getItem("workerToken");
 
-  const fetchShifts = async () => {
+  const [range, setRange] = useState({ from: null, to: null });
+
+  /** Fetch shifts and sync onShift by active record (start w/o end) */
+  const fetchShifts = useCallback(async () => {
+    if (!token) return;
     try {
       const res = await api.get("/api/shifts", {
         headers: { Authorization: `Bearer ${token}` },
@@ -23,22 +36,32 @@ export default function WorkingHoursPage() {
       const data = res.data || [];
       setShifts(data);
 
-      // סנכרון onShift לפי מצב בפועל בשרת (יש משמרת ללא end?)
       const active = data.find((s) => s.start && !s.end);
-      setWorker((w) => ({ ...w, ...JSON.parse(localStorage.getItem("worker") || "{}"), onShift: !!active }));
+      setWorker((prev) => {
+        const stored = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("worker") || "{}");
+          } catch {
+            return {};
+          }
+        })();
+        return { ...prev, ...stored, onShift: !!active };
+      });
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [token]);
 
+  /** Redirect to login if no token; otherwise load shifts on mount */
   useEffect(() => {
     if (!token) {
       navigate("/worker/login");
       return;
     }
     fetchShifts();
-  }, [token, navigate]);
+  }, [token, navigate, fetchShifts]);
 
+  /** Actions */
   const handleStartShift = async () => {
     try {
       await api.post("/api/shifts/start", {}, { headers: { Authorization: `Bearer ${token}` } });
@@ -59,7 +82,7 @@ export default function WorkingHoursPage() {
     }
   };
 
-  /* ---------- עזרי חישוב ---------- */
+  /** ---------- Helpers ---------- */
   const inRange = (date) => {
     if (!date) return false;
     const d = new Date(date);
@@ -79,7 +102,7 @@ export default function WorkingHoursPage() {
     const breakHrs = filtered.reduce((sum, s) => sum + (s.breakMinutes ? s.breakMinutes / 60 : 0), 0) || 0;
     const absentDays = filtered.filter((s) => s.isAbsent).length;
     const overtimeHrs = filtered.reduce((sum, s) => sum + (s.overtimeHours || 0), 0) || 0;
-    const permissions = filtered.filter((s) => s.permissionTaken).length;
+    const permissions = filtered.filter((s) => s.permissionTaken).length; // kept if needed later
     const workedHrs = filtered.reduce((sum, s) => sum + (s.hours || 0), 0) || 0;
 
     return { daysWorked, daysLate, daysLeave, breakHrs, absentDays, overtimeHrs, permissions, workedHrs };
@@ -90,7 +113,7 @@ export default function WorkingHoursPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] p-6" dir="rtl">
-      {/* כותרת */}
+      {/* Header */}
       <header className="max-w-7xl mx-auto flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200" title="חזרה">
@@ -99,6 +122,7 @@ export default function WorkingHoursPage() {
           <h1 className="text-3xl font-extrabold text-[#101010]">שעות עבודה</h1>
         </div>
 
+        {/* Only the shift buttons (avatar/name/settings removed) */}
         <div className="flex items-center gap-3">
           {worker.onShift ? (
             <button onClick={handleEndShift} className="bg-red-500 text-white rounded-full px-4 py-2 shadow-sm">
@@ -109,28 +133,14 @@ export default function WorkingHoursPage() {
               התחלת משמרת
             </button>
           )}
-
-          <div className="flex items-center gap-2 bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
-              {worker.avatar ? (
-                <img src={worker.avatar} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full grid place-items-center text-sm text-gray-500">👤</div>
-              )}
-            </div>
-            <span className="text-sm font-medium text-gray-700">{worker.name || "עובד"}</span>
-            <button className="text-gray-500" title="הגדרות">
-              ⚙️
-            </button>
-          </div>
         </div>
       </header>
 
-      {/* כרטיס סטטיסטיקות + פרופיל */}
+      {/* Stats + profile */}
       <section className="max-w-7xl mx-auto">
         <div className="bg-white rounded-2xl shadow-md p-4 md:p-5 border border-gray-100">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* כרטיס עובד */}
+            {/* Worker card */}
             <div className="flex-1 md:max-w-xs">
               <div className="bg-[#cfe5ff] rounded-xl h-full p-4 flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full overflow-hidden bg-white shadow">
@@ -147,7 +157,7 @@ export default function WorkingHoursPage() {
               </div>
             </div>
 
-            {/* צ'יפים כהים של סטטיסטיקות */}
+            {/* Stat chips */}
             <div className="flex-[3] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
               {[
                 { title: "ימים", sub: "עבד", val: stats.daysWorked },
@@ -167,7 +177,7 @@ export default function WorkingHoursPage() {
             </div>
           </div>
 
-          {/* טווח תאריכים */}
+          {/* Date range */}
           <div className="mt-4 flex items-center justify-end gap-2">
             <input
               type="date"
@@ -192,7 +202,7 @@ export default function WorkingHoursPage() {
         </div>
       </section>
 
-      {/* טבלה */}
+      {/* Table */}
       <section className="max-w-7xl mx-auto mt-6">
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <table className="w-full text-sm">
@@ -215,10 +225,7 @@ export default function WorkingHoursPage() {
                 <tr key={s._id} className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-4">▸</td>
                   <td className="py-3 px-4">{toDateStr(s.start)}</td>
-                  <td className="py-3 px-4">
-                    {s.shiftName || "כללי"}
-                    {/* General */}
-                  </td>
+                  <td className="py-3 px-4">{s.shiftName || "כללי"}</td>
                   <td className="py-3 px-4">{toTime(s.start)}</td>
                   <td className="py-3 px-4">{toTime(s.end)}</td>
                   <td className="py-3 px-4">{s.breakMinutes ? (s.breakMinutes / 60).toFixed(2) : "00.00"}</td>

@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const Shift = require("../models/Shift");
 const { protect } = require("../middleware/authMiddleware");
+const { workerProtect } = require("../middleware/workerAuthMiddleware");
 
 // Start a shift
-router.post("/start", protect, async (req, res) => {
-  try {
+router.post("/start", workerProtect, async (req, res) => {
+    try {
     const existing = await Shift.findOne({ user: req.user._id, end: null });
     if (existing) {
       return res.status(400).json({ message: "Shift already active" });
@@ -18,8 +19,8 @@ router.post("/start", protect, async (req, res) => {
 });
 
 // Stop current shift
-router.post("/stop", protect, async (req, res) => {
-  try {
+router.post("/stop", workerProtect, async (req, res) => {
+    try {
     const shift = await Shift.findOne({ user: req.user._id, end: null });
     if (!shift) return res.status(404).json({ message: "No active shift" });
     shift.end = new Date();
@@ -32,8 +33,8 @@ router.post("/stop", protect, async (req, res) => {
 });
 
 // Get shifts for current user
-router.get("/", protect, async (req, res) => {
-  try {
+router.get("/", workerProtect, async (req, res) => {
+    try {
     const shifts = await Shift.find({ user: req.user._id }).sort({ start: -1 });
     res.json(shifts);
   } catch (err) {
