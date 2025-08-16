@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount, orderId, orderData }) => {
+const TranzilaIframe = ({ amount, orderId }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -23,7 +23,7 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
     }
   }, []);
 
-  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId, orderData });
+  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId });
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -55,10 +55,8 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
 
         {/* Order tracking */}
         <input type="hidden" name="order_id" value={orderId} />
+        <input type="hidden" name="ud1" value={orderId} />
         <input type="hidden" name="notify_url" value="https://resturant-system-3f33.onrender.com/api/tranzila-webhook" />
-
-        {/* ✅ Send orderData to backend via webhook */}
-        <input type="hidden" name="order" value={JSON.stringify(orderData)} />
       </form>
 
       <div

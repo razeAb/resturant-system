@@ -155,11 +155,25 @@ const CartPage = () => {
       }
     }
 
-    submitOrderToBackend(deliveryOption);
+    if (paymentMethod === "Card") {
+      if (!orderId) {
+        alert("התשלום בכרטיס לא הושלם");
+        return;
+      }
+      setOrderSubmitted(true);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      clearCart();
+      setShowConfirmationModal(false);
+      setGuestName("");
+      return;
+    }
+
+    submitOrderToBackend();
   };
 
-  //submitting order to backend
-  const submitOrderToBackend = async (deliveryOption) => {
+  // Build order payload shared by submission and pre-payment creation
+  const buildOrderPayload = () => {
     const groupedItems = groupCartItems();
 
     const itemsForBackend = groupedItems
@@ -181,22 +195,33 @@ const CartPage = () => {
 
     const loggedInUserId = user?._id;
 
-    const paymentDetails = { method: paymentMethod };
-
     const totalPrice = parseFloat(calculateCartTotal());
 
-    const payload = {
+    return {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       ...(guestName && !loggedInUserId && { customerName: guestName }),
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
-      paymentDetails,
+      paymentDetails: { method: paymentMethod },
       status: ORDER_STATUS.PENDING,
       createdAt: new Date(),
       ...(couponApplied && { couponUsed: eligibleReward }),
     };
+  };
+
+  // Create order before payment and return stable ID
+  const createPrePaymentOrder = async () => {
+    const payload = buildOrderPayload();
+    console.log("📦 Creating pre-payment order:", payload);
+    const res = await api.post(`/api/orders/create-pre-payment`, payload);
+    setOrderId(res.data.orderId);
+  };
+
+  // Submit order for non-card payments
+  const submitOrderToBackend = async () => {
+    const payload = buildOrderPayload();
 
     console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
@@ -208,15 +233,14 @@ const CartPage = () => {
       const orderId = createdOrder._id; // ✅ This is the MongoDB _id
       console.log("📦 Order ID (MongoDB _id):", orderId);
 
-      // Optional: save to state or localStorage if needed for payment checks
-      setOrderId(orderId); // You need to define `orderId` state with useState()
+      setOrderId(orderId);
 
       setOrderSubmitted(true);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
 
-      if (loggedInUserId) {
+      if (user?._id) {
         try {
           const token = localStorage.getItem("token");
           const profile = await api.get(`/api/users/profile`, {
@@ -620,10 +644,22 @@ const CartPage = () => {
                       מזומן
                     </button>
                     <button
-                      onClick={() => {
-                        setPaymentMethod("Card"); // 🔥 This triggers the iframe
-                        setShowCardPayment(true);
+                      onClick={async () => {
+                        if (!deliveryOption) {
+                          alert("אנא בחר אפשרות משלוח לפני תשלום בכרטיס");
+                          return;
+                        }
+                        setPaymentMethod("Card");
                         setPaymentResult(null);
+                        try {
+                          if (!orderId) {
+                            await createPrePaymentOrder();
+                          }
+                          setShowCardPayment(true);
+                        } catch (err) {
+                          console.error("❌ Failed to create pre-payment order:", err);
+                          alert("שגיאה ביצירת ההזמנה");
+                        }
                       }}
                       style={{
                         flex: "1",
@@ -728,19 +764,8 @@ const CartPage = () => {
                     שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
                   </p>
                 )}
-                {paymentMethod === "Card" && showCardPayment && !paymentResult && (
-                  <TranzilaIframe
-                    amount={calculateFinalTotal()}
-                    orderId={orderId}
-                    onSuccess={() => {
-                      setPaymentResult("success");
-                      setShowCardPayment(false);
-                    }}
-                    onFailure={() => {
-                      setPaymentResult("failure");
-                      setShowCardPayment(false);
-                    }}
-                  />
+                {paymentMethod === "Card" && showCardPayment && !paymentResult && orderId && (
+                  <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />
                 )}
                 {paymentResult === "success" && (
                   <div style={{ textAlign: "center", marginTop: "20px" }}>

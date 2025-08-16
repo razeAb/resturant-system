@@ -25,7 +25,6 @@ mongoose
 // ✅ Middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
@@ -106,16 +105,17 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     await order.save();
     console.log("✅ Order updated as paid:", order._id);
 
-    // 🔔 אופציונלי: אם יש לכם Socket.IO - עדכנו את לוח הניהול בזמן אמת
-    // io.emit("order_paid", {
-    //   _id: order._id,
-    //   clientOrderId: order.clientOrderId,
-    //   items: order.items,
-    //   totalPrice: order.totalPrice,
-    //   status: order.status,
-    //   createdAt: order.createdAt,
-    // });
-
+    // 🔔 notify admin dashboard in real-time
+    if (io && io.emit) {
+      io.emit("order_paid", {
+        _id: order._id,
+        clientOrderId: order.clientOrderId,
+        items: order.items,
+        totalPrice: order.totalPrice,
+        status: order.status,
+        createdAt: order.createdAt,
+      });
+    }
     return res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);
@@ -126,4 +126,4 @@ app.post("/api/tranzila-webhook", async (req, res) => {
 
 // ✅ Server Ready
 app.get("/", (req, res) => res.send("🚀 Server Running"));
-app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));

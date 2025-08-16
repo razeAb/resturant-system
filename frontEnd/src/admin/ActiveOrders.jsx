@@ -5,6 +5,9 @@ import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
 import { Menu } from "lucide-react";
+import { io } from "socket.io-client";
+
+const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5001");
 
 /* ----------------- helpers ----------------- */
 const formatTime = (timestamp) => {
@@ -94,6 +97,12 @@ export default function ActiveOrdersPage() {
       setOrders([]);
     }
   };
+
+  useEffect(() => {
+    const handler = () => fetchOrders();
+    socket.on("order_paid", handler);
+    return () => socket.off("order_paid", handler);
+  }, []);
 
   // unlock audio (mobile)
   useEffect(() => {
