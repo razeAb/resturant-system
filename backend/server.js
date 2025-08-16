@@ -40,6 +40,7 @@ app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/workers", require("./routes/workerRoutes"));
 app.use("/api/upload", require("./uploadRoute"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/tranzila", require("./routes/TranzillaRoutes"));
@@ -63,7 +64,7 @@ app.post("/api/tranzila-webhook", async (req, res) => {
       if (typeof orderData === "string") {
         try {
           orderData = JSON.parse(orderData);
-        } catch (err) {
+        } catch {
           console.error("❌ Could not parse order JSON");
           return res.send("Invalid order data");
         }

@@ -1,22 +1,12 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import api from "../api";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { initializeFirebase } from "../firebase"; // ✅ חדש
-import { AuthContext } from "../context/AuthContext";
 import CartContext from "../context/CartContext";
-
-// 📞 Format phone number to international format
-const formatPhoneNumber = (number) => {
-  if (number.startsWith("0")) {
-    return "+972" + number.substring(1);
-  }
-  return number;
-};
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
   const { clearCart } = useContext(CartContext);
 
   const [email, setEmail] = useState("");
@@ -28,7 +18,8 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await api.post(`/api/auth/login`, { email, password });      const user = response.data.user;
+      const response = await api.post(`/api/auth/login`, { email, password });
+      const user = response.data.user;
 
       clearCart();
       localStorage.removeItem("cartItems");
@@ -114,11 +105,15 @@ const Login = () => {
         </button>
 
         <button type="button" onClick={() => navigate("/register")} className="text-sm text-blue-500 mt-4 hover:underline">
-          Don't have an account? Register
+          Don&apos;t have an account? Register
         </button>
 
         <button type="button" onClick={() => navigate("/resetPassword")} className="text-sm text-blue-500 mt-2 hover:underline">
           Forgot Password?
+        </button>
+
+        <button type="button" onClick={() => navigate("/worker/login")} className="text-sm text-blue-500 mt-2 hover:underline">
+          Worker Login
         </button>
 
         <div className="my-6 border-t border-gray-300 relative">
