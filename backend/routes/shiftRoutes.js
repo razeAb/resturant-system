@@ -46,7 +46,21 @@ router.get("/", workerProtect, async (req, res) => {
 router.get("/all", protect, async (req, res) => {
   if (!req.user.isAdmin) return res.status(403).json({ message: "Not authorized" });
   try {
-    const shifts = await Shift.find().populate("user", "name").sort({ start: -1 });
+    const { worker, start, end } = req.query;
+    const query = {};
+    if (worker) query.user = worker;
+    if (start || end) {
+      query.start = {};
+      if (start) query.start.$gte = new Date(start);
+      if (end) {
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+        query.start.$lte = endDate;
+      }
+    }
+    const shifts = await Shift.find(query)
+      .populate("user", "username")
+      .sort({ start: -1 });
     res.json(shifts);
   } catch (err) {
     res.status(500).json({ message: err.message });

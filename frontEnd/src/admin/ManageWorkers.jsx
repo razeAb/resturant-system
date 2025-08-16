@@ -23,19 +23,6 @@ const toBool = (v) => {
   return !!v;
 };
 
-// get the worker id from a shift object in a defensive way
-const getShiftWorkerId = (s) =>
-  s?.user?._id ||
-  s?.userId ||
-  s?.user ||
-  s?.worker?._id ||
-  s?.workerId ||
-  s?.worker ||
-  s?.employee?._id ||
-  s?.employeeId ||
-  s?.employee ||
-  null;
-
 const ManageWorkers = () => {
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({ username: "", password: "", role: "cook" });
@@ -46,7 +33,7 @@ const ManageWorkers = () => {
   const [expanded, setExpanded] = useState(null);
   const [shiftsMap, setShiftsMap] = useState({});
   const [shiftsLoading, setShiftsLoading] = useState({}); // { [workerId]: true/false }
-
+  const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
   const fetchWorkers = async () => {
     try {
       setLoading(true);
@@ -94,21 +81,15 @@ const ManageWorkers = () => {
       setShiftsLoading((m) => ({ ...m, [id]: true }));
       const token = localStorage.getItem("token");
 
-      // If your backend supports filtering by query, prefer this:
-      // const res = await api.get(`/api/shifts?user=${id}`, { headers: { Authorization: `Bearer ${token}` } });
-
-      // Fallback: get all shifts, then filter on client:
-      const res = await api.get("/api/shifts/all", {
+      const params = { worker: id };
+      if (dateFilter.start) params.start = dateFilter.start;
+      if (dateFilter.end) params.end = dateFilter.end;
+      const res = await api.get("/api/shifts/all", params, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const all = Array.isArray(res.data) ? res.data : [];
-      const workerShifts = all.filter((s) => {
-        const sid = getShiftWorkerId(s);
-        return sid && String(sid) === String(id);
-      });
-
-      setShiftsMap((p) => ({ ...p, [id]: workerShifts }));
+      const list = Array.isArray(res.data) ? res.data : [];
+      setShiftsMap((p) => ({ ...p, [id]: list }));
     } catch (err) {
       console.error("Failed to load shifts", err);
       setMsg({ text: "שגיאה בטעינת משמרות לעובד", tone: "error" });
@@ -124,7 +105,7 @@ const ManageWorkers = () => {
       return;
     }
     setExpanded(id);
-    if (!shiftsMap[id]) fetchShiftsForWorker(id);
+    fetchShiftsForWorker(id);
   };
 
   const adjustHours = async (shiftId, workerId) => {
@@ -255,6 +236,39 @@ const ManageWorkers = () => {
               </div>
             </form>
             <p className="text-[12px] text-white/40 mt-2">נתוני גישה נשמרים בבקאנד. כאן רק מוסיפים משתמש ותפקיד.</p>
+          </section>
+
+          {/* Date Filter */}
+          <section className="bg-[#17181d] border border-white/10 rounded-2xl p-4 fade-up card-hover">
+            <h3 className="text-sm text-white/80 mb-3">סינון משמרות לפי תאריך</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">מתאריך</label>
+                <input
+                  type="date"
+                  value={dateFilter.start}
+                  onChange={(e) => setDateFilter((s) => ({ ...s, start: e.target.value }))}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">עד תאריך</label>
+                <input
+                  type="date"
+                  value={dateFilter.end}
+                  onChange={(e) => setDateFilter((s) => ({ ...s, end: e.target.value }))}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+              <div className="flex sm:justify-end">
+                <button
+                  onClick={() => expanded && fetchShiftsForWorker(expanded)}
+                  className="w-full sm:w-auto rounded-xl px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm"
+                >
+                  סנן
+                </button>
+              </div>
+            </div>
           </section>
 
           {/* Workers List */}

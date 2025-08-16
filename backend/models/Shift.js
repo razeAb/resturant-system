@@ -2,8 +2,7 @@ const mongoose = require("mongoose");
 
 const shiftSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    start: { type: Date, required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "Worker", required: true },    start: { type: Date, required: true },
     end: { type: Date },
     hours: { type: Number, default: 0 },
     adjustedByManager: { type: Boolean, default: false },
