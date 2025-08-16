@@ -4,6 +4,33 @@ const Order = require("../models/Order");
 const User = require("../models/User"); // ✅ ADD THIS
 const { protect } = require("../middleware/authMiddleware");
 
+// ✅ Create pre-payment order and return stable ID
+router.post("/create-pre-payment", async (req, res) => {
+  try {
+    const { items, totalPrice, deliveryOption, user, phone, customerName, paymentDetails, couponUsed } = req.body;
+
+    const order = new Order({
+      user: user || undefined,
+      phone: phone || undefined,
+      customerName: customerName || undefined,
+      paymentDetails: paymentDetails || {},
+      couponUsed: couponUsed || undefined,
+      items,
+      totalPrice: parseFloat(totalPrice),
+      deliveryOption,
+      status: "pending_payment",
+    });
+
+    order.clientOrderId = order._id.toString();
+    await order.save();
+
+    return res.status(201).json({ orderId: order.clientOrderId });
+  } catch (err) {
+    console.error("❌ Error creating pre-payment order:", err);
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 // ✅ Create a New Order
 router.post("/", async (req, res) => {
   try {
@@ -19,7 +46,7 @@ router.post("/", async (req, res) => {
       items,
       totalPrice: parseFloat(totalPrice),
       deliveryOption,
-      status: status || "pending",
+      status: status || "pending_payment",
       createdAt: createdAt || new Date(),
     });
 

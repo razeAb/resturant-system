@@ -3,12 +3,18 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 const Order = require("./models/Order");
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+module.exports.io = io;
 
 // ✅ MongoDB
 mongoose
@@ -17,6 +23,7 @@ mongoose
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
 // ✅ Middleware
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -48,54 +55,71 @@ app.use("/api/analytics", require("./routes/analyticsRoutes"));
 // ✅ Tranzila Webhook Endpoint
 app.post("/api/tranzila-webhook", async (req, res) => {
   try {
+    // טרנזילה שולחים בדרך כלל application/x-www-form-urlencoded
     const data = req.body;
     console.log("📩 Webhook received:", data);
 
+    // אימות טוקן (אם יש)
     const token = req.headers["x-tranzila-token"];
     if (process.env.TRANZILA_WEBHOOK_TOKEN && token !== process.env.TRANZILA_WEBHOOK_TOKEN) {
       console.warn("⚠️ Invalid token");
       return res.status(403).send("Forbidden");
     }
 
-    if (data.Response === "000") {
-      let orderData = data.order || data.orderData;
+    // ✅ הצלחה יכולה להגיע תחת processor_response_code או Response
+    const isSuccess = data.processor_response_code === "000" || data.Response === "000" || data.response === "000";
 
-      if (typeof orderData === "string") {
-        try {
-          orderData = JSON.parse(orderData);
-        } catch (err) {
-          console.error("❌ Could not parse order JSON");
-          return res.send("Invalid order data");
-        }
-      }
-
-      if (!orderData || !orderData.items) return res.send("No valid order");
-
-      const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed } = orderData;
-
-      const newOrder = new Order({
-        user,
-        phone,
-        customerName,
-        paymentDetails,
-        couponUsed,
-        items,
-        totalPrice: parseFloat(totalPrice),
-        deliveryOption,
-        status: status || "pending",
-        createdAt: createdAt || new Date(),
-      });
-
-      await newOrder.save();
-      console.log("✅ Order saved from webhook:", newOrder._id);
-    } else {
-      console.log("❌ Payment failed:", data.Response);
+    if (!isSuccess) {
+      console.warn("❌ Payment failed payload:", data);
+      return res.status(200).send("received"); // להימנע מריצוד/רטראי
     }
 
-    res.send("OK");
+    // ✅ שלוף את מזהה ההזמנה שלך שחזר מהחיוב (מאוד חשוב ששלחת אותו כ-ud1)
+    const clientOrderId = data.ud1 || data.orderId || data.clientOrderId;
+    if (!clientOrderId) {
+      console.error("✅ Success but missing clientOrderId (ud1). Payload:", data);
+      return res.status(200).send("received");
+    }
+
+    // ✅ מצא את ההזמנה שנוצרה לפני התשלום
+    const order = await Order.findOne({ clientOrderId });
+    if (!order) {
+      console.error("❌ Order not found for clientOrderId:", clientOrderId);
+      return res.status(200).send("received");
+    }
+
+    // ✅ עדכן סטטוס ופרטי תשלום מה־payload של טרנזילה
+    order.status = "paid"; // או "preparing" אם ככה אתה מציג ב-Active
+    order.paymentDetails = {
+      provider: "tranzila",
+      transaction_id: data.transaction_id,
+      auth_number: data.auth_number,
+      card_type: data.card_type_name || data.card_type,
+      last4: data.last_4,
+      token: data.token,
+      amount: Number(data.sum || data.amount || order.totalPrice || 0),
+      currency: data.currency || data.currency_code || "1", // 1=ILS אצלם
+      raw: data, // לשמור הכל לבקרה
+    };
+
+    await order.save();
+    console.log("✅ Order updated as paid:", order._id);
+
+    // 🔔 אופציונלי: אם יש לכם Socket.IO - עדכנו את לוח הניהול בזמן אמת
+    // io.emit("order_paid", {
+    //   _id: order._id,
+    //   clientOrderId: order.clientOrderId,
+    //   items: order.items,
+    //   totalPrice: order.totalPrice,
+    //   status: order.status,
+    //   createdAt: order.createdAt,
+    // });
+
+    return res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);
-    res.status(500).send("Error");
+    // מחזירים 200 כדי לא לגרום לריטריים אינסופיים
+    return res.status(200).send("received");
   }
 });
 
