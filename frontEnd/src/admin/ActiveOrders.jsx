@@ -38,7 +38,7 @@ const translateDeliveryOption = (option) =>
   option === "EatIn" ? "אכילה במקום" : option === "Delivery" ? "משלוח" : option === "Pickup" ? "איסוף עצמי" : option;
 
 const translatePaymentMethod = (method) =>
-  method === "Card" ? "כרטיס אשראי" : method === "Cash" ? "מזומן" : method === "Bit" ? "ביט" : method || "לא ידוע";
+  method === "Card" ? "כרטיס אשראי" : method === "Cash" ? "מזומן" : method === "Bit" ? "ביט" : method || "אפל פיי/ גוגל פיי;
 
 const startOfToday = () => {
   const d = new Date();
