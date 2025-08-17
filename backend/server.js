@@ -75,7 +75,7 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     }
 
     // ✅ שלוף את מזהה ההזמנה שלך שחזר מהחיוב (מאוד חשוב ששלחת אותו כ-ud1)
-    const clientOrderId = data.ud1 || data.orderId || data.clientOrderId;
+    const clientOrderId = data.ud1 || data.orderId || data.clientOrderId || req.query.orderId;
     if (!clientOrderId) {
       console.error("✅ Success but missing clientOrderId (ud1). Payload:", data);
       return res.status(200).send("received");
