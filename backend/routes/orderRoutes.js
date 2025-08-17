@@ -86,10 +86,24 @@ router.post("/success", async (req, res) => {
     const { orderId } = req.body;
     console.log("💳 Payment success received for orderId:", orderId);
 
-    // In this flow the order itself is created on the client after a
-    // successful payment, so we simply acknowledge the callback here.
-    // If in the future you persist temporary IDs you can update the order
-    // status or store additional payment details at this point.
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
+    }
+
+    // Support both _id and clientOrderId
+    const order = await Order.findOne({
+      $or: [{ _id: orderId }, { clientOrderId: orderId }],
+    });
+
+    if (!order) {
+      console.warn("❌ Order not found for payment success:", orderId);
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.status = "paid";
+    order.paymentStatus = "paid";
+    order.paidAt = new Date();
+    await order.save();
 
     res.status(200).json({ message: "Payment success recorded" });
   } catch (err) {
@@ -165,7 +179,8 @@ router.get("/active", async (req, res) => {
     // 🧠 Step 2: Fetch still active
     const activeOrders = await Order.find({
       status: { $nin: ["done", "pending_payment", "failed", "canceled"] },
-    })      .populate("user", "name phone")
+    })
+      .populate("user", "name phone")
       .populate("items.product", "name")
       .sort({ createdAt: -1 });
 

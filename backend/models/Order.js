@@ -55,6 +55,14 @@ const OrderSchema = new mongoose.Schema({
     currency: { type: String },
     raw: { type: mongoose.Schema.Types.Mixed },
   },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed"],
+    default: "pending",
+  },
+  tranzilaToken: { type: String },
+  tranzilaResponse: { type: mongoose.Schema.Types.Mixed },
+  paidAt: { type: Date },
   // Track which coupon was used for this order, if any
   couponUsed: {
     type: String,
