@@ -5,9 +5,15 @@ import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
 import { Menu } from "lucide-react";
-import { io } from "socket.io-client";
+import io from "socket.io-client"; // ✅ default import
 
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5001");
+// ✅ single socket instance (robust connection options)
+const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5001", {
+  transports: ["websocket"],
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+});
 
 /* ----------------- helpers ----------------- */
 const formatTime = (timestamp) => {
@@ -63,6 +69,8 @@ export default function ActiveOrdersPage() {
 
   // polling + new order sound
   const prevOrderCountRef = useRef(0);
+
+  // initial fetch + 5s polling safety net
   useEffect(() => {
     fetchOrders();
     const id = setInterval(fetchOrders, 5000);
@@ -86,10 +94,7 @@ export default function ActiveOrdersPage() {
       const res = await api.get("/api/orders/active");
       // Backend already filters out completed and unpaid orders
       const newOrderList = res.data.filter(
-        (o) =>
-          o.status !== ORDER_STATUS?.DONE &&
-          o.status !== ORDER_STATUS?.PENDING_PAYMENT &&
-          o.status !== ORDER_STATUS?.CANCELED
+        (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED
       );
       if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
         playNotificationSound();
@@ -102,10 +107,28 @@ export default function ActiveOrdersPage() {
     }
   };
 
+  // ✅ REAL-TIME: merge order from webhook (no extra fetch)
   useEffect(() => {
-    const handler = () => fetchOrders();
-    socket.on("order_paid", handler);
-    return () => socket.off("order_paid", handler);
+    const onPaid = (order) => {
+      playNotificationSound();
+      setOrders((prev) => {
+        const i = prev.findIndex((o) => o._id === order._id);
+        if (i >= 0) {
+          const updated = [...prev];
+          updated[i] = { ...prev[i], ...order };
+          return updated;
+        }
+        return [order, ...prev];
+      });
+      prevOrderCountRef.current += 1;
+    };
+
+    socket.on("connect", () => console.log("🔌 admin socket connected"));
+    socket.on("order_paid", onPaid);
+
+    return () => {
+      socket.off("order_paid", onPaid);
+    };
   }, []);
 
   // unlock audio (mobile)
@@ -148,7 +171,7 @@ export default function ActiveOrdersPage() {
     // ✅ WhatsApp stays intact
     const formattedPhone = formatPhoneNumber(phone);
     const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttps://hungryresturant.netlify.app/order-status`;
-    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    if (formattedPhone) window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, "_blank");
     alert(`הלקוח יקבל הודעה בוואטסאפ`);
   };
 
@@ -272,7 +295,7 @@ export default function ActiveOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Mobile card (UPDATED ORDER) */}
+                      {/* Mobile card */}
                       <div className="md:hidden py-4 border-b border-white/10">
                         {/* Name + phone on top */}
                         <div className="flex items-center justify-between">
@@ -291,7 +314,7 @@ export default function ActiveOrdersPage() {
                           </span>
                         </div>
 
-                        {/* Order number under in smaller text */}
+                        {/* Order number + time */}
                         <div className="text-white/60 text-xs mt-1">
                           #{order._id.slice(-6)} · {new Date(order.createdAt).toLocaleString("he-IL")}
                         </div>
@@ -364,7 +387,7 @@ export default function ActiveOrdersPage() {
                             )}
 
                             {((order.deliveryOption === "Delivery" && order.status === ORDER_STATUS?.DELIVERING) ||
-                              order.deliveryOption !== "Delivery") && (
+                              +order.deliveryOption !== "Delivery") && (
                               <button
                                 className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg"
                                 onClick={() => markAsDone(order._id)}
