@@ -15,13 +15,15 @@ const TranzilaIframe = ({ amount, orderId }) => {
   }, []);
 
   useEffect(() => {
-    if (formRef.current) {
+    if (orderId && formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
       formRef.current.submit();
+    } else if (!orderId) {
+      console.warn("⚠️ Missing orderId, delaying form submission");
     } else {
       console.warn("⚠️ formRef is null, cannot submit form");
     }
-  }, []);
+  }, [orderId]);
 
   console.log("🔁 TranzilaIframe rendered with:", { amount, orderId });
 
