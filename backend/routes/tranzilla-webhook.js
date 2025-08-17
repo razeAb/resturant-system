@@ -1,69 +1,61 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
+const { io } = require("../server"); // <-- make sure the path points to where you export io
 
-// If you have app-level parsers, prefer:
-// app.use(express.urlencoded({ extended: false }));
-// app.use(express.json());
-// Then this route can just read req.body.
-// If not, keep the text parser & manual parse like you did.
-
+// If you use global app-level parsers, you could use urlencoded here.
+// Keeping text parser to be safe with Tranzila payloads.
 router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
     console.log("📬 Webhook headers:", req.headers);
     console.log("📩 Raw Tranzila body:", req.body);
 
-    // Parse application/x-www-form-urlencoded-like body to object
+    // Parse x-www-form-urlencoded-like body to object
     const parsed = new URLSearchParams(req.body || "");
     const data = Object.fromEntries(parsed.entries());
-
     console.log("📩 Parsed Tranzila Webhook Data:", data);
 
-    // ✅ 1) Identify success robustly
-    const isSuccess =
-      data.processor_response_code === "000" ||
-      data.Response === "000" ||
-      data.response === "000";
+    // 1) success detection
+    const isSuccess = data.processor_response_code === "000" || data.Response === "000" || data.response === "000";
 
-    // ✅ 2) Use ud1 as the stable identifier (your own id)
+    // 2) stable id we sent as ud1
     const clientOrderId = data.ud1 || data.orderId || data.order_id || data.clientOrderId || null;
-
-    console.log("🔎 clientOrderId (from ud1):", clientOrderId);
     if (!clientOrderId) {
-      console.warn("⚠️ Success but missing clientOrderId (ud1). Payload lacked ud1.");
-      return res.status(200).send("received"); // don't cause retries storm
+      console.warn("⚠️ Success but missing clientOrderId (ud1).");
+      return res.status(200).send("received");
     }
 
-    // ✅ 3) Optional token protection
+    // 3) optional token
     const receivedToken = req.headers["x-tranzila-token"];
     if (process.env.TRANZILA_WEBHOOK_TOKEN && receivedToken !== process.env.TRANZILA_WEBHOOK_TOKEN) {
       console.warn("❌ Invalid webhook token");
       return res.status(403).send("Forbidden");
     }
 
-    // ✅ 4) Find by clientOrderId (string) – not only by _id
+    // 4) find the pre-payment order by clientOrderId
     const order = await Order.findOne({ clientOrderId });
     if (!order) {
       console.warn("❌ Order not found by clientOrderId:", clientOrderId);
       return res.status(200).send("received");
     }
 
-    // ✅ 5) Idempotency: if already paid/preparing, just ack
+    // 5) idempotency
     if (["paid", "preparing", "delivering", "done"].includes(order.status) || order.paymentStatus === "paid") {
-      console.log("ℹ️ Webhook duplicate / already processed for:", clientOrderId);
+      console.log("ℹ️ Duplicate webhook for:", clientOrderId);
       return res.status(200).send("ok");
     }
 
-    // ✅ 6) Update fields
+    // 6) update order
     if (isSuccess) {
       order.paymentStatus = "paid";
-      // pick one that your Active page shows; 'preparing' usually appears immediately
       order.status = "preparing"; // or "paid" if your /active includes it
       order.paidAt = new Date();
 
-      // Optional: keep structured payment details
+      // ✅ keep the original method (e.g., "Card") and merge details
+      const prevMethod = order.paymentDetails?.method || "Card";
       order.paymentDetails = {
         ...(order.paymentDetails || {}),
+        method: prevMethod,
         provider: "tranzila",
         transaction_id: data.transaction_id,
         auth_number: data.auth_number,
@@ -78,31 +70,31 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
       order.status = "failed";
     }
 
-    // ✅ 7) Always keep raw payload for audit/debug
+    // 7) keep raw payload for audit/debug
     order.tranzilaResponse = data;
     await order.save();
 
-    console.log(
-      isSuccess
-        ? `✅ Order ${clientOrderId} marked as ${order.status.toUpperCase()}`
-        : `❌ Payment FAILED for ${clientOrderId}`
-    );
+    console.log(isSuccess ? `✅ Order ${clientOrderId} marked as ${order.status.toUpperCase()}` : `❌ Payment FAILED for ${clientOrderId}`);
 
-    // (Optional) If you have Socket.IO available, emit to admin UI:
-    // const { io } = require("../app"); // adjust path if needed
-    // io?.emit("order_paid", {
-    //   _id: order._id,
-    //   clientOrderId: order.clientOrderId,
-    //   items: order.items,
-    //   totalPrice: order.totalPrice,
-    //   status: order.status,
-    //   createdAt: order.createdAt,
-    // });
+    // 🔔 push to admin UI in real-time
+    if (isSuccess && io?.emit) {
+      io.emit("order_paid", {
+        _id: order._id,
+        clientOrderId: order.clientOrderId,
+        items: order.items,
+        totalPrice: order.totalPrice,
+        status: order.status,
+        createdAt: order.createdAt,
+        deliveryOption: order.deliveryOption,
+        customerName: order.customerName,
+        phone: order.phone,
+        paymentDetails: order.paymentDetails, // so UI shows the method
+      });
+    }
 
     return res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Error in Tranzila webhook handler:", err);
-    // Still 200 to avoid infinite retries (unless you want retries)
     return res.status(200).send("received");
   }
 });
