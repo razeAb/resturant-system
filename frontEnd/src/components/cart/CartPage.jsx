@@ -212,8 +212,13 @@ const CartPage = () => {
   };
 
   // Create order before payment and return stable ID
-  const createPrePaymentOrder = async () => {
+  const createPrePaymentOrder = async (forcedMethod) => {
     const payload = buildOrderPayload();
+    // ensure method is present even if React state hasn't updated yet
+    payload.paymentDetails = {
+      ...(payload.paymentDetails || {}),
+      method: forcedMethod || payload.paymentDetails?.method || "Card",
+    };
     console.log("📦 Creating pre-payment order:", payload);
     const res = await api.post(`/api/orders/create-pre-payment`, payload);
     setOrderId(res.data.orderId);
@@ -653,8 +658,8 @@ const CartPage = () => {
                         setPaymentResult(null);
                         try {
                           if (!orderId) {
-                            await createPrePaymentOrder();
-                          }
+                              await createPrePaymentOrder("Card");
+                            }
                           setShowCardPayment(true);
                         } catch (err) {
                           console.error("❌ Failed to create pre-payment order:", err);
