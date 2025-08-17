@@ -83,10 +83,14 @@ export default function ActiveOrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/api/orders");
-      // Keep everything except DONE; we'll filter to today below
-      const newOrderList = res.data.orders.filter((o) => o.status !== ORDER_STATUS?.DONE);
-
+      const res = await api.get("/api/orders/active");
+      // Backend already filters out completed and unpaid orders
+      const newOrderList = res.data.filter(
+        (o) =>
+          o.status !== ORDER_STATUS?.DONE &&
+          o.status !== ORDER_STATUS?.PENDING_PAYMENT &&
+          o.status !== ORDER_STATUS?.CANCELED
+      );
       if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
         playNotificationSound();
       }

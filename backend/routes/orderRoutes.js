@@ -163,8 +163,9 @@ router.get("/active", async (req, res) => {
     await Order.updateMany({ createdAt: { $lte: twentyFourHoursAgo }, status: { $ne: "done" } }, { $set: { status: "done" } });
 
     // 🧠 Step 2: Fetch still active
-    const activeOrders = await Order.find({ status: { $ne: "done" } })
-      .populate("user", "name phone")
+    const activeOrders = await Order.find({
+      status: { $nin: ["done", "pending_payment", "failed", "canceled"] },
+    })      .populate("user", "name phone")
       .populate("items.product", "name")
       .sort({ createdAt: -1 });
 
