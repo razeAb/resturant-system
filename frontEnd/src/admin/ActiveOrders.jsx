@@ -39,20 +39,6 @@ const translateDeliveryOption = (option) =>
 
 const translatePaymentMethod = (method) =>
   method === "Card" ? "כרטיס אשראי" : method === "Cash" ? "מזומן" : method === "Bit" ? "ביט" : method || "אפל פיי / גוגל פיי";
-const startOfToday = () => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-const endOfToday = () => {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-};
-const isToday = (createdAt) => {
-  const d = new Date(createdAt);
-  return d >= startOfToday() && d <= endOfToday();
-};
 
 /* ----------------- page ----------------- */
 export default function ActiveOrdersPage() {

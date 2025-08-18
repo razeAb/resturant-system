@@ -273,10 +273,6 @@ router.post("/:id/add-item", async (req, res) => {
 // ✅ Get Active Orders (not marked as done)
 router.get("/active", async (req, res) => {
   try {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    await Order.updateMany({ createdAt: { $lte: twentyFourHoursAgo }, status: { $ne: "done" } }, { $set: { status: "done" } });
-
     const activeOrders = await Order.find({
       status: { $nin: ["done", "pending_payment", "failed", "canceled"] },
     })
