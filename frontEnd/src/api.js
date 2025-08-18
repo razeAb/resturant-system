@@ -1,24 +1,8 @@
-// Automatically attach the worker token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("workerToken");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || "",
+  withCredentials: true,
 });
 
-// Redirect to login if the API returns 401 (unauthorized)
-api.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem("workerToken");
-      localStorage.removeItem("worker");
-      if (typeof window !== "undefined") {
-        window.location.href = "/worker/login";
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+export default api;
