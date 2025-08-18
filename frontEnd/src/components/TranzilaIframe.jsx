@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const TranzilaIframe = ({ amount, orderId, orderData }) => {
+const TranzilaIframe = ({ amount, orderId }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -15,15 +15,17 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
   }, []);
 
   useEffect(() => {
-    if (formRef.current) {
+    if (orderId && formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
       formRef.current.submit();
+    } else if (!orderId) {
+      console.warn("⚠️ Missing orderId, delaying form submission");
     } else {
       console.warn("⚠️ formRef is null, cannot submit form");
     }
-  }, []);
+  }, [orderId]);
 
-  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId, orderData });
+  console.log("🔁 TranzilaIframe rendered with:", { amount, orderId });
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -55,10 +57,12 @@ const TranzilaIframe = ({ amount, orderId, orderData }) => {
 
         {/* Order tracking */}
         <input type="hidden" name="order_id" value={orderId} />
-        <input type="hidden" name="notify_url" value="https://resturant-system-3f33.onrender.com/api/tranzila-webhook" />
-
-        {/* ✅ Send orderData to backend via webhook */}
-        <input type="hidden" name="order" value={JSON.stringify(orderData)} />
+        <input type="hidden" name="ud1" value={orderId} />
+        <input
+          type="hidden"
+          name="notify_url"
+          value={`https://resturant-system-3f33.onrender.com/api/tranzila-webhook?orderId=${orderId}`}
+        />
       </form>
 
       <div

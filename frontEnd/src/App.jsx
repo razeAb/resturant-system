@@ -23,8 +23,6 @@ import { AuthProvider } from "./context/AuthContext"; // ✅
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
 import CashRegister from "./admin/CashRegister";
 import RevenuePage from "./admin/RevenuePage";
-import ManageWorkers from "./admin/ManageWorkers";
-import WorkerLogin from "./pages/WorkerLogin";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
 const App = () => {
@@ -66,6 +64,8 @@ const App = () => {
               <Route path="/admin/revenue" element={<RevenuePage />} />
               <Route path="/admin/cash-register" element={<CashRegister />} />
               <Route path="/kitchen" element={<KitchenOrders />} />
+              <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+              <Route path="/admin/manage-shifts" element={<ManageShifts />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
               <Route path="/admin/workers" element={<ManageWorkers />} />

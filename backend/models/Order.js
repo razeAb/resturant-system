@@ -6,6 +6,10 @@ const OrderSchema = new mongoose.Schema({
     ref: "User",
     required: false,
   },
+  clientOrderId: {
+    type: String,
+    index: true,
+  },
   items: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
@@ -41,9 +45,24 @@ const OrderSchema = new mongoose.Schema({
   },
   paymentDetails: {
     method: { type: String },
-    cardLastFour: { type: String },
-    cardholderName: { type: String },
+    provider: { type: String },
+    transaction_id: { type: String },
+    auth_number: { type: String },
+    card_type: { type: String },
+    last4: { type: String },
+    token: { type: String },
+    amount: { type: Number },
+    currency: { type: String },
+    raw: { type: mongoose.Schema.Types.Mixed },
   },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed"],
+    default: "pending",
+  },
+  tranzilaToken: { type: String },
+  tranzilaResponse: { type: mongoose.Schema.Types.Mixed },
+  paidAt: { type: Date },
   // Track which coupon was used for this order, if any
   couponUsed: {
     type: String,
@@ -52,8 +71,8 @@ const OrderSchema = new mongoose.Schema({
   status: {
     type: String,
     // Unified set of order statuses used across the app
-    enum: ["pending", "preparing", "delivering", "done", "paid", "failed"],
-    default: "pending",
+    enum: ["pending_payment", "paid", "preparing", "delivering", "done", "canceled"],
+    default: "pending_payment",
   },
   estimatedTime: {
     type: Number,
