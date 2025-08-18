@@ -25,6 +25,8 @@ import CashRegister from "./admin/CashRegister";
 import RevenuePage from "./admin/RevenuePage";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
+import ManageWorkers from "./admin/ManageWorkers";
+import WorkerLogin from "./pages/WorkerLogin";
 const App = () => {
   return (
     <AuthProvider>
