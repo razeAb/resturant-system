@@ -72,8 +72,8 @@ const App = () => {
               <Route path="/payment-failure" element={<PaymentFailure />} />
               <Route path="/admin/workers" element={<ManageWorkers />} />
               <Route path="/worker/login" element={<WorkerLogin />} />
-              <Route path="/worker/dashboard" element={<WorkerDashboard />} />
-              <Route path="/admin/manage-shifts" element={<ManageShifts />} />            </Routes>
+              </Routes>
+
 
             {/* CartIcon should be placed here to appear on all pages */}
             <CartIcon />

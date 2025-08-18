@@ -13,13 +13,11 @@ export default function WorkingHoursPage() {
     }
   });
   const [range, setRange] = useState({ from: null, to: null });
-  const token = localStorage.getItem("workerToken");
 
   const fetchShifts = async () => {
     try {
-      const res = await api.get("/api/shifts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/api/shifts");
+
       const data = res.data || [];
       setShifts(data);
 
@@ -27,8 +25,7 @@ export default function WorkingHoursPage() {
       const active = data.find((s) => s.start && !s.end);
       setWorker((w) => ({ ...w, ...(JSON.parse(localStorage.getItem("worker") || "{}")), onShift: !!active }));
     } catch (e) {
-      console.error(e);
-    }
+      console.error("Error loading shifts", e);    }
   };
 
   useEffect(() => {
@@ -37,11 +34,11 @@ export default function WorkingHoursPage() {
       return;
     }
     fetchShifts();
-  }, [token, navigate]);
+  }, [navigate]);
 
   const handleStartShift = async () => {
     try {
-      await api.post("/api/shifts/start", {}, { headers: { Authorization: `Bearer ${token}` } });
+      await api.post("/api/shifts/start");
       setWorker((w) => ({ ...w, onShift: true }));
       fetchShifts();
     } catch (e) {
@@ -51,7 +48,7 @@ export default function WorkingHoursPage() {
 
   const handleEndShift = async () => {
     try {
-      await api.post("/api/shifts/stop", {}, { headers: { Authorization: `Bearer ${token}` } });
+      await api.post("/api/shifts/stop");
       setWorker((w) => ({ ...w, onShift: false }));
       fetchShifts();
     } catch (e) {
