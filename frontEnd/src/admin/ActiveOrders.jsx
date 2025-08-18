@@ -199,9 +199,8 @@ export default function ActiveOrdersPage() {
     }
   };
 
-  // only today's orders
-  const filtered = orders.filter((o) => isToday(o.createdAt));
-
+  // show all active orders
+  const filtered = orders;
   /* ----------------- UI ----------------- */
   return (
     <div className="min-h-screen bg-[#0f1415] text-white flex" dir="rtl">
