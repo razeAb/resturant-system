@@ -4,7 +4,7 @@ const TranzilaIframe = ({ amount, orderId }) => {
   const formRef = useRef(null);
   const iframeRef = useRef(null);
 
-  const terminal = "hungryvisa";
+  const terminal = "hungryvisatok";
 
   useEffect(() => {
     const script = document.createElement("script");
