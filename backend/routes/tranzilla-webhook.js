@@ -52,8 +52,7 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
       order.paidAt = new Date();
 
       // ✅ keep the original method (e.g., "Card") and merge details
-      const prevMethod = data.payment_method || order.paymentDetails?.method || "Card";
-      order.paymentDetails = {
+      const prevMethod = data.payment_method || order.paymentDetails?.method || "Card";      order.paymentDetails = {
         ...(order.paymentDetails || {}),
         method: prevMethod,
         provider: "tranzila",

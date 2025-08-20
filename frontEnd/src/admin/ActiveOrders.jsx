@@ -104,10 +104,12 @@ export default function ActiveOrdersPage() {
 
   // ✅ REAL-TIME: merge order from webhook (no extra fetch)
   useEffect(() => {
+    const normalizeId = (o) => o?._id || o?.clientOrderId;
     const onPaid = (order) => {
       playNotificationSound();
       setOrders((prev) => {
-        const i = prev.findIndex((o) => o._id === order._id);
+        const incomingId = normalizeId(order);
+        const i = prev.findIndex((o) => normalizeId(o) === incomingId);
         if (i >= 0) {
           const updated = [...prev];
           updated[i] = { ...prev[i], ...order };
