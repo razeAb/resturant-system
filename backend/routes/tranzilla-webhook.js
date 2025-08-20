@@ -52,8 +52,7 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
       order.paidAt = new Date();
 
       // ✅ keep the original method (e.g., "Card") and merge details
-      const prevMethod = order.paymentDetails?.method || "Card";
-      order.paymentDetails = {
+      const prevMethod = data.payment_method || order.paymentDetails?.method || "Card";      order.paymentDetails = {
         ...(order.paymentDetails || {}),
         method: prevMethod,
         provider: "tranzila",
@@ -64,6 +63,7 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
         token: data.token,
         amount: Number(data.sum || data.amount || order.totalPrice || 0),
         currency: data.currency || data.currency_code || "1",
+        raw: data,
       };
     } else {
       order.paymentStatus = "failed";

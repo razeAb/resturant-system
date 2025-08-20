@@ -38,7 +38,17 @@ const translateDeliveryOption = (option) =>
   option === "EatIn" ? "אכילה במקום" : option === "Delivery" ? "משלוח" : option === "Pickup" ? "איסוף עצמי" : option;
 
 const translatePaymentMethod = (method) =>
-  method === "Card" ? "כרטיס אשראי" : method === "Cash" ? "מזומן" : method === "Bit" ? "ביט" : method || "אפל פיי / גוגל פיי";
+  method === "Card"
+    ? "כרטיס אשראי"
+    : method === "Cash"
+    ? "מזומן"
+    : method === "Bit"
+    ? "ביט"
+    : method === "GOOGLE_PAY"
+    ? "Google Pay"
+    : method === "APPLE_PAY"
+    ? "Apple Pay"
+    : method || " לא ידוע";
 
 /* ----------------- page ----------------- */
 export default function ActiveOrdersPage() {
