@@ -7,7 +7,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/Order");
 
-
 dotenv.config();
 
 const app = express();
@@ -92,6 +91,8 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     // ✅ עדכן סטטוס ופרטי תשלום מה־payload של טרנזילה
     order.status = "paid"; // או "preparing" אם ככה אתה מציג ב-Active
     order.paymentDetails = {
+      ...(order.paymentDetails || {}),
+      method: data.payment_method || order.paymentDetails?.method,
       provider: "tranzila",
       transaction_id: data.transaction_id,
       auth_number: data.auth_number,
@@ -115,6 +116,10 @@ app.post("/api/tranzila-webhook", async (req, res) => {
         totalPrice: order.totalPrice,
         status: order.status,
         createdAt: order.createdAt,
+        deliveryOption: order.deliveryOption,
+        customerName: order.customerName,
+        phone: order.phone,
+        paymentDetails: order.paymentDetails,
       });
     }
     return res.status(200).send("ok");
