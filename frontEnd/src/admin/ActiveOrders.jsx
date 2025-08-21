@@ -50,6 +50,20 @@ const translatePaymentMethod = (method) =>
     ? "Apple Pay"
     : method || " לא ידוע";
 
+// Normalize an order ID that might arrive as _id or clientOrderId
+const normalizeId = (o) => o?._id || o?.clientOrderId;
+
+// Remove duplicate orders that may arrive from both polling and socket events
+const dedupeOrders = (orders = []) => {
+  const seen = new Set();
+  return orders.filter((o) => {
+    const id = normalizeId(o);
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
+
 /* ----------------- page ----------------- */
 export default function ActiveOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -87,10 +101,11 @@ export default function ActiveOrdersPage() {
   const fetchOrders = async () => {
     try {
       const res = await api.get("/api/orders/active");
-      // Backend already filters out completed and unpaid orders
-      const newOrderList = res.data.filter(
+      // Backend already filters out completed and unpaid orders; still dedupe to avoid double entries
+      let newOrderList = res.data.filter(
         (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED
       );
+      newOrderList = dedupeOrders(newOrderList);
       if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
         playNotificationSound();
       }
@@ -104,7 +119,6 @@ export default function ActiveOrdersPage() {
 
   // ✅ REAL-TIME: merge order from webhook (no extra fetch)
   useEffect(() => {
-    const normalizeId = (o) => o?._id || o?.clientOrderId;
     const onPaid = (order) => {
       playNotificationSound();
       setOrders((prev) => {
