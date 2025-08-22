@@ -51,6 +51,17 @@ app.use("/api/tranzila", require("./routes/TranzillaRoutes"));
 app.use("/api/config", require("./routes/config"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
 app.use("/api/shifts", require("./routes/shiftRoutes"));
+app.use("/api/floors", require("./routes/floorRoutes"));
+app.use("/api/table-orders", require("./routes/tableOrderRoutes"));
+app.use("/api/menu", require("./routes/menuRoutes"));
+
+// Socket.IO rooms
+io.on("connection", (socket) => {
+  socket.on("join_floor", (floorId) => socket.join(`floor:${floorId}`));
+  socket.on("leave_floor", (floorId) => socket.leave(`floor:${floorId}`));
+  socket.on("join_table", (tableId) => socket.join(`table:${tableId}`));
+  socket.on("leave_table", (tableId) => socket.leave(`table:${tableId}`));
+});
 // ✅ Tranzila Webhook Endpoint
 app.post("/api/tranzila-webhook", async (req, res) => {
   try {
