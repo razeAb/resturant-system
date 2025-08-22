@@ -92,6 +92,7 @@ router.post("/firebase-login", async (req, res) => {
         email: user.email,
         photo: user.photo,
         isAdmin: user.isAdmin,
+        isWaiter: user.isWaiter,
       },
       token,
     });

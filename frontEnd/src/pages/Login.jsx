@@ -28,14 +28,15 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await api.post(`/api/auth/login`, { email, password });      const user = response.data.user;
+      const response = await api.post(`/api/auth/login`, { email, password });
+      const user = response.data.user;
 
       clearCart();
       localStorage.removeItem("cartItems");
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      navigate(user.isAdmin ? "/admin/dashboard" : "/");
+      navigate(user.isAdmin ? "/admin/dashboard" : user.isWaiter ? "/waiter/tables" : "/");
     } catch (error) {
       console.error("Login Error:", error.response || error.message || error);
       setError(error.response?.data?.message || "משהו השתבש בהתחברות");
@@ -77,7 +78,7 @@ const Login = () => {
 
     localStorage.setItem("token", response.data.token);
     localStorage.setItem("user", JSON.stringify(response.data.user));
-    navigate(response.data.user.isAdmin ? "/admin/dashboard" : "/");
+    navigate(response.data.user.isAdmin ? "/admin/dashboard" : response.data.user.isWaiter ? "/waiter/tables" : "/");
   };
 
   return (

@@ -7,10 +7,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true }, // ✅ Required & Unique
   phone: { type: String },
   points: { type: Number, default: 0 },
-  orderCount: {type: Number, default: 0},
-usedDrinkCoupon: { type: Boolean, default: false },
+  orderCount: { type: Number, default: 0 },
+  usedDrinkCoupon: { type: Boolean, default: false },
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
   isAdmin: { type: Boolean, default: false },
+  isWaiter: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

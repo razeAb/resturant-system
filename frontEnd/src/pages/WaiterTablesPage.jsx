@@ -1,5 +1,8 @@
 import { useSearchParams, Link } from "react-router-dom";
+import { useContext } from "react";
+
 import { FloorProvider, useFloor } from "../context/FloorContext.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 function TableGrid() {
   const { floor } = useFloor();
@@ -18,6 +21,8 @@ function TableGrid() {
 
 export default function WaiterTablesPage() {
   const [params] = useSearchParams();
+  const { user } = useContext(AuthContext);
+  if (!user?.isWaiter) return <div>Unauthorized</div>;
   const floorId = params.get("floorId");
   if (!floorId) return <div>No floorId</div>;
   return (

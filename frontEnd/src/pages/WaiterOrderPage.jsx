@@ -2,7 +2,8 @@ import { useSearchParams } from "react-router-dom";
 import { OrderProvider, useOrder } from "../context/OrderContext.jsx";
 import MenuBrowser from "../components/MenuBrowser.jsx";
 import OrderCart from "../components/OrderCart.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 const courseMap = { starters: "starter", mains: "main", desserts: "dessert", drinks: "drink" };
 
@@ -52,6 +53,8 @@ function Screen() {
 
 export default function WaiterOrderPage() {
   const [params] = useSearchParams();
+  const { user } = useContext(AuthContext);
+  if (!user?.isWaiter) return <div>Unauthorized</div>;
   const tableId = params.get("table");
   if (!tableId) return <div>No table</div>;
   return (

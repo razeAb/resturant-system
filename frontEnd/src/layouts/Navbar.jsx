@@ -12,6 +12,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isWaiter, setIsWaiter] = useState(false);
+
   const { logout } = useContext(AuthContext);
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -21,6 +23,7 @@ const Navbar = () => {
         setUserName(user.name || ""); // Fallback if name not present
         setIsLoggedIn(true);
         setIsAdmin(user.isAdmin || false);
+        setIsWaiter(user.isWaiter || false);
       } catch (e) {
         console.error("Failed to parse user from localStorage:", e);
       }
@@ -78,6 +81,11 @@ const Navbar = () => {
           {isAdmin && (
             <RouterLink to="/admin/dashboard" className="hover:text-brightColor transition-all cursor-pointer">
               Admin Dashboard
+            </RouterLink>
+          )}
+          {isWaiter && (
+            <RouterLink to="/waiter/tables" className="hover:text-brightColor transition-all cursor-pointer">
+              Waiter
             </RouterLink>
           )}
           {isLoggedIn ? (
@@ -139,6 +147,11 @@ const Navbar = () => {
         {isAdmin && (
           <RouterLink to="/admin/dashboard">
             <Button title="admin dashboard" />
+          </RouterLink>
+        )}
+        {isWaiter && (
+          <RouterLink to="/waiter/tables" onClick={closeMenu}>
+            <Button title="waiter" />
           </RouterLink>
         )}
         {isLoggedIn ? (

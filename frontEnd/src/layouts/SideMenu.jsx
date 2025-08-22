@@ -1,8 +1,7 @@
 // SideMenu.jsx
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListChecks, ClipboardList, ChefHat, History, LayoutGrid, Store, ArrowRight, BarChart3 } from "lucide-react";
-
+import { Home, ListChecks, ClipboardList, ChefHat, History, LayoutGrid, Store, ArrowRight, BarChart3, Table } from "lucide-react";
 
 const navItems = [
   { to: "/admin/dashboard", label: "לוח בקרה", icon: Home },
@@ -12,6 +11,7 @@ const navItems = [
   { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
   { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
+  { to: "/admin/floor", label: "תכנון שולחנות", icon: Table },
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
@@ -108,8 +108,6 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
           <span className="truncate">חזרה לדף הבית</span>
         </Link>
       </nav>
-
-     
 
       {/* Footer */}
       <div className="py-8 text-center text-[11px] text-white/40">
