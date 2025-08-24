@@ -72,7 +72,9 @@ const DishesCard = (props) => {
         <div className="flex flex-row justify-center"></div>
         <div className="flex flex-col items-center justify-center gap-2">
           {" "}
-          <h3 className="font-semibold text-lg">{props.price} ILS</h3>
+<h3 className="font-semibold text-lg" dir="rtl">
+  ₪ {props.price}
+</h3>
           <Button disabled={!isActive} title="הוספה לעגלה" onClick={handleButtonClick} />
         </div>
       </div>

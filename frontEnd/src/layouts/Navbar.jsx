@@ -51,7 +51,7 @@ const Navbar = () => {
             <div className="flex items-center cursor-pointer">
               <img src="photos/logo1.jpg" alt="Icon" className="w-12 h-12" />
               <div className="flex flex-col ml-2">
-                <h1 className="text-xl font-semibold">hungry</h1>
+                <h1 className="text-xl font-semibold">Hungry</h1>
                 {userName && <span className="text-sm text-gray-600"> {userName}</span>}
               </div>
             </div>
