@@ -25,6 +25,8 @@ import CashRegister from "./admin/CashRegister";
 import RevenuePage from "./admin/RevenuePage";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
+import ManageWorkers from "./admin/ManageWorkers";
+import WorkerLogin from "./pages/WorkerLogin";
 const App = () => {
   return (
     <AuthProvider>
@@ -68,7 +70,10 @@ const App = () => {
               <Route path="/admin/manage-shifts" element={<ManageShifts />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
-            </Routes>
+              <Route path="/admin/workers" element={<ManageWorkers />} />
+              <Route path="/worker/login" element={<WorkerLogin />} />
+              </Routes>
+
 
             {/* CartIcon should be placed here to appear on all pages */}
             <CartIcon />
