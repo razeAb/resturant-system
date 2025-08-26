@@ -1,3 +1,4 @@
+// frontEnd/src/pages/ManageWorkers.jsx
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import api from "../api";
@@ -15,15 +16,161 @@ const Anim = () => (
   `}</style>
 );
 
-// --- helpers to make data robust ---
+/* ----------------- helpers ----------------- */
 const toBool = (v) => {
-  // normalize potentially string/number booleans from backend
   if (typeof v === "boolean") return v;
   if (typeof v === "string") return v.toLowerCase() === "true";
   return !!v;
 };
 
-const ManageWorkers = () => {
+/* ===================== Shift Edit Modal ===================== */
+function ShiftEditModal({ open, onClose, shift, onSave }) {
+  const [mode, setMode] = useState("hours"); // 'hours' | 'detailed'
+  const [hours, setHours] = useState(shift?.hours ?? 0);
+  const [start, setStart] = useState(shift?.start ? new Date(shift.start).toISOString().slice(0, 16) : "");
+  const [end, setEnd] = useState(shift?.end ? new Date(shift.end).toISOString().slice(0, 16) : "");
+  const [breakMinutes, setBreakMinutes] = useState(shift?.breakMinutes ?? 0);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (shift) {
+      setHours(shift.hours ?? 0);
+      setStart(shift.start ? new Date(shift.start).toISOString().slice(0, 16) : "");
+      setEnd(shift.end ? new Date(shift.end).toISOString().slice(0, 16) : "");
+      setBreakMinutes(shift.breakMinutes ?? 0);
+    }
+  }, [shift]);
+
+  if (!open) return null;
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      if (mode === "hours") {
+        await onSave({ hours: Number(hours) });
+      } else {
+        await onSave({
+          start: start ? new Date(start).toISOString() : undefined,
+          end: end ? new Date(end).toISOString() : undefined,
+          breakMinutes: Number(breakMinutes),
+        });
+      }
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" dir="rtl">
+      <div className="w-full max-w-md rounded-2xl bg-[#17181d] border border-white/10 p-4">
+        <h3 className="text-white text-base font-semibold mb-3">עדכון משמרת</h3>
+
+        <div className="flex gap-2 mb-3">
+          <button
+            className={`px-3 py-1 rounded ${mode === "hours" ? "bg-emerald-600" : "bg-white/10 text-white/80"}`}
+            onClick={() => setMode("hours")}
+          >
+            עדכון שעות ישיר
+          </button>
+          <button
+            className={`px-3 py-1 rounded ${mode === "detailed" ? "bg-emerald-600" : "bg-white/10 text-white/80"}`}
+            onClick={() => setMode("detailed")}
+          >
+            שינוי זמנים/הפסקה
+          </button>
+        </div>
+
+        {mode === "hours" ? (
+          <div className="space-y-2">
+            <label className="block text-xs text-white/70">שעות (מספר עשרוני)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <label className="block text-xs text-white/70">תחילת משמרת</label>
+            <input
+              type="datetime-local"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none"
+            />
+            <label className="block text-xs text-white/70 mt-2">סיום משמרת</label>
+            <input
+              type="datetime-local"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none"
+            />
+            <label className="block text-xs text-white/70 mt-2">דקות הפסקה</label>
+            <input
+              type="number"
+              value={breakMinutes}
+              onChange={(e) => setBreakMinutes(e.target.value)}
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none"
+            />
+            <p className="text-[11px] text-white/40">השרת יחישב שעות אוטומטית: (סיום - התחלה) פחות breakMinutes.</p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="px-3 py-2 rounded-xl bg-white/10 text-white/90">
+            ביטול
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving}
+            className={`px-3 py-2 rounded-xl ${saving ? "bg-emerald-700/60" : "bg-emerald-600 hover:bg-emerald-700"}`}
+          >
+            {saving ? "שומר…" : "שמור"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ShiftEditModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  shift: PropTypes.object,
+  onSave: PropTypes.func.isRequired,
+};
+
+/* ===================== Role & Shift Badges ===================== */
+function RoleBadge({ role }) {
+  const map = {
+    cook: { text: "טבח", bg: "bg-amber-500/15", textc: "text-amber-200", border: "border-amber-500/25" },
+    waiter: { text: "מלצר", bg: "bg-sky-500/15", textc: "text-sky-200", border: "border-sky-500/25" },
+    dishwasher: { text: "שוטף כלים", bg: "bg-fuchsia-500/15", textc: "text-fuchsia-200", border: "border-fuchsia-500/25" },
+  };
+  const style = map[role] || { text: role, bg: "bg-white/5", textc: "text-white/70", border: "border-white/10" };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] border ${style.bg} ${style.textc} ${style.border}`}
+    >
+      {style.text}
+    </span>
+  );
+}
+RoleBadge.propTypes = { role: PropTypes.string };
+
+function ShiftBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] bg-emerald-500/15 text-emerald-200 border border-emerald-500/25">
+      ● במשמרת
+    </span>
+  );
+}
+
+/* ===================== Page ===================== */
+export default function ManageWorkers() {
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({ username: "", password: "", role: "cook" });
   const [msg, setMsg] = useState({ text: "", tone: "neutral" });
@@ -32,21 +179,20 @@ const ManageWorkers = () => {
 
   const [expanded, setExpanded] = useState(null);
   const [shiftsMap, setShiftsMap] = useState({});
-  const [shiftsLoading, setShiftsLoading] = useState({}); // { [workerId]: true/false }
+  const [shiftsLoading, setShiftsLoading] = useState({});
   const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
+
+  // Edit modal state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editShift, setEditShift] = useState(null);
+
   const fetchWorkers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const res = await api.get("/api/workers", { headers: { Authorization: `Bearer ${token}` } });
       const list = Array.isArray(res.data?.workers) ? res.data.workers : [];
-
-      // ✅ normalize onShift to a true boolean
-      const normalized = list.map((w) => ({
-        ...w,
-        onShift: toBool(w?.onShift),
-      }));
-
+      const normalized = list.map((w) => ({ ...w, onShift: toBool(w?.onShift) }));
       setWorkers(normalized);
     } catch (err) {
       console.error("Error fetching workers", err);
@@ -58,6 +204,9 @@ const ManageWorkers = () => {
 
   useEffect(() => {
     fetchWorkers();
+    // אופציונלי: פולינג כל 10 שניות לראות מצב onShift בלייב
+    // const t = setInterval(fetchWorkers, 10000);
+    // return () => clearInterval(t);
   }, []);
 
   const handleChange = (e) => setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
@@ -80,12 +229,14 @@ const ManageWorkers = () => {
     try {
       setShiftsLoading((m) => ({ ...m, [id]: true }));
       const token = localStorage.getItem("token");
-
-      const params = { worker: id };
+      const params = {};
       if (dateFilter.start) params.start = dateFilter.start;
       if (dateFilter.end) params.end = dateFilter.end;
-      const res = await api.get("/api/shifts/all", params, {
+
+      // שים לב: axios get צריך להעביר params באובייקט { params }
+      const res = await api.get("/api/shifts/all", {
         headers: { Authorization: `Bearer ${token}` },
+        params: { worker: id, ...params },
       });
 
       const list = Array.isArray(res.data) ? res.data : [];
@@ -108,23 +259,24 @@ const ManageWorkers = () => {
     fetchShiftsForWorker(id);
   };
 
-  const adjustHours = async (shiftId, workerId) => {
-    const hoursStr = prompt("Enter new hours");
-    if (hoursStr == null || hoursStr === "") return;
-    const hours = Number(hoursStr);
-    if (Number.isNaN(hours)) {
-      alert("Hours must be a number");
-      return;
-    }
+  // === open modal for edit
+  const openEdit = (shift, workerId) => {
+    setEditShift({ ...shift, _workerId: workerId });
+    setEditOpen(true);
+  };
+
+  // === save edit
+  const saveShiftEdit = async (payload) => {
     try {
       const token = localStorage.getItem("token");
-      await api.put(`/api/shifts/${shiftId}`, { hours }, { headers: { Authorization: `Bearer ${token}` } });
-      // refresh that worker's shifts
-      fetchShiftsForWorker(workerId);
-      setMsg({ text: "שעות עודכנו בהצלחה", tone: "success" });
+      await api.put(`/api/shifts/${editShift._id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await fetchShiftsForWorker(editShift._workerId);
+      setMsg({ text: "המשמרת עודכנה בהצלחה", tone: "success" });
     } catch (err) {
       console.error("Update failed", err);
-      setMsg({ text: "שגיאה בעדכון שעות", tone: "error" });
+      setMsg({ text: err.response?.data?.message || "שגיאה בעדכון משמרת", tone: "error" });
     }
   };
 
@@ -289,7 +441,7 @@ const ManageWorkers = () => {
             ) : (
               <ul className="space-y-2">
                 {workers.map((w) => {
-                  const isOnShift = toBool(w.onShift); // ✅ use normalized boolean
+                  const isOnShift = toBool(w.onShift);
                   const isExp = expanded === w._id;
                   const isShiftsLoading = !!shiftsLoading[w._id];
 
@@ -333,7 +485,7 @@ const ManageWorkers = () => {
                                       {s.adjustedByManager && <span className="ml-1 text-orange-400">(עודכן)</span>}
                                     </span>
                                     <button
-                                      onClick={() => adjustHours(s._id, w._id)}
+                                      onClick={() => openEdit(s, w._id)}
                                       className="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-[2px]"
                                     >
                                       עדכון
@@ -355,37 +507,9 @@ const ManageWorkers = () => {
           </section>
         </div>
       </div>
+
+      {/* Edit modal */}
+      <ShiftEditModal open={editOpen} onClose={() => setEditOpen(false)} shift={editShift} onSave={saveShiftEdit} />
     </div>
   );
-};
-
-/** Badges */
-function RoleBadge({ role }) {
-  const map = {
-    cook: { text: "טבח", bg: "bg-amber-500/15", textc: "text-amber-200", border: "border-amber-500/25" },
-    waiter: { text: "מלצר", bg: "bg-sky-500/15", textc: "text-sky-200", border: "border-sky-500/25" },
-    dishwasher: { text: "שוטף כלים", bg: "bg-fuchsia-500/15", textc: "text-fuchsia-200", border: "border-fuchsia-500/25" },
-  };
-  const style = map[role] || { text: role, bg: "bg-white/5", textc: "text-white/70", border: "border-white/10" };
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] border ${style.bg} ${style.textc} ${style.border}`}
-    >
-      {style.text}
-    </span>
-  );
 }
-
-RoleBadge.propTypes = {
-  role: PropTypes.string,
-};
-
-function ShiftBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] bg-emerald-500/15 text-emerald-200 border border-emerald-500/25">
-      ● במשמרת
-    </span>
-  );
-}
-
-export default ManageWorkers;

@@ -5,6 +5,7 @@ import api from "../api";
 export default function WorkingHoursPage() {
   const navigate = useNavigate();
   const [shifts, setShifts] = useState([]);
+  const [isActing, setIsActing] = useState(false); // ✅ avoid double-clicks
   const [worker, setWorker] = useState(() => {
     try {
       return (
@@ -21,15 +22,24 @@ export default function WorkingHoursPage() {
   });
   const [range, setRange] = useState({ from: null, to: null });
 
+  const persistWorker = (updater) => {
+    // helper to also keep localStorage in sync
+    setWorker((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+      localStorage.setItem("worker", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const fetchShifts = async () => {
     try {
       const res = await api.get("/api/shifts");
       const data = res.data || [];
       setShifts(data);
 
-      // סנכרון onShift לפי מצב בפועל בשרת (יש משמרת ללא end?)
+      // sync onShift from actual active shift
       const active = data.find((s) => s.start && !s.end);
-      setWorker((w) => ({
+      persistWorker((w) => ({
         ...w,
         ...JSON.parse(localStorage.getItem("worker") || "{}"),
         onShift: !!active,
@@ -49,36 +59,56 @@ export default function WorkingHoursPage() {
   }, [navigate]);
 
   const handleStartShift = async () => {
+    if (isActing) return;
+    setIsActing(true);
     try {
-      await api.post("/api/shifts/start");
-      setWorker((w) => ({ ...w, onShift: true }));
-      fetchShifts();
+      // backend also sets Worker.onShift=true and returns { shift, worker }
+      const res = await api.post("/api/shifts/start");
+      const updatedWorker = res?.data?.worker;
+      if (updatedWorker) {
+        persistWorker((w) => ({ ...w, onShift: !!updatedWorker.onShift }));
+      } else {
+        // fallback if server didn't return worker
+        persistWorker((w) => ({ ...w, onShift: true }));
+      }
+      await fetchShifts();
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsActing(false);
     }
   };
 
   const handleEndShift = async () => {
+    if (isActing) return;
+    setIsActing(true);
     try {
-      await api.post("/api/shifts/stop");
-      setWorker((w) => ({ ...w, onShift: false }));
-      fetchShifts();
+      // backend also sets Worker.onShift=false and returns { shift, worker }
+      const res = await api.post("/api/shifts/stop");
+      const updatedWorker = res?.data?.worker;
+      if (updatedWorker) {
+        persistWorker((w) => ({ ...w, onShift: !!updatedWorker.onShift }));
+      } else {
+        // fallback if server didn't return worker
+        persistWorker((w) => ({ ...w, onShift: false }));
+      }
+      await fetchShifts();
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsActing(false);
     }
   };
 
-  // הופך מחרוזת "YYYY-MM-DD" לתאריך מקומי (ללא הטיית UTC)
+  // ---- date helpers ----
   const parseLocalDateOnly = (ymd) => {
     if (!ymd) return null;
     const [y, m, d] = ymd.split("-").map(Number);
-    return new Date(y, m - 1, d); // local time, 00:00
+    return new Date(y, m - 1, d); // local 00:00
   };
-
   const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
   const endOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
-  // פורמט תצוגה נחמד לסיכום טווח (DD/MM/YYYY)
   const fmtRangeDisplay = (ymd) => {
     if (!ymd) return "";
     const d = parseLocalDateOnly(ymd);
@@ -88,15 +118,15 @@ export default function WorkingHoursPage() {
     return `${dd}/${mm}/${yyyy}`;
   };
 
-  /* ---------- עזרי חישוב ---------- */
+  // ---- filters/stats ----
   const inRange = (date) => {
     if (!date) return false;
-    const d = new Date(date); // ה־timestamp של המשמרת
+    const d = new Date(date);
     const from = range.from ? startOfDay(parseLocalDateOnly(range.from)) : null;
     const to = range.to ? endOfDay(parseLocalDateOnly(range.to)) : null;
     if (from && d < from) return false;
     if (to && d > to) return false;
-    return true; // כולל את הימים שבאמצע וגם את ימי הקצה
+    return true;
   };
 
   const filtered = useMemo(() => (range.from || range.to ? shifts.filter((s) => inRange(s.start)) : shifts), [shifts, range]);
@@ -137,16 +167,14 @@ export default function WorkingHoursPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] p-6" dir="rtl">
-      {/* כותרת */}
+      {/* Header */}
       <header className="max-w-7xl mx-auto flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          {/* כפתור חזרה מעודכן */}
           <button
             onClick={() => navigate(-1)}
             className="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-gray-700 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md"
             title="חזרה"
           >
-            {/* חץ לימין (מתאים ל־RTL) */}
             <svg
               className="h-5 w-5 transition-transform group-hover:translate-x-0.5"
               viewBox="0 0 24 24"
@@ -167,13 +195,22 @@ export default function WorkingHoursPage() {
 
         <div className="flex items-center gap-3">
           {worker.onShift ? (
-            <button onClick={handleEndShift} className="bg-red-500 text-white rounded-full px-4 py-2 shadow-sm hover:bg-red-600 transition">
+            <button
+              onClick={handleEndShift}
+              disabled={isActing}
+              className={`${
+                isActing ? "opacity-70 cursor-wait" : ""
+              } bg-red-500 text-white rounded-full px-4 py-2 shadow-sm hover:bg-red-600 transition`}
+            >
               סיום משמרת
             </button>
           ) : (
             <button
               onClick={handleStartShift}
-              className="bg-green-500 text-white rounded-full px-4 py-2 shadow-sm hover:bg-green-600 transition"
+              disabled={isActing}
+              className={`${
+                isActing ? "opacity-70 cursor-wait" : ""
+              } bg-green-500 text-white rounded-full px-4 py-2 shadow-sm hover:bg-green-600 transition`}
             >
               התחלת משמרת
             </button>
@@ -195,11 +232,11 @@ export default function WorkingHoursPage() {
         </div>
       </header>
 
-      {/* כרטיס סטטיסטיקות + פרופיל */}
+      {/* Profile + Stats */}
       <section className="max-w-7xl mx-auto">
         <div className="bg-white rounded-2xl shadow-md p-4 md:p-5 border border-gray-100">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* כרטיס עובד */}
+            {/* worker card */}
             <div className="flex-1 md:max-w-xs">
               <div className="bg-[#cfe5ff] rounded-xl h-full p-4 flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full overflow-hidden bg-white shadow">
@@ -216,7 +253,7 @@ export default function WorkingHoursPage() {
               </div>
             </div>
 
-            {/* צ'יפים כהים של סטטיסטיקות */}
+            {/* stats chips */}
             <div className="flex-[3] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
               {[
                 { title: "ימים", sub: "עבד", val: stats.daysWorked },
@@ -231,7 +268,7 @@ export default function WorkingHoursPage() {
             </div>
           </div>
 
-          {/* שורת כלים: טווח תאריכים עם מתאריך/עד תאריך + סיכום טווח */}
+          {/* filters */}
           <div className="mt-4 flex flex-col gap-2">
             <div className="flex items-end justify-end gap-3">
               <label className="flex flex-col text-xs text-gray-600">
@@ -274,7 +311,7 @@ export default function WorkingHoursPage() {
         </div>
       </section>
 
-      {/* טבלה */}
+      {/* table */}
       <section className="max-w-7xl mx-auto mt-6">
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <table className="w-full text-sm">
@@ -302,7 +339,17 @@ export default function WorkingHoursPage() {
                   <td className="py-3 px-4">{toTime(s.end)}</td>
                   <td className="py-3 px-4">{s.breakMinutes ? (s.breakMinutes / 60).toFixed(2) : "00.00"}</td>
                   <td className="py-3 px-4">{formatH(s.overtimeHours)}</td>
-                  <td className="py-3 px-4">{formatH(s.hours)}</td>
+
+                  {/* ✅ hours with “(עודכן)” flag if admin adjusted */}
+                  <td className="py-3 px-4">
+                    {formatH(s.hours)}
+                    {s.adjustedByManager && (
+                      <span className="ml-2 inline-flex items-center text-[11px] px-2 py-[2px] rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                        עודכן
+                      </span>
+                    )}
+                  </td>
+
                   <td className="py-3 px-4">{s.leaveCreditHours ? s.leaveCreditHours.toFixed(2) : "00.00"}</td>
                   <td className="py-3 px-4">
                     {s.status === "P" ? (
