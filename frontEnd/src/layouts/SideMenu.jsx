@@ -13,6 +13,7 @@ const navItems = [
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
   { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", label: "עובדים", icon: Users },
+  { to: "/admin/floor", label: "מסעדה", icon: LayoutGrid }, 
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
