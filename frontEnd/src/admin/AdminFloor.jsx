@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import SideMenu from "../layouts/SideMenu";
 import { Menu, RotateCcw, Trash2, Grid, Plus, Edit2 } from "lucide-react";
 
@@ -15,8 +15,14 @@ export default function AdminFloor() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   /* קומות */
-  const [floors, setFloors] = useState([{ id: genId(), name: "קומה 1", tables: [] }]);
-  const [activeFloorId, setActiveFloorId] = useState(floors[0].id);
+  const [floors, setFloors] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("adminFloors");
+      if (saved) return JSON.parse(saved);
+    }
+    return [{ id: genId(), name: "קומה 1", tables: [] }];
+  });
+  const [activeFloorId, setActiveFloorId] = useState(() => floors[0].id);
   const activeIndex = floors.findIndex((f) => f.id === activeFloorId);
   const currentFloor = floors[activeIndex];
 
@@ -27,6 +33,21 @@ export default function AdminFloor() {
   const TABLE_PX = 96; // ✅ uniform table size on floor
 
   const floorRef = useRef(null);
+
+  const tileBackground = useMemo(() => {
+    const tileSize = 32; // גודל האריח
+    const grout = "#ffffff"; // צבע הקווים (רובה)
+    const tile = "#f2f2f2"; // צבע האריח עצמו
+
+    return {
+      backgroundImage: `
+      linear-gradient(${grout} 1px, transparent 1px),
+      linear-gradient(90deg, ${grout} 1px, transparent 1px)
+    `,
+      backgroundSize: `${tileSize}px ${tileSize}px`,
+      backgroundColor: tile,
+    };
+  }, []);
 
   /* רצפת עץ */
   const wood = useMemo(
@@ -111,6 +132,12 @@ export default function AdminFloor() {
     };
   }, [SUBGRID, TILE, wood, noiseDataURI]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adminFloors", JSON.stringify(floors));
+    }
+  }, [floors]);
+
   /* פעולות */
   const addFloor = () => {
     const nextNumber = floors.length + 1;
@@ -123,6 +150,17 @@ export default function AdminFloor() {
     const name = window.prompt("שם חדש לקומה:", floors.find((f) => f.id === id)?.name || "");
     if (!name) return;
     setFloors((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+  };
+
+  const removeFloor = (id) => {
+    if (floors.length === 1) return;
+    setFloors((prev) => {
+      const updated = prev.filter((f) => f.id !== id);
+      if (id === activeFloorId && updated.length) {
+        setActiveFloorId(updated[0].id);
+      }
+      return updated.length ? updated : prev;
+    });
   };
 
   const handleDragStart = (e, templ) => {
@@ -272,6 +310,16 @@ export default function AdminFloor() {
                         }}
                         title="שינוי שם קומה"
                       />
+                      {floors.length > 1 && (
+                        <Trash2
+                          className="size-3.5 opacity-60 hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFloor(f.id);
+                          }}
+                          title="מחק קומה"
+                        />
+                      )}
                     </button>
                   );
                 })}
@@ -303,7 +351,7 @@ export default function AdminFloor() {
                     className="flex flex-col items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs hover:bg-white/10 active:scale-[.98] transition"
                     title="גרור לתוך האזור הריבועי"
                   >
-                    <div className="w-14 h-14 shrink-0 rounded-md overflow-hidden">
+                    <div className="w-[96px] h-[96px] shrink-0 rounded-md overflow-hidden">
                       <img
                         src={t.iconSrc}
                         alt={t.label}
