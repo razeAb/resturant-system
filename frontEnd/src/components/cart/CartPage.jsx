@@ -29,6 +29,8 @@ const CartPage = () => {
   const [orderId, setOrderId] = useState(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+  const [policyChecked, setPolicyChecked] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
 
   useEffect(() => {
     let interval;
@@ -70,6 +72,8 @@ const CartPage = () => {
 
     setPaymentResult(null);
     setOrderSubmitted(false);
+    setPolicyChecked(false);
+    setShowPolicyModal(false);
 
     setIsOrderReady(false);
   };
@@ -95,6 +99,8 @@ const CartPage = () => {
       setIsClosedModalOpen(false);
       setIsOrderReady(false);
       setOrderSubmitted(false);
+      setPolicyChecked(false);
+      setShowPolicyModal(false);
     }
   }, [user]);
 
@@ -166,6 +172,8 @@ const CartPage = () => {
       clearCart();
       setShowConfirmationModal(false);
       setGuestName("");
+      setPolicyChecked(false);
+      setShowPolicyModal(false);
       return;
     }
 
@@ -259,6 +267,8 @@ const CartPage = () => {
 
       setShowConfirmationModal(false);
       setGuestName("");
+      setPolicyChecked(false);
+      setShowPolicyModal(false);
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
@@ -658,8 +668,8 @@ const CartPage = () => {
                         setPaymentResult(null);
                         try {
                           if (!orderId) {
-                              await createPrePaymentOrder("Card");
-                            }
+                            await createPrePaymentOrder("Card");
+                          }
                           setShowCardPayment(true);
                         } catch (err) {
                           console.error("❌ Failed to create pre-payment order:", err);
@@ -802,19 +812,30 @@ const CartPage = () => {
                     </button>
                   </div>
                 )}
+                <div style={{ marginTop: "15px", direction: "rtl", textAlign: "right" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input type="checkbox" checked={policyChecked} onChange={(e) => setPolicyChecked(e.target.checked)} />
+                    <span>
+                      אני מאשר/ת שקראתי את{" "}
+                      <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => setShowPolicyModal(true)}>
+                        התקנון ומדיניות הביטולים
+                      </span>
+                    </span>
+                  </label>
+                </div>
                 {/* ✅ Send and Cancel buttons */}
                 <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={orderSubmitted || !paymentMethod || !deliveryOption}
+                    disabled={orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked}
                     style={{
                       padding: "12px 24px",
-                      backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption ? "gray" : "green",
+                      backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "bold",
                       borderRadius: "8px",
-                      cursor: orderSubmitted || !paymentMethod || !deliveryOption ? "not-allowed" : "pointer",
+                      cursor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
                       border: "none",
                     }}
                   >
@@ -840,6 +861,19 @@ const CartPage = () => {
                 </div>
               </div>
             </div>
+            {showPolicyModal && (
+              <div className="modal-overlay" onClick={() => setShowPolicyModal(false)} style={{ zIndex: 3000 }}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <h2 style={{ direction: "rtl", textAlign: "right" }}>מדיניות ביטולים והחזרים:</h2>
+                  <div style={{ direction: "rtl", textAlign: "right", maxHeight: "70vh", overflowY: "auto" }}>
+                    <p>• ניתן לבטל הזמנה תוך 5 דקות ממועד ההזמנה כל עוד לא התחילה ההכנה.</p>
+                    <p>• לאחר תחילת ההכנה או יציאת המשלוח – לא ניתן לבטל את ההזמנה.</p>
+                    <p>• החזר כספי יתבצע באותו אמצעי תשלום, עד 5% או 100 ₪ דמי ביטול (הנמוך מביניהם) בהתאם לחוק.</p>
+                    <p>• במקרה של טעות מצד המסעדה (למשל מנה לא נכונה או לא סופקה) – הלקוח זכאי להחזר מלא או אספקה מחדש.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
