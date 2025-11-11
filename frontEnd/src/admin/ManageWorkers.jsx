@@ -23,6 +23,22 @@ const toBool = (v) => {
   return !!v;
 };
 
+// Formats "2025-11-11T14:30:00Z" -> "16:30" (24h, local)
+const fmtTime = (iso) => (iso ? new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false }) : "");
+
+// Formats ISO -> "11/11/2025" (local date)
+const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("he-IL") : "");
+
+// Prefer s.hours; else compute from start/end minus breakMinutes
+const calcHours = (s) => {
+  if (typeof s?.hours === "number") return s.hours;
+  if (s?.start && s?.end) {
+    const ms = new Date(s.end) - new Date(s.start) - (s.breakMinutes || 0) * 60000;
+    return Math.max(ms / 3600000, 0);
+  }
+  return 0;
+};
+
 /* ===================== Shift Edit Modal ===================== */
 function ShiftEditModal({ open, onClose, shift, onSave }) {
   const [mode, setMode] = useState("hours"); // 'hours' | 'detailed'
@@ -204,7 +220,7 @@ export default function ManageWorkers() {
 
   useEffect(() => {
     fetchWorkers();
-    // אופציונלי: פולינג כל 10 שניות לראות מצב onShift בלייב
+    // Optional: live polling
     // const t = setInterval(fetchWorkers, 10000);
     // return () => clearInterval(t);
   }, []);
@@ -233,7 +249,6 @@ export default function ManageWorkers() {
       if (dateFilter.start) params.start = dateFilter.start;
       if (dateFilter.end) params.end = dateFilter.end;
 
-      // שים לב: axios get צריך להעביר params באובייקט { params }
       const res = await api.get("/api/shifts/all", {
         headers: { Authorization: `Bearer ${token}` },
         params: { worker: id, ...params },
@@ -259,13 +274,13 @@ export default function ManageWorkers() {
     fetchShiftsForWorker(id);
   };
 
-  // === open modal for edit
+  // open modal for edit
   const openEdit = (shift, workerId) => {
     setEditShift({ ...shift, _workerId: workerId });
     setEditOpen(true);
   };
 
-  // === save edit
+  // save edit
   const saveShiftEdit = async (payload) => {
     try {
       const token = localStorage.getItem("token");
@@ -472,30 +487,52 @@ export default function ManageWorkers() {
                         <div className="mt-2">
                           {isShiftsLoading ? (
                             <div className="text-xs text-white/60">טוען משמרות…</div>
-                          ) : (
-                            <ul className="space-y-1">
-                              {Array.isArray(shiftsMap[w._id]) && shiftsMap[w._id].length > 0 ? (
-                                shiftsMap[w._id].map((s) => (
-                                  <li
-                                    key={s._id}
-                                    className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs"
-                                  >
-                                    <span>
-                                      {new Date(s.start).toLocaleDateString("he-IL")} — {(s.hours || 0).toFixed(2)}h
-                                      {s.adjustedByManager && <span className="ml-1 text-orange-400">(עודכן)</span>}
-                                    </span>
-                                    <button
-                                      onClick={() => openEdit(s, w._id)}
-                                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-[2px]"
-                                    >
+                          ) : Array.isArray(shiftsMap[w._id]) && shiftsMap[w._id].length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs md:text-sm border-separate border-spacing-y-1">
+                                <thead>
+                                  <tr className="text-white/70">
+                                    <th className="text-right font-normal bg-white/5 border border-white/10 px-3 py-2 rounded-s-lg">
+                                      תאריך
+                                    </th>
+                                    <th className="text-right font-normal bg-white/5 border border-white/10 px-3 py-2">התחלה</th>
+                                    <th className="text-right font-normal bg-white/5 border border-white/10 px-3 py-2">סיום</th>
+                                    <th className="text-right font-normal bg-white/5 border border-white/10 px-3 py-2">סה״כ (ש׳)</th>
+                                    <th className="text-right font-normal bg-white/5 border border-white/10 px-3 py-2 rounded-e-lg">
                                       עדכון
-                                    </button>
-                                  </li>
-                                ))
-                              ) : (
-                                <li className="text-xs text-white/60">אין משמרות.</li>
-                              )}
-                            </ul>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {shiftsMap[w._id].map((s) => {
+                                    const hours = calcHours(s).toFixed(2);
+                                    return (
+                                      <tr key={s._id} className="bg-white/5 border border-white/10 rounded-lg">
+                                        <td className="px-3 py-2 border border-white/10 rounded-s-lg whitespace-nowrap">
+                                          <div className="flex items-center gap-2">
+                                            <span>{fmtDate(s.start)}</span>
+                                            {s.adjustedByManager && <span className="text-[11px] text-orange-300">(עודכן)</span>}
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2 border border-white/10 whitespace-nowrap">{fmtTime(s.start) || "-"}</td>
+                                        <td className="px-3 py-2 border border-white/10 whitespace-nowrap">{fmtTime(s.end) || "-"}</td>
+                                        <td className="px-3 py-2 border border-white/10 whitespace-nowrap">{hours}</td>
+                                        <td className="px-3 py-2 border border-white/10 rounded-e-lg">
+                                          <button
+                                            onClick={() => openEdit(s, w._id)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-2 py-1 text-xs"
+                                          >
+                                            עדכון
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-white/60">אין משמרות.</div>
                           )}
                         </div>
                       )}

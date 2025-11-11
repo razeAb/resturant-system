@@ -84,26 +84,24 @@ const CartPage = () => {
   const isGuest = () => !user;
 
   useEffect(() => {
-    if (user) {
+    if (!user) {
       clearCart();
       localStorage.removeItem("cartItems");
-      // Reset cart state when user logs in
-      setPaymentMethod(null);
-      setDeliveryOption(null);
-      setShowCardPayment(false);
-      setPhoneNumber("");
-      setGuestName("");
-      setCouponApplied(false);
-      setEligibleReward(null);
-      setShowConfirmationModal(false);
-      setIsClosedModalOpen(false);
-      setIsOrderReady(false);
-      setOrderSubmitted(false);
-      setPolicyChecked(false);
-      setShowPolicyModal(false);
     }
-  }, [user]);
-
+    setPaymentMethod(null);
+    setDeliveryOption(null);
+    setShowCardPayment(false);
+    setPhoneNumber("");
+    setGuestName("");
+    setCouponApplied(false);
+    setEligibleReward(null);
+    setShowConfirmationModal(false);
+    setIsClosedModalOpen(false);
+    setIsOrderReady(false);
+    setOrderSubmitted(false);
+    setPolicyChecked(false);
+    setShowPolicyModal(false);
+  }, [user, clearCart]);
   useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
 
