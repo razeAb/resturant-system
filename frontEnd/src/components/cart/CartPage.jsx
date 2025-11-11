@@ -84,7 +84,7 @@ const CartPage = () => {
   const isGuest = () => !user;
 
   useEffect(() => {
-    if (!user) {
+    if (user) {
       clearCart();
       localStorage.removeItem("cartItems");
     }

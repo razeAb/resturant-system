@@ -86,6 +86,54 @@ export default function ActiveOrdersPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Format currency (₪)
+  const fmtILS = (n) => (typeof n === "number" ? `₪${n.toFixed(2)}` : `₪${Number(n || 0).toFixed(2)}`);
+
+  const num = (v) => (typeof v === "number" ? v : Number(v || 0));
+
+  /** Base item price:
+   * 1) prefer item.price
+   * 2) else product.price
+   * 3) if weighted: use (grams/100) * pricePer100g when available
+   */
+  const getItemBasePrice = (item) => {
+    if (item?.isWeighted) {
+      const grams = num(item.weightGrams || item.grams);
+      const per100 = num(item.pricePer100g || item.product?.pricePer100g);
+      if (grams && per100) return (grams / 100) * per100;
+    }
+    if (item?.price != null) return num(item.price);
+    if (item?.product?.price != null) return num(item.product.price);
+    return 0;
+  };
+
+  /** Sum additions cost.
+   * Supports:
+   *  - { price }
+   *  - weighted addition: { grams, pricePer100g }
+   */
+  const getAdditionsTotal = (item) => {
+    if (!Array.isArray(item?.additions)) return 0;
+    return item.additions.reduce((sum, a) => {
+      const p = a?.price;
+      if (p != null) return sum + num(p);
+
+      const grams = num(a?.grams);
+      const per100 = num(a?.pricePer100g);
+      if (grams && per100) return sum + (grams / 100) * per100;
+
+      return sum;
+    }, 0);
+  };
+
+  /** Full line total = (base + additions) * quantity */
+  const getLineTotal = (item) => {
+    const base = getItemBasePrice(item);
+    const adds = getAdditionsTotal(item);
+    const qty = num(item?.quantity || 1);
+    return (base + adds) * qty;
+  };
+
   const playNotificationSound = () => {
     let count = 0;
     const play = () => {
@@ -369,15 +417,57 @@ export default function ActiveOrdersPage() {
                               <ul className="space-y-2">
                                 {order.items.map((item, idx) => (
                                   <li key={idx} className="leading-6">
-                                    <strong>{item.product?.name || item.title || "פריט"}</strong> — כמות: {item.quantity}{" "}
-                                    {item.isWeighted ? "גרם" : ""}
-                                    <div className="text-white/70">
-                                      ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}{" "}
-                                      · תוספות:{" "}
-                                      {Array.isArray(item.additions) && item.additions.length
-                                        ? item.additions.map((a) => a.addition).join(", ")
-                                        : "אין"}
-                                      {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                    <div className="flex items-center justify-between">
+                                      <strong>{item.product?.name || item.title || "פריט"}</strong>
+                                      {/* Line total on the right */}
+                                      <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
+                                    </div>
+
+                                    <div className="text-white/70 text-sm">
+                                      כמות: {item.quantity}
+                                      {item.isWeighted && item.weightGrams ? ` · משקל: ${item.weightGrams} גרם` : ""}
+                                    </div>
+
+                                    {/* Price breakdown */}
+                                    <div className="mt-1 text-white/75 text-xs">
+                                      <div>
+                                        מחיר בסיס: <span className="text-white/90">{fmtILS(getItemBasePrice(item))}</span>
+                                        {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
+                                      </div>
+
+                                      {/* Additions list with individual costs */}
+                                      <div className="mt-1">
+                                        תוספות:
+                                        {Array.isArray(item.additions) && item.additions.length ? (
+                                          <ul className="list-disc mr-4 mt-1 space-y-0.5">
+                                            {item.additions.map((a, i2) => {
+                                              const aPrice =
+                                                a?.price != null
+                                                  ? num(a.price)
+                                                  : a?.grams && a?.pricePer100g
+                                                  ? (num(a.grams) / 100) * num(a.pricePer100g)
+                                                  : 0;
+
+                                              return (
+                                                <li key={i2}>
+                                                  {a.addition || a.name || "תוספת"}{" "}
+                                                  <span className="text-white/90">(+{fmtILS(aPrice)})</span>
+                                                  {a?.grams ? ` · ${a.grams} גרם` : ""}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        ) : (
+                                          <span> אין</span>
+                                        )}
+                                      </div>
+
+                                      {/* Vegetables & comment unchanged */}
+                                      <div className="mt-1">
+                                        ירקות:{" "}
+                                        {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                                        {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                      </div>
                                     </div>
                                   </li>
                                 ))}
