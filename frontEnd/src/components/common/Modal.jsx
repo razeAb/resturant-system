@@ -10,7 +10,7 @@ const Modal = ({
   title,
   price,
   description,
-  options = {},
+  options,
   isOpen,
   onClose,
   onAddToCart, // not used, but kept if you need it later
@@ -24,7 +24,8 @@ const Modal = ({
 
   const { addToCart } = useContext(CartContext); // Access addToCart function
   const menuOptions = useMenuOptions() || {};
-  const { vegetables = [], weightedAdditions = [], fixedAdditions = [] } = options || menuOptions;
+  const sourceOptions = options && Object.keys(options).length ? options : menuOptions;
+  const { vegetables = [], weightedAdditions = [], fixedAdditions = [] } = sourceOptions;
 
   const availableVegetables = vegetables;
   const availableWeightedAdditions = weightedAdditions;
