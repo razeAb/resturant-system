@@ -2,14 +2,26 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListChecks, ClipboardList, ChefHat, History, LayoutGrid, Store, ArrowRight, BarChart3, Users } from "lucide-react";
-
+import {
+  Home,
+  ListChecks,
+  ClipboardList,
+  ChefHat,
+  History,
+  LayoutGrid,
+  Store,
+  ArrowRight,
+  BarChart3,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 const navItems = [
   { to: "/admin/dashboard", label: "לוח בקרה", icon: Home },
   { to: "/admin/products", label: "מוצרים", icon: LayoutGrid },
   { to: "/admin/activeOrders", label: "הזמנות פעילות", icon: ListChecks },
   { to: "/kitchen", label: "מסך מטבח", icon: ChefHat },
   { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
+  { to: "/admin/menu-options", label: "תוספות וסלטים", icon: UtensilsCrossed },
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
   { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", label: "עובדים", icon: Users },

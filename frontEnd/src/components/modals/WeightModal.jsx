@@ -1,8 +1,7 @@
 import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
-import Button from "../common/Button"; // ✅
-
+import { useMenuOptions } from "../../context/MenuOptionsContext";
 const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
@@ -13,6 +12,11 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   const { addToCart } = useContext(CartContext); // Access addToCart function from CartContext
 
   const [comment, setComment] = useState(""); // Initial comment is an empty string
+
+  const { vegetables, fixedAdditions } = useMenuOptions();
+
+  const availableVegetables = vegetables?.length ? vegetables : [];
+  const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
 
   if (!isOpen) return null;
 
@@ -26,21 +30,14 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     }));
   };
 
-  // Extract the numeric price from the addition string
-  const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/); // Extract number from string
-    return priceMatch ? parseFloat(priceMatch[1]) : 0; // Return price as float
-  };
-
-  // Handle addition selection
   const handleAdditionChange = (addition) => {
-    const additionPrice = getPrice(addition);
+    const label = `${addition.name} (+₪${addition.price})`;
 
     setSelectedOptions((prev) => ({
       ...prev,
-      additions: prev.additions.some((item) => item.addition === addition)
-        ? prev.additions.filter((item) => item.addition !== addition) // Remove if deselected
-        : [...prev.additions, { addition, price: additionPrice }], // Add the new addition
+      additions: prev.additions.some((item) => item.addition === label)
+        ? prev.additions.filter((item) => item.addition !== label)
+        : [...prev.additions, { addition: label, price: addition.price }],
     }));
   };
 
@@ -93,7 +90,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:ירקות בצד למנה</h3>
-          {["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"].map((vegetable, index) => (
+          {availableVegetables.map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
@@ -111,16 +108,21 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Options for Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
-          {["🧀 רוטב גבינה בצד 8", "🍄 פטריות 5", "🥖 ג׳בטה 5"].map((addition, index) => (
+          {availableFixedAdditions.map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
-                <input type="checkbox" id={`addition-option-${index}`} onChange={() => handleAdditionChange(addition)} />
+                <input
+                  type="checkbox"
+                  id={`addition-option-${index}`}
+                  onChange={() => handleAdditionChange(addition)}
+                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
+                />
                 <svg>
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
               <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition}
+                {addition.name} (₪{addition.price}){" "}
               </label>
             </div>
           ))}

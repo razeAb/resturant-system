@@ -1,17 +1,33 @@
 import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
-import Button from "./Button"; // ✅ correct
+import Button from "./Button"; // ✅ currently unused, you can remove if not needed
+import { useMenuOptions } from "../../context/MenuOptionsContext";
 
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
+const Modal = ({
+  _id,
+  img,
+  title,
+  price,
+  description,
+  options,
+  isOpen,
+  onClose,
+  onAddToCart, // not used, but kept if you need it later
+}) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
     additions: [],
   });
+  const [comment, setComment] = useState(""); // ✅ missing state added
 
-  const { addToCart } = useContext(CartContext); // Access addToCart function
-  const [comment, setComment] = useState("");
+  const { addToCart } = useContext(CcartContext); // Access addToCart function
+  const { vegetables, weightedAdditions, fixedAdditions } = useMenuOptions();
+
+  const availableVegetables = vegetables?.length ? vegetables : [];
+  const availableWeightedAdditions = weightedAdditions?.length ? weightedAdditions : [];
+  const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
 
   if (!isOpen) return null;
 
@@ -28,48 +44,71 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     }));
   };
 
-  const getPrice = (addition) => {
-    const priceMatch = addition.match(/(\d+)/);
-    return priceMatch ? parseFloat(priceMatch[1]) : 0;
-  };
+  const formatAdditionLabel = (name, suffix, priceValue) =>
+    `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
 
-  const handleAdditionChange = (addition, grams = null) => {
+  const handleWeightedAdditionChange = (addition, grams) => {
     setSelectedOptions((prev) => {
-      const additionName = grams ? `${addition} (${grams} גרם)` : addition;
+      const price = grams === 100 ? addition.pricePer100 : addition.pricePer50;
+      const label = formatAdditionLabel(addition.name, `(${grams} גרם)`, price);
+      const alreadySelected = prev.additions.some((item) => item.addition === label);
 
-      const alreadySelected = prev.additions.some((item) => item.addition === additionName);
-
+      // If this exact option is already selected – remove it
       if (alreadySelected) {
-        // Toggle off: remove same selection
         return {
           ...prev,
-          additions: prev.additions.filter((item) => item.addition !== additionName),
-        };
-      } else {
-        // Remove any other variant of the same meat
-        const updatedAdditions = prev.additions.filter((item) => !item.addition.startsWith(addition));
-
-        return {
-          ...prev,
-          additions: [
-            ...updatedAdditions,
-            {
-              addition: additionName,
-              price: grams === 50 ? 13 : grams === 100 ? 26 : getPrice(addition),
-            },
-          ],
+          additions: prev.additions.filter((item) => item.addition !== label),
         };
       }
+
+      // Remove same addition with other grams (so only one per meat)
+      const updatedAdditions = prev.additions.filter(
+        (item) => !item.addition.includes(addition.name)
+      );
+
+      return {
+        ...prev,
+        additions: [...updatedAdditions, { addition: label, price }],
+      };
+    });
+  };
+
+  const handleFixedAdditionChange = (addition) => {
+    setSelectedOptions((prev) => {
+      const label = formatAdditionLabel(addition.name, "", addition.price);
+      const alreadySelected = prev.additions.some(
+        (item) => item.addition === label
+      );
+
+      if (alreadySelected) {
+        // Remove if already selected
+        return {
+          ...prev,
+          additions: prev.additions.filter((item) => item.addition !== label),
+        };
+      }
+
+      // Add if not selected
+      return {
+        ...prev,
+        additions: [...prev.additions, { addition: label, price: addition.price }],
+      };
     });
   };
 
   const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
-    const totalPrice = parseFloat(price) * quantity + additionsTotal;
-    return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
+    const additionsTotal = selectedOptions.additions.reduce(
+      (total, item) => total + item.price,
+      0
+    );
+    const basePrice = parseFloat(price) || 0;
+    const totalPrice = basePrice * quantity + additionsTotal;
+    return Number.isInteger(totalPrice)
+      ? totalPrice
+      : parseFloat(totalPrice.toFixed(2));
   };
+
   const handleAddToCart = () => {
-    // Calculate the total price for one unit of the item (including additions)
     const totalPrice = calculateTotalPrice();
 
     const itemToAdd = {
@@ -84,10 +123,11 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       comment,
       totalPrice: parseFloat(totalPrice),
     };
-    console.log("Adding to cart:", itemToAdd); // Debug log
-    addToCart(itemToAdd); // Add to cart via context
 
-    //reset modal state
+    console.log("Adding to cart:", itemToAdd);
+    addToCart(itemToAdd);
+
+    // reset modal state
     setQuantity(1);
     setSelectedOptions({
       vegetables: [],
@@ -103,87 +143,110 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
+
         <img src={img} alt={title} className="modal-img" />
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
-        {/* Dynamically updated price */}
+        <p className="modal-description font-semibold text-center text-xl pt-6">
+          {description}
+        </p>
 
-        <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
-
-        {/* Options for Vegetables */}
+        {/* Vegetables */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">:ירקות על המנה</h3>
-          {[" 🥬 חסה", " 🥒 מלפפון חמוץ", " 🍅 עגבניה", " 🧅 בצל", " 🥗 סלט קרוב", " 🌿 צימצורי"].map((vegetable, index) => (
+          <h3 className="text-2xl font-semibold text-center pb-10">
+            :ירקות על המנה
+          </h3>
+          {availableVegetables.map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
-                <input type="checkbox" id={`vegetable-option-${index}`} onChange={() => handleVegetableChange(vegetable)} />
+                <input
+                  type="checkbox"
+                  id={`vegetable-option-${index}`}
+                  onChange={() => handleVegetableChange(vegetable)}
+                  checked={selectedOptions.vegetables.includes(vegetable)}
+                />
                 <svg>
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
-              <label htmlFor={`vegetable-option-${index}`} className="checkbox-label pl-2">
+              <label
+                htmlFor={`vegetable-option-${index}`}
+                className="checkbox-label pl-2"
+              >
                 {vegetable}
               </label>
             </div>
           ))}
         </div>
 
-        {/* Options for Additions with Buttons */}
+        {/* Additions */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">
+            :תוספת למנה רגילה
+          </h3>
 
           {/* Gram-based additions */}
-          {[
-            { name: "🥩 צלי כתף", prices: { 50: 13, 100: 26 } },
-            { name: "🥩 אונטרייב", prices: { 50: 13, 100: 26 } },
-            { name: "🥩 אסאדו", prices: { 50: 15, 100: 30 } },
-            { name: "🥩 צוואר טלה", prices: { 50: 15, 100: 30 } },
-            { name: "🥩 בריסקת", prices: { 50: 13, 100: 26 } },
-          ].map((addition, index) => (
+          {availableWeightedAdditions.map((addition, index) => (
             <div key={index} className="addition-buttons">
               <span>{addition.name}</span>
               <button
                 className={`gram-button ${
-                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (50 גרם)`)) ? "selected" : ""
+                  selectedOptions.additions.some((item) =>
+                    item.addition.includes(`${addition.name} (50 גרם)`)
+                  )
+                    ? "selected"
+                    : ""
                 }`}
-                onClick={() => handleAdditionChange(addition.name, 50)}
+                onClick={() => handleWeightedAdditionChange(addition, 50)}
               >
-                50 גרם
+                50 גרם (₪{addition.pricePer50})
               </button>
               <button
                 className={`gram-button ${
-                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (100 גרם)`)) ? "selected" : ""
+                  selectedOptions.additions.some((item) =>
+                    item.addition.includes(`${addition.name} (100 גרם)`)
+                  )
+                    ? "selected"
+                    : ""
                 }`}
-                onClick={() => handleAdditionChange(addition.name, 100)}
+                onClick={() => handleWeightedAdditionChange(addition, 100)}
               >
-                100 גרם
+                100 גרם (₪{addition.pricePer100})
               </button>
             </div>
           ))}
 
           {/* Fixed-price additions */}
-          {["🥓 ביקון טלה 10", "🧀 רוטב גבינה 8", "🍄 פטריות 5", "🥖 ג׳בטה 5"].map((addition, index) => (
+          {availableFixedAdditions.map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input
                   type="checkbox"
                   id={`addition-option-${index}`}
-                  onChange={() => handleAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) => item.addition === addition)}
+                  onChange={() => handleFixedAdditionChange(addition)}
+                  checked={selectedOptions.additions.some((item) =>
+                    item.addition.includes(addition.name)
+                  )}
                 />
                 <svg>
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
-              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition}
+              <label
+                htmlFor={`addition-option-${index}`}
+                className="checkbox-label pl-2"
+              >
+                {addition.name} (₪{addition.price})
               </label>
             </div>
           ))}
         </div>
 
+        {/* Comment */}
         <div className="modal-comment">
-          <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">
+            :הוסף הערה
+          </h3>
           <textarea
             placeholder="הוסף הערה (לא חובה)"
             value={comment}
@@ -200,6 +263,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           ></textarea>
         </div>
 
+        {/* Footer */}
         <div className="modal-footer sticky bottom-0 bg-white py-4 px-6 shadow-inner flex items-center justify-between gap-4 z-10">
           {/* Quantity Selector */}
           <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-[#1f3a44] text-orange-400 font-bold w-32">
@@ -212,13 +276,15 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
             </button>
           </div>
 
-          {/* Add to Cart Button with Price */}
+          {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
             className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
           >
             <span>הוספה לעגלה</span>
-            <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
+            <span className="font-bold whitespace-nowrap text-lg sm:text-base">
+              ₪{calculateTotalPrice()}
+            </span>
           </button>
         </div>
 
@@ -228,7 +294,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
             <path
               fill="none"
               stroke="currentColor"
-              d="M5.5,11.3L9,14.8L20.2,3.3l0,0c-0.5-1-1.5-1.8-2.7-1.8h-13c-1.7,0-3,1.3-3,3v13c0,1.7,1.3,3,3,3h13 c1.7,0,3-1.3,3-3v-13c0-0.4-0.1-0.8-0.3-1.2"
+              d="M5.5,11.3L9,14.8L20.2,3.3l0,0c-0.5-1-1.5-1.8-2.7-1.8h-13c-1.7,0-3,1.3-3,3v13c0,1.7,1.3,3,3,3h13
+               c1.7,0,3-1.3,3-3v-13c0-0.4-0.1-0.8-0.3-1.2"
             />
           </symbol>
         </svg>
