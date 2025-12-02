@@ -21,6 +21,7 @@ import PaymentFailure from "./pages/PaymentFailure";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import { MenuOptionsProvider } from "./context/MenuOptionsContext";
+import MenuOptionsAdmin from "./admin/MenuOptions";
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
 import CashRegister from "./admin/CashRegister";
 import RevenuePage from "./admin/RevenuePage";
@@ -77,9 +78,8 @@ const App = () => {
                 <Route path="/worker/login" element={<WorkerLogin />} />
               </Routes>
 
-
-          {/* CartIcon should be placed here to appear on all pages */}
-          <CartIcon />
+              {/* CartIcon should be placed here to appear on all pages */}
+              <CartIcon />
             </div>
           </Router>
         </CartProvider>
