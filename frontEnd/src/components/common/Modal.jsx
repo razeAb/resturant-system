@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
-import Button from "./Button"; // ✅ currently unused, you can remove if not needed
+
 import { useMenuOptions } from "../../context/MenuOptionsContext";
 
 const Modal = ({
@@ -10,7 +10,7 @@ const Modal = ({
   title,
   price,
   description,
-  options,
+  options = {},
   isOpen,
   onClose,
   onAddToCart, // not used, but kept if you need it later
@@ -22,12 +22,13 @@ const Modal = ({
   });
   const [comment, setComment] = useState(""); // ✅ missing state added
 
-  const { addToCart } = useContext(CcartContext); // Access addToCart function
-  const { vegetables, weightedAdditions, fixedAdditions } = useMenuOptions();
+  const { addToCart } = useContext(CartContext); // Access addToCart function
+  const menuOptions = useMenuOptions() || {};
+  const { vegetables = [], weightedAdditions = [], fixedAdditions = [] } = options || menuOptions;
 
-  const availableVegetables = vegetables?.length ? vegetables : [];
-  const availableWeightedAdditions = weightedAdditions?.length ? weightedAdditions : [];
-  const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
+  const availableVegetables = vegetables;
+  const availableWeightedAdditions = weightedAdditions;
+  const availableFixedAdditions = fixedAdditions;
 
   if (!isOpen) return null;
 
@@ -44,8 +45,7 @@ const Modal = ({
     }));
   };
 
-  const formatAdditionLabel = (name, suffix, priceValue) =>
-    `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
+  const formatAdditionLabel = (name, suffix, priceValue) => `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
 
   const handleWeightedAdditionChange = (addition, grams) => {
     setSelectedOptions((prev) => {
@@ -62,9 +62,7 @@ const Modal = ({
       }
 
       // Remove same addition with other grams (so only one per meat)
-      const updatedAdditions = prev.additions.filter(
-        (item) => !item.addition.includes(addition.name)
-      );
+      const updatedAdditions = prev.additions.filter((item) => !item.addition.includes(addition.name));
 
       return {
         ...prev,
@@ -76,9 +74,7 @@ const Modal = ({
   const handleFixedAdditionChange = (addition) => {
     setSelectedOptions((prev) => {
       const label = formatAdditionLabel(addition.name, "", addition.price);
-      const alreadySelected = prev.additions.some(
-        (item) => item.addition === label
-      );
+      const alreadySelected = prev.additions.some((item) => item.addition === label);
 
       if (alreadySelected) {
         // Remove if already selected
@@ -97,15 +93,10 @@ const Modal = ({
   };
 
   const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce(
-      (total, item) => total + item.price,
-      0
-    );
+    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
     const basePrice = parseFloat(price) || 0;
     const totalPrice = basePrice * quantity + additionsTotal;
-    return Number.isInteger(totalPrice)
-      ? totalPrice
-      : parseFloat(totalPrice.toFixed(2));
+    return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
   };
 
   const handleAddToCart = () => {
@@ -147,15 +138,11 @@ const Modal = ({
         <img src={img} alt={title} className="modal-img" />
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
-        <p className="modal-description font-semibold text-center text-xl pt-6">
-          {description}
-        </p>
+        <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
 
         {/* Vegetables */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">
-            :ירקות על המנה
-          </h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">:ירקות על המנה</h3>
           {availableVegetables.map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
@@ -169,10 +156,7 @@ const Modal = ({
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
-              <label
-                htmlFor={`vegetable-option-${index}`}
-                className="checkbox-label pl-2"
-              >
+              <label htmlFor={`vegetable-option-${index}`} className="checkbox-label pl-2">
                 {vegetable}
               </label>
             </div>
@@ -181,9 +165,7 @@ const Modal = ({
 
         {/* Additions */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">
-            :תוספת למנה רגילה
-          </h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
 
           {/* Gram-based additions */}
           {availableWeightedAdditions.map((addition, index) => (
@@ -191,11 +173,7 @@ const Modal = ({
               <span>{addition.name}</span>
               <button
                 className={`gram-button ${
-                  selectedOptions.additions.some((item) =>
-                    item.addition.includes(`${addition.name} (50 גרם)`)
-                  )
-                    ? "selected"
-                    : ""
+                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (50 גרם)`)) ? "selected" : ""
                 }`}
                 onClick={() => handleWeightedAdditionChange(addition, 50)}
               >
@@ -203,11 +181,7 @@ const Modal = ({
               </button>
               <button
                 className={`gram-button ${
-                  selectedOptions.additions.some((item) =>
-                    item.addition.includes(`${addition.name} (100 גרם)`)
-                  )
-                    ? "selected"
-                    : ""
+                  selectedOptions.additions.some((item) => item.addition.includes(`${addition.name} (100 גרם)`)) ? "selected" : ""
                 }`}
                 onClick={() => handleWeightedAdditionChange(addition, 100)}
               >
@@ -224,18 +198,13 @@ const Modal = ({
                   type="checkbox"
                   id={`addition-option-${index}`}
                   onChange={() => handleFixedAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) =>
-                    item.addition.includes(addition.name)
-                  )}
+                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
                 />
                 <svg>
                   <use xlinkHref="#checkbox-30" className="checkbox"></use>
                 </svg>
               </span>
-              <label
-                htmlFor={`addition-option-${index}`}
-                className="checkbox-label pl-2"
-              >
+              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
                 {addition.name} (₪{addition.price})
               </label>
             </div>
@@ -244,9 +213,7 @@ const Modal = ({
 
         {/* Comment */}
         <div className="modal-comment">
-          <h3 className="text-2xl font-semibold text-center pb-10">
-            :הוסף הערה
-          </h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
           <textarea
             placeholder="הוסף הערה (לא חובה)"
             value={comment}
@@ -282,9 +249,7 @@ const Modal = ({
             className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
           >
             <span>הוספה לעגלה</span>
-            <span className="font-bold whitespace-nowrap text-lg sm:text-base">
-              ₪{calculateTotalPrice()}
-            </span>
+            <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
           </button>
         </div>
 
