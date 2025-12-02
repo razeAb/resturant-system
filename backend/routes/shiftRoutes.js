@@ -110,6 +110,67 @@ router.get("/", workerProtect, async (req, res) => {
 
 /* ───────────────────────── Admin routes ───────────────────────── */
 
+// Admin: start a shift for a worker
+router.post("/admin/start/:workerId", protect, async (req, res) => {
+  if (!req.user?.isAdmin) return res.status(403).json({ message: "Not authorized" });
+
+  try {
+    const { workerId } = req.params;
+
+    // avoid double active shifts
+    const existing = await Shift.findOne({ user: workerId, end: null });
+    if (existing) {
+      return res.status(400).json({ message: "Shift already active for this worker" });
+    }
+
+    const now = new Date();
+    const shift = await Shift.create({ user: workerId, start: now });
+
+    const updatedWorker = await Worker.findByIdAndUpdate(
+      workerId,
+      { onShift: true, shiftStart: now },
+      { new: true, lean: true, select: "username role onShift shiftStart" }
+    );
+
+    return res.status(201).json({ shift, worker: updatedWorker });
+  } catch (err) {
+    console.error("Admin start shift error:", err);
+    return res.status(500).json({ message: err.message || "Failed to start shift" });
+  }
+});
+
+// Admin: stop a worker's current shift
+router.post("/admin/stop/:workerId", protect, async (req, res) => {
+  if (!req.user?.isAdmin) return res.status(403).json({ message: "Not authorized" });
+
+  try {
+    const { workerId } = req.params;
+    const shift = await Shift.findOne({ user: workerId, end: null });
+
+    if (!shift) {
+      return res.status(404).json({ message: "No active shift for this worker" });
+    }
+
+    const now = new Date();
+    shift.end = now;
+    const breakMin = typeof shift.breakMinutes === "number" ? shift.breakMinutes : 0;
+    shift.hours = hoursBetween(shift.start, shift.end, breakMin);
+    await shift.save();
+
+    const updatedWorker = await Worker.findByIdAndUpdate(
+      workerId,
+      { onShift: false, shiftStart: null },
+      { new: true, lean: true, select: "username role onShift shiftStart" }
+    );
+
+    return res.json({ shift, worker: updatedWorker });
+  } catch (err) {
+    console.error("Admin stop shift error:", err);
+    return res.status(500).json({ message: err.message || "Failed to end shift" });
+  }
+});
+
+
 // Get all shifts (admin only) + filters: ?worker=<id>&start=YYYY-MM-DD&end=YYYY-MM-DD
 router.get("/all", protect, async (req, res) => {
   if (!req.user?.isAdmin) return res.status(403).json({ message: "Not authorized" });

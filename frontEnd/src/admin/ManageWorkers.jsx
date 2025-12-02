@@ -162,11 +162,31 @@ ShiftEditModal.propTypes = {
 /* ===================== Role & Shift Badges ===================== */
 function RoleBadge({ role }) {
   const map = {
-    cook: { text: "טבח", bg: "bg-amber-500/15", textc: "text-amber-200", border: "border-amber-500/25" },
-    waiter: { text: "מלצר", bg: "bg-sky-500/15", textc: "text-sky-200", border: "border-sky-500/25" },
-    dishwasher: { text: "שוטף כלים", bg: "bg-fuchsia-500/15", textc: "text-fuchsia-200", border: "border-fuchsia-500/25" },
+    cook: {
+      text: "טבח",
+      bg: "bg-amber-500/15",
+      textc: "text-amber-200",
+      border: "border-amber-500/25",
+    },
+    waiter: {
+      text: "מלצר",
+      bg: "bg-sky-500/15",
+      textc: "text-sky-200",
+      border: "border-sky-500/25",
+    },
+    dishwasher: {
+      text: "שוטף כלים",
+      bg: "bg-fuchsia-500/15",
+      textc: "text-fuchsia-200",
+      border: "border-fuchsia-500/25",
+    },
   };
-  const style = map[role] || { text: role, bg: "bg-white/5", textc: "text-white/70", border: "border-white/10" };
+  const style = map[role] || {
+    text: role,
+    bg: "bg-white/5",
+    textc: "text-white/70",
+    border: "border-white/10",
+  };
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] border ${style.bg} ${style.textc} ${style.border}`}
@@ -197,7 +217,7 @@ export default function ManageWorkers() {
   const [shiftsMap, setShiftsMap] = useState({});
   const [shiftsLoading, setShiftsLoading] = useState({});
   const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
-
+  const [shiftOps, setShiftOps] = useState({});
   // Edit modal state
   const [editOpen, setEditOpen] = useState(false);
   const [editShift, setEditShift] = useState(null);
@@ -225,7 +245,11 @@ export default function ManageWorkers() {
     // return () => clearInterval(t);
   }, []);
 
-  const handleChange = (e) => setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setFormData((s) => ({
+      ...s,
+      [e.target.name]: e.target.value,
+    }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -272,6 +296,64 @@ export default function ManageWorkers() {
     }
     setExpanded(id);
     fetchShiftsForWorker(id);
+  };
+
+  const startShiftForWorker = async (workerId) => {
+    setShiftOps((m) => ({ ...m, [workerId]: "starting" }));
+    setMsg({ text: "", tone: "neutral" });
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await api.post(`/api/shifts/admin/start/${workerId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const updated = res.data?.worker;
+
+      if (updated) {
+        setWorkers((list) => list.map((w) => (w._id === workerId ? { ...w, ...updated, onShift: toBool(updated.onShift) } : w)));
+      } else {
+        setWorkers((list) => list.map((w) => (w._id === workerId ? { ...w, onShift: true } : w)));
+      }
+
+      if (expanded === workerId) fetchShiftsForWorker(workerId);
+      setMsg({ text: "המשמרת התחילה עבור העובד", tone: "success" });
+    } catch (err) {
+      console.error("Admin start shift failed", err);
+      setMsg({ text: err.response?.data?.message || "שגיאה בהתחלת משמרת", tone: "error" });
+    } finally {
+      setShiftOps((m) => {
+        const next = { ...m };
+        delete next[workerId];
+        return next;
+      });
+    }
+  };
+
+  const stopShiftForWorker = async (workerId) => {
+    setShiftOps((m) => ({ ...m, [workerId]: "stopping" }));
+    setMsg({ text: "", tone: "neutral" });
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await api.post(`/api/shifts/admin/stop/${workerId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const updated = res.data?.worker;
+
+      if (updated) {
+        setWorkers((list) => list.map((w) => (w._id === workerId ? { ...w, ...updated, onShift: toBool(updated.onShift) } : w)));
+      } else {
+        setWorkers((list) => list.map((w) => (w._id === workerId ? { ...w, onShift: false } : w)));
+      }
+
+      if (expanded === workerId) fetchShiftsForWorker(workerId);
+      setMsg({ text: "המשמרת נסגרה עבור העובד", tone: "success" });
+    } catch (err) {
+      console.error("Admin stop shift failed", err);
+      setMsg({ text: err.response?.data?.message || "שגיאה בסיום משמרת", tone: "error" });
+    } finally {
+      setShiftOps((m) => {
+        const next = { ...m };
+        delete next[workerId];
+        return next;
+      });
+    }
   };
 
   // open modal for edit
@@ -429,8 +511,16 @@ export default function ManageWorkers() {
               </div>
               <div className="flex sm:justify-end">
                 <button
-                  onClick={() => expanded && fetchShiftsForWorker(expanded)}
-                  className="w-full sm:w-auto rounded-xl px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm"
+                  type="button"
+                  onClick={() =>
+                    expanded
+                      ? fetchShiftsForWorker(expanded)
+                      : setMsg({
+                          text: "בחר עובד לצפייה במשמרות מסוננות",
+                          tone: "error",
+                        })
+                  }
+                  className="w-full sm:w-auto rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-sm"
                 >
                   סנן
                 </button>
@@ -475,10 +565,22 @@ export default function ManageWorkers() {
                           </div>
                         </div>
 
+                        {/* ACTIONS: start/stop, view hours, badge */}
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => (isOnShift ? stopShiftForWorker(w._id) : startShiftForWorker(w._id))}
+                            disabled={!!shiftOps[w._id]}
+                            className={`text-xs rounded px-2 py-1 transition ${
+                              isOnShift ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"
+                            } ${shiftOps[w._id] ? "opacity-70 cursor-wait" : ""}`}
+                          >
+                            {shiftOps[w._id] ? (isOnShift ? "מסיים…" : "מפעיל…") : isOnShift ? "סיים משמרת" : "התחל משמרת"}
+                          </button>
+
                           <button onClick={() => toggleShifts(w._id)} className="text-xs bg-blue-600 hover:bg-blue-700 rounded px-2 py-1">
                             {isExp ? "סגור" : "שעות"}
                           </button>
+
                           {isOnShift && <ShiftBadge />}
                         </div>
                       </div>
