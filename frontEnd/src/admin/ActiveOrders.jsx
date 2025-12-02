@@ -429,7 +429,7 @@ export default function ActiveOrdersPage() {
                             <div className="md:col-span-2">
                               <h4 className="font-semibold mb-2">פרטי הזמנה</h4>
                               <ul className="space-y-2">
-                              {order.items.map((item, idx) => {
+                                {order.items.map((item, idx) => {
                                   const qtyLabel = item.isWeighted
                                     ? `${item.weightGrams || item.grams || item.quantity} גרם`
                                     : item.quantity;
@@ -444,51 +444,51 @@ export default function ActiveOrdersPage() {
 
                                       <div className="text-white/70 text-sm">כמות: {qtyLabel}</div>
 
+                                      {/* Price breakdown */}
+                                      <div className="mt-1 text-white/75 text-xs">
+                                        <div>
+                                          מחיר בסיס: <span className="text-white/90">{fmtILS(getItemBasePrice(item))}</span>
+                                          {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
+                                        </div>
 
-                                    {/* Price breakdown */}
-                                    <div className="mt-1 text-white/75 text-xs">
-                                      <div>
-                                        מחיר בסיס: <span className="text-white/90">{fmtILS(getItemBasePrice(item))}</span>
-                                        {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
+                                        {/* Additions list with individual costs */}
+                                        <div className="mt-1">
+                                          תוספות:
+                                          {Array.isArray(item.additions) && item.additions.length ? (
+                                            <ul className="list-disc mr-4 mt-1 space-y-0.5">
+                                              {item.additions.map((a, i2) => {
+                                                const aPrice =
+                                                  a?.price != null
+                                                    ? num(a.price)
+                                                    : a?.grams && a?.pricePer100g
+                                                    ? (num(a.grams) / 100) * num(a.pricePer100g)
+                                                    : 0;
+
+                                                return (
+                                                  <li key={i2}>
+                                                    {a.addition || a.name || "תוספת"}{" "}
+                                                    <span className="text-white/90">(+{fmtILS(aPrice)})</span>
+                                                    {a?.grams ? ` · ${a.grams} גרם` : ""}
+                                                  </li>
+                                                );
+                                              })}
+                                            </ul>
+                                          ) : (
+                                            <span> אין</span>
+                                          )}
+                                        </div>
+
+                                        {/* Vegetables & comment unchanged */}
+                                        <div className="mt-1">
+                                          ירקות:{" "}
+                                          {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                                          {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                        </div>
                                       </div>
-
-                                      {/* Additions list with individual costs */}
-                                      <div className="mt-1">
-                                        תוספות:
-                                        {Array.isArray(item.additions) && item.additions.length ? (
-                                          <ul className="list-disc mr-4 mt-1 space-y-0.5">
-                                            {item.additions.map((a, i2) => {
-                                              const aPrice =
-                                                a?.price != null
-                                                  ? num(a.price)
-                                                  : a?.grams && a?.pricePer100g
-                                                  ? (num(a.grams) / 100) * num(a.pricePer100g)
-                                                  : 0;
-
-                                              return (
-                                                <li key={i2}>
-                                                  {a.addition || a.name || "תוספת"}{" "}
-                                                  <span className="text-white/90">(+{fmtILS(aPrice)})</span>
-                                                  {a?.grams ? ` · ${a.grams} גרם` : ""}
-                                                </li>
-                                              );
-                                            })}
-                                          </ul>
-                                        ) : (
-                                          <span> אין</span>
-                                        )}
-                                      </div>
-
-                                      {/* Vegetables & comment unchanged */}
-                                      <div className="mt-1">
-                                        ירקות:{" "}
-                                        {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                        {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                      </div>
-                                    </div>
-                                  </li>
-);
-})}                              </ul>
+                                    </li>
+                                  );
+                                })}{" "}
+                              </ul>
                             </div>
                           </div>
 
