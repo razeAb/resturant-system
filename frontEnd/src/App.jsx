@@ -20,6 +20,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
+import { MenuOptionsProvider } from "./context/MenuOptionsContext";
 import KitchenOrders from "./admin/kitchen/kitchenOrders";
 import CashRegister from "./admin/CashRegister";
 import RevenuePage from "./admin/RevenuePage";
@@ -30,56 +31,59 @@ import WorkerLogin from "./pages/WorkerLogin";
 const App = () => {
   return (
     <AuthProvider>
-      <CartProvider>
-        <Router>
-          <div>
-            {/* Main pages with Scroll Navbar */}
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <>
-                    <Navbar />
-                    <div id="home">
-                      <Home />
-                    </div>
-                    <div id="menu">
-                      <Menu />
-                    </div>
-                    <Footer />
-                  </>
-                }
-              />
-              {/* Cart page with regular CartNavbar */}
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/resetPassword" element={<ResetPassword />} />
-              <Route path="/order-status" element={<OrderStatus />} />
+      <MenuOptionsProvider>
+        <CartProvider>
+          <Router>
+            <div>
+              {/* Main pages with Scroll Navbar */}
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <>
+                      <Navbar />
+                      <div id="home">
+                        <Home />
+                      </div>
+                      <div id="menu">
+                        <Menu />
+                      </div>
+                      <Footer />
+                    </>
+                  }
+                />
+                {/* Cart page with regular CartNavbar */}
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/resetPassword" element={<ResetPassword />} />
+                <Route path="/order-status" element={<OrderStatus />} />
 
-              <Route path="/admin/products" element={<AdminProducts />} />
-              <Route path="/admin/activeOrders" element={<ActiveOrders />} />
-              <Route path="/admin/orderHistory" element={<OrderHistory />} />
-              <Route path="/admin/collections" element={<CollectionsReport />} />
-              <Route path="/admin/revenue" element={<RevenuePage />} />
-              <Route path="/admin/cash-register" element={<CashRegister />} />
-              <Route path="/kitchen" element={<KitchenOrders />} />
-              <Route path="/worker/dashboard" element={<WorkerDashboard />} />
-              <Route path="/admin/manage-shifts" element={<ManageShifts />} />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
-              <Route path="/payment-failure" element={<PaymentFailure />} />
-              <Route path="/admin/workers" element={<ManageWorkers />} />
-              <Route path="/worker/login" element={<WorkerLogin />} />
+                <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/admin/activeOrders" element={<ActiveOrders />} />
+                <Route path="/admin/orderHistory" element={<OrderHistory />} />
+                <Route path="/admin/collections" element={<CollectionsReport />} />
+                <Route path="/admin/revenue" element={<RevenuePage />} />
+                <Route path="/admin/cash-register" element={<CashRegister />} />
+                <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
+                <Route path="/kitchen" element={<KitchenOrders />} />
+                <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+                <Route path="/admin/manage-shifts" element={<ManageShifts />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/payment-failure" element={<PaymentFailure />} />
+                <Route path="/admin/workers" element={<ManageWorkers />} />
+                <Route path="/worker/login" element={<WorkerLogin />} />
               </Routes>
 
 
-            {/* CartIcon should be placed here to appear on all pages */}
-            <CartIcon />
-          </div>
-        </Router>
-      </CartProvider>
+          {/* CartIcon should be placed here to appear on all pages */}
+          <CartIcon />
+            </div>
+          </Router>
+        </CartProvider>
+      </MenuOptionsProvider>
     </AuthProvider>
   );
 };

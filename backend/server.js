@@ -48,6 +48,7 @@ app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/workers", require("./routes/workerRoutes"));
 app.use("/api/upload", require("./uploadRoute"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/menu-options", require("./routes/menuOptionsRoutes"));
 app.use("/api/tranzila", require("./routes/TranzillaRoutes"));
 app.use("/api/config", require("./routes/config"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
