@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { protect } = require("../middleware/authMiddleware");
+const { sendWhatsAppNotification } = require("../utils/whatsapp");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -159,7 +160,7 @@ router.post("/", async (req, res) => {
       method: newOrder.paymentDetails?.method,
       status: newOrder.status,
     });
-
+    sendWhatsAppNotification(newOrder);
     // ---- loyalty updates ----
     if (user) {
       const foundUser = await User.findById(user);

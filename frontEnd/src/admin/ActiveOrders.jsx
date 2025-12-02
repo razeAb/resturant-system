@@ -98,8 +98,16 @@ export default function ActiveOrdersPage() {
    */
   const getItemBasePrice = (item) => {
     if (item?.isWeighted) {
-      const grams = num(item.weightGrams || item.grams);
-      const per100 = num(item.pricePer100g || item.product?.pricePer100g);
+      const grams = num(item.weightGrams || item.grams || item.quantity);
+      const per100 =
+        item.pricePer100g != null
+          ? num(item.pricePer100g)
+          : item.product?.pricePer100g != null
+          ? num(item.product.pricePer100g)
+          : item.price != null
+          ? num(item.price)
+          : 0;
+
       if (grams && per100) return (grams / 100) * per100;
     }
     if (item?.price != null) return num(item.price);
@@ -126,10 +134,16 @@ export default function ActiveOrdersPage() {
     }, 0);
   };
 
-  /** Full line total = (base + additions) * quantity */
-  const getLineTotal = (item) => {
+  /**
+   * Full line total.
+   * Weighted items already encode grams inside the base price calculation,
+   * so we avoid multiplying by quantity again (their `quantity` is the grams value).
+   */ const getLineTotal = (item) => {
     const base = getItemBasePrice(item);
     const adds = getAdditionsTotal(item);
+
+    if (item?.isWeighted) return base + adds;
+
     const qty = num(item?.quantity || 1);
     return (base + adds) * qty;
   };
@@ -415,18 +429,21 @@ export default function ActiveOrdersPage() {
                             <div className="md:col-span-2">
                               <h4 className="font-semibold mb-2">פרטי הזמנה</h4>
                               <ul className="space-y-2">
-                                {order.items.map((item, idx) => (
-                                  <li key={idx} className="leading-6">
-                                    <div className="flex items-center justify-between">
-                                      <strong>{item.product?.name || item.title || "פריט"}</strong>
-                                      {/* Line total on the right */}
-                                      <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
-                                    </div>
+                              {order.items.map((item, idx) => {
+                                  const qtyLabel = item.isWeighted
+                                    ? `${item.weightGrams || item.grams || item.quantity} גרם`
+                                    : item.quantity;
 
-                                    <div className="text-white/70 text-sm">
-                                      כמות: {item.quantity}
-                                      {item.isWeighted && item.weightGrams ? ` · משקל: ${item.weightGrams} גרם` : ""}
-                                    </div>
+                                  return (
+                                    <li key={idx} className="leading-6">
+                                      <div className="flex items-center justify-between">
+                                        <strong>{item.product?.name || item.title || "פריט"}</strong>
+                                        {/* Line total on the right */}
+                                        <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
+                                      </div>
+
+                                      <div className="text-white/70 text-sm">כמות: {qtyLabel}</div>
+
 
                                     {/* Price breakdown */}
                                     <div className="mt-1 text-white/75 text-xs">
@@ -470,8 +487,8 @@ export default function ActiveOrdersPage() {
                                       </div>
                                     </div>
                                   </li>
-                                ))}
-                              </ul>
+);
+})}                              </ul>
                             </div>
                           </div>
 
