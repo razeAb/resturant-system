@@ -68,6 +68,8 @@ const dedupeOrders = (orders = []) => {
 export default function ActiveOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const audioRef = useRef(null);
+  const audioReadyRef = useRef(false);
 
   // sidebar (mobile)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -149,16 +151,37 @@ export default function ActiveOrdersPage() {
   };
 
   const playNotificationSound = () => {
-    let count = 0;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    let remaining = 3;
     const play = () => {
-      if (count >= 3) return;
-      const audio = new Audio(notificationSound);
-      audio.play().catch(() => {});
-      count++;
-      audio.onended = () => setTimeout(play, 1000);
+      if (!audioReadyRef.current || !audioRef.current || remaining <= 0) return;
+
+      // restart from the beginning and play
+      audioRef.current.currentTime = 0;
+      audioRef.current
+        .play()
+        .then(() => {
+          remaining -= 1;
+          audioRef.current.onended = () => setTimeout(play, 750);
+        })
+        .catch((err) => console.warn("🔇 Notification audio blocked:", err));
     };
     play();
   };
+
+  // preload audio once so we don't create a new element for every order
+  useEffect(() => {
+    const audio = new Audio(notificationSound);
+    audio.preload = "auto";
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -207,11 +230,29 @@ export default function ActiveOrdersPage() {
   // unlock audio (mobile)
   useEffect(() => {
     const unlock = () => {
-      const a = new Audio();
-      a.play().catch(() => {});
-      document.removeEventListener("click", unlock);
+      if (!audioRef.current) return;
+
+      audioRef.current
+        .play()
+        .then(() => {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioReadyRef.current = true;
+          document.removeEventListener("click", unlock);
+          document.removeEventListener("keydown", unlock);
+          document.removeEventListener("pointerdown", unlock);
+        })
+        .catch(() => {});
     };
     document.addEventListener("click", unlock);
+    document.addEventListener("keydown", unlock);
+    document.addEventListener("pointerdown", unlock);
+
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("keydown", unlock);
+      document.removeEventListener("pointerdown", unlock);
+    };
   }, []);
 
   const formatPhoneNumber = (phone) => (phone ? (phone.startsWith("0") ? `+972${phone.slice(1)}` : phone) : null);
