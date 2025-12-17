@@ -126,3 +126,4 @@ const DishesCard = (props) => {
 };
 
 export default DishesCard;
+

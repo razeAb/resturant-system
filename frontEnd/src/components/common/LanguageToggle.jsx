@@ -9,7 +9,7 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={toggleLang}
-      className="fixed bottom-4 right-4 z-[60] inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/90 border border-gray-200 shadow hover:shadow-md hover:bg-white transition"
+      className="fixed bottom-4 left-4 z-[60] inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/90 border border-gray-200 shadow hover:shadow-md hover:bg-white transition"
       title={isHebrew ? "Switch to English" : "עברית"}
     >
       <Languages size={16} />
