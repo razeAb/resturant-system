@@ -4,18 +4,38 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { initializeFirebase } from "../firebase"; // ✅ חדש
 import CartContext from "../context/CartContext";
+import { UserPlus, KeyRound, BadgeCheck } from "lucide-react";
+import { useLang } from "../context/LangContext";
 
 const Login = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
+  const { t, dir } = useLang();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // quick client-side validation for clearer feedback before hitting the server
+    if (!email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      setError("Enter a valid email address");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await api.post(`/api/auth/login`, { email, password });
@@ -72,52 +92,100 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4" dir={dir}>
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
         <RouterLink to="/">
           <img src="/photos/logo1.jpg" alt="Logo" className="w-20 h-20 mx-auto mb-4" />
         </RouterLink>
 
-        <h2 className="text-2xl font-semibold mb-6">Login</h2>
+        <h2 className="text-2xl font-semibold mb-6">{t("login.title", "Login")}</h2>
 
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-500 mb-4 text-sm" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        )}
 
         <input
           type="email"
-          placeholder="Email"
+          placeholder={t("login.email", "Email")}
           className="w-full p-2 border border-gray-300 rounded mb-4"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError("");
+          }}
           required
+          autoComplete="email"
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="w-full mb-4 relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder={t("login.password", "Password")}
+            className="w-full p-2 pr-24 border border-gray-300 rounded"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (error) setError("");
+            }}
+            required
+            autoComplete="current-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((p) => !p)}
+            className="absolute inset-y-0 right-0 px-3 text-sm text-gray-600 hover:text-gray-800"
+            tabIndex={-1}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
-        <button type="submit" className="bg-black text-white w-full py-2 rounded hover:bg-gray-800" disabled={loading}>
-          {loading ? "Processing..." : "Login"}
+        <button
+          type="submit"
+          className={`bg-black text-white w-full py-2 rounded hover:bg-gray-800 ${loading ? "opacity-80 cursor-not-allowed" : ""}`}
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? t("login.processing", "Processing...") : t("login.submit", "Login")}
         </button>
 
-        <button type="button" onClick={() => navigate("/register")} className="text-sm text-blue-500 mt-4 hover:underline">
-          Don&apos;t have an account? Register
-        </button>
-
-        <button type="button" onClick={() => navigate("/resetPassword")} className="text-sm text-blue-500 mt-2 hover:underline">
-          Forgot Password?
-        </button>
-
-        <button type="button" onClick={() => navigate("/worker/login")} className="text-sm text-blue-500 mt-2 hover:underline">
-          Worker Login
-        </button>
+        <div className="mt-4 grid gap-2 text-left">
+          <button
+            type="button"
+            onClick={() => navigate("/register")}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-md border border-orange-200 bg-orange-50 text-orange-800 text-sm font-medium hover:bg-orange-100 transition"
+          >
+            <span className="inline-flex items-center gap-2">
+              <UserPlus size={16} /> {t("login.createAccount", "Create an account")}
+            </span>
+            <span className="text-xs">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/resetPassword")}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-md border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 transition"
+          >
+            <span className="inline-flex items-center gap-2">
+              <KeyRound size={16} /> {t("login.forgotPassword", "Forgot password?")}
+            </span>
+            <span className="text-xs">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/worker/login")}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-800 text-sm font-medium hover:bg-indigo-100 transition"
+          >
+            <span className="inline-flex items-center gap-2">
+              <BadgeCheck size={16} /> {t("login.workerLogin", "Worker login")}
+            </span>
+            <span className="text-xs">→</span>
+          </button>
+        </div>
 
         <div className="my-6 border-t border-gray-300 relative">
-          <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-2 text-gray-500 text-sm">or</span>
+          <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-2 text-gray-500 text-sm">{t("login.or", "or")}</span>
         </div>
 
         <div className="flex justify-center gap-4">
@@ -128,7 +196,7 @@ const Login = () => {
             disabled={loading}
           >
             <img src="/svg/google.svg" alt="Google" className="w-5 h-5" />
-            <span className="text-sm text-gray-700">Sign in with Google</span>
+            <span className="text-sm text-gray-700">{t("login.signInWithGoogle", "Sign in with Google")}</span>
           </button>
         </div>
       </form>

@@ -5,6 +5,7 @@ import { AiOutlineMenuUnfold, AiOutlineClose } from "react-icons/ai";
 import Button from "../components/common/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
+import { useLang } from "../context/LangContext.jsx";
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);
@@ -13,6 +14,7 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const { logout } = useContext(AuthContext);
+  const { t, lang } = useLang();
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -61,32 +63,32 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-row items-center text-lg font-medium gap-8">
           <ScrollLink to="home" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
-            בית
+            {t("nav.home", "בית")}
           </ScrollLink>
           <RouterLink to="/about" className="hover:text-brightColor transition-all cursor-pointer">
-            עלינו
+            {t("nav.about", "עלינו")}
           </RouterLink>
           <ScrollLink to="menu" spy={true} smooth={true} duration={500} className="hover:text-brightColor transition-all cursor-pointer">
-            תפריט
+            {t("nav.menu", "תפריט")}
           </ScrollLink>
           <RouterLink to="/cart" className="hover:text-brightColor transition-all cursor-pointer">
-            עגלה
+            {t("nav.cart", "עגלה")}
           </RouterLink>
           <RouterLink to="/order-status" className="hover:text-brightColor transition-all cursor-pointer">
-            בדיקת הזמנה
+            {t("nav.orderStatus", "בדיקת הזמנה")}
           </RouterLink>
           {isAdmin && (
             <RouterLink to="/admin/dashboard" className="hover:text-brightColor transition-all cursor-pointer">
-              Admin Dashboard
+              {t("nav.admin", "Admin Dashboard")}
             </RouterLink>
           )}
           {isLoggedIn ? (
             <button onClick={handleLogout} className="text-sm text-red-500 hover:underline">
-              Logout
+              {t("nav.logout", "Logout")}
             </button>
           ) : (
             <RouterLink to="/login">
-              <Button title="Login" />
+              <Button title={t("nav.login", "Login")} />
             </RouterLink>
           )}
         </nav>
@@ -115,10 +117,10 @@ const Navbar = () => {
           onClick={closeMenu}
           className="hover:text-brightColor transition-all cursor-pointer"
         >
-          בית
+          {t("nav.home", "בית")}
         </ScrollLink>
         <RouterLink to="/about" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
-          עלינו
+          {t("nav.about", "עלינו")}
         </RouterLink>
         <ScrollLink
           to="menu"
@@ -128,26 +130,26 @@ const Navbar = () => {
           onClick={closeMenu}
           className="hover:text-brightColor transition-all cursor-pointer"
         >
-          תפריט
+          {t("nav.menu", "תפריט")}
         </ScrollLink>
         <RouterLink to="/cart" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
-          עגלה
+          {t("nav.cart", "עגלה")}
         </RouterLink>
         <RouterLink to="/order-status" onClick={closeMenu} className="hover:text-brightColor transition-all cursor-pointer">
-          בדיקת הזמנה
+          {t("nav.orderStatus", "בדיקת הזמנה")}
         </RouterLink>
         {isAdmin && (
           <RouterLink to="/admin/dashboard">
-            <Button title="admin dashboard" />
+            <Button title={t("nav.admin", "Admin Dashboard")} />
           </RouterLink>
         )}
         {isLoggedIn ? (
           <button onClick={handleLogout} className="text-mid text-red-500 hover:underline">
-            Logout
+            {t("nav.logout", "Logout")}
           </button>
         ) : (
           <RouterLink to="/login">
-            <Button title="Login" />
+            <Button title={t("nav.login", "Login")} />
           </RouterLink>
         )}
       </div>

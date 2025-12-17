@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
 import axios from "axios";
-
-const categoriesList = [
-  { id: "all", label: "הכל" },
-  { id: "starters", label: "מנות פתיחה", filter: ["Starters"] },
-  { id: "sandwiches", label: "כריכים", filter: ["Sandwiches"] },
-  { id: "meats", label: "בשרים במשקל", filter: ["Meats", "premium Meat"] },
-  { id: "sides", label: "תוספות בצד", filter: ["Side Dishes"] },
-  { id: "drinks", label: "שתיה", filter: ["Drinks"] },
-];
+import { useLang } from "../context/LangContext";
 
 const Menu = () => {
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { t, dir } = useLang();
+
+  const categoriesList = [
+    { id: "all", label: t("menu.categories.all", "הכל") },
+    { id: "starters", label: t("menu.categories.starters", "מנות פתיחה"), filter: ["Starters"] },
+    { id: "sandwiches", label: t("menu.categories.sandwiches", "כריכים"), filter: ["Sandwiches"] },
+    { id: "meats", label: t("menu.categories.meats", "בשרים במשקל"), filter: ["Meats", "premium Meat"] },
+    { id: "sides", label: t("menu.categories.sides", "תוספות בצד"), filter: ["Side Dishes"] },
+    { id: "drinks", label: t("menu.categories.drinks", "שתיה"), filter: ["Drinks"] },
+  ];
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -62,8 +64,8 @@ const Menu = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center lg:px-32 px-5">
-      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">התפריט שלנו</h1>
+    <div className="min-h-screen flex flex-col items-center lg:px-32 px-5" dir={dir}>
+      <h1 className="text-4xl font-semibold text-center pt-24 pb-10">{t("menu.heading", "התפריט שלנו")}</h1>
 
       {/* ✅ CATEGORY FILTER BUTTONS */}
       <div className="w-full overflow-x-auto mb-10">
@@ -87,11 +89,11 @@ const Menu = () => {
       {/* ✅ RENDER SECTIONS */}
       {selectedCategory === "all" ? (
         <>
-          {renderSection("מנות פתיחה", ["Starters"])}
-          {renderSection("כריכים", ["Sandwiches"])}
-          {renderSection("בשרים במשקל", ["Meats", "premium Meat"])}
-          {renderSection("תוספות בצד", ["Side Dishes"])}
-          {renderSection("שתיה", ["Drinks"])}
+          {renderSection(t("menu.sections.starters", "מנות פתיחה"), ["Starters"])}
+          {renderSection(t("menu.sections.sandwiches", "כריכים"), ["Sandwiches"])}
+          {renderSection(t("menu.sections.meats", "בשרים במשקל"), ["Meats", "premium Meat"])}
+          {renderSection(t("menu.sections.sides", "תוספות בצד"), ["Side Dishes"])}
+          {renderSection(t("menu.sections.drinks", "שתיה"), ["Drinks"])}
         </>
       ) : (
         (() => {

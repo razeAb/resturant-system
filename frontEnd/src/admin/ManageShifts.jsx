@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../api";
+import { useLang } from "../context/LangContext";
 
 export default function ManageShifts() {
   const [shifts, setShifts] = useState([]);
   const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
   const token = localStorage.getItem("token");
+  const { t, dir } = useLang();
 
   // Helper: calculate hours for a shift (fallback if hours is missing)
   const calcHours = (s) => {
@@ -70,8 +72,8 @@ export default function ManageShifts() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
-      <h2>Manage Shifts</h2>
+    <div style={{ padding: "16px" }} dir={dir}>
+      <h2>{t("manageShifts.title", "Manage Shifts")}</h2>
 
       {/* Filter by date */}
       <div
@@ -82,7 +84,7 @@ export default function ManageShifts() {
           borderRadius: 8,
         }}
       >
-        <h4>Filter by date</h4>
+        <h4>{t("manageShifts.filterTitle", "Filter by date")}</h4>
         <div
           style={{
             display: "flex",
@@ -92,18 +94,21 @@ export default function ManageShifts() {
           }}
         >
           <label>
-            From:{" "}
+            {t("manageShifts.from", "From")}{" "}
             <input type="date" value={dateFilter.start} onChange={(e) => setDateFilter((prev) => ({ ...prev, start: e.target.value }))} />
           </label>
           <label>
-            To: <input type="date" value={dateFilter.end} onChange={(e) => setDateFilter((prev) => ({ ...prev, end: e.target.value }))} />
+            {t("manageShifts.to", "To")}:{" "}
+            <input type="date" value={dateFilter.end} onChange={(e) => setDateFilter((prev) => ({ ...prev, end: e.target.value }))} />
           </label>
-          <button onClick={applyFilter}>Apply filter</button>
-          <button onClick={clearFilter}>Clear</button>
+          <button onClick={applyFilter}>{t("manageShifts.apply", "Apply filter")}</button>
+          <button onClick={clearFilter}>{t("manageShifts.clear", "Clear")}</button>
         </div>
 
         {/* Total hours for current filter */}
-        <div style={{ marginTop: 8, fontWeight: "bold" }}>Total hours (current filter): {totalHours.toFixed(2)}</div>
+        <div style={{ marginTop: 8, fontWeight: "bold" }}>
+          {t("manageShifts.total", "Total hours (current filter):")} {totalHours.toFixed(2)}
+        </div>
       </div>
 
       {/* Shifts list */}
@@ -112,8 +117,9 @@ export default function ManageShifts() {
           const hours = calcHours(s);
           return (
             <li key={s._id} style={{ marginBottom: 6 }}>
-              {s.user?.name || "User"} - {s.start ? new Date(s.start).toLocaleDateString() : "No date"} : {hours.toFixed(2)} hrs{" "}
-              <button onClick={() => adjustHours(s._id)}>Adjust Hours</button>
+              {s.user?.name || t("manageShifts.userFallback", "User")} - {s.start ? new Date(s.start).toLocaleDateString() : t("manageShifts.noDate", "No date")} :{" "}
+              {hours.toFixed(2)} {t("manageShifts.hoursLabel", "hrs")}{" "}
+              <button onClick={() => adjustHours(s._id)}>{t("manageShifts.adjust", "Adjust hours")}</button>
             </li>
           );
         })}

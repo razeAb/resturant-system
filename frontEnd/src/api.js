@@ -14,7 +14,8 @@ const api = axios.create({
 
 // ----- Request interceptor: מוסיף Authorization -----
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("workerToken"); // ← הגדרה חסרה אצלך
+  // Support both worker/admin storage keys to avoid missing headers -> 401
+  const token = localStorage.getItem("workerToken") || localStorage.getItem("token");
   if (token) {
     config.headers = config.headers || {};
     if (!config.headers.Authorization) {
@@ -24,28 +25,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ----- Response interceptor: מפנה ללוגין על 401/403 -----
-let isRedirecting = false;
+// ----- Response interceptor: לא מפנה אוטומטית -----
+// We simply bubble up 401/403 so the page can decide (toast/refresh/etc.).
 
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    const status = error?.response?.status;
-    const path = typeof window !== "undefined" ? window.location.pathname : "";
-
-    if (!error.response) {
-      // בעיית רשת — לא מפנים אוטומטית
-      return Promise.reject(error);
-    }
-
-    if ((status === 401 || status === 403) && path !== "/worker/login") {
-      localStorage.removeItem("workerToken");
-      localStorage.removeItem("worker");
-      if (typeof window !== "undefined" && !isRedirecting) {
-        isRedirecting = true;
-        window.location.replace("/worker/login"); // replace כדי לא להוסיף להיסטוריה
-      }
-    }
+    if (!error.response) return Promise.reject(error);
     return Promise.reject(error);
   }
 );
