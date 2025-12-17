@@ -14,6 +14,7 @@ import {
   BarChart3,
   Users,
   UtensilsCrossed,
+  MapPinned,
 } from "lucide-react";
 const navItems = [
   { to: "/admin/dashboard", label: "לוח בקרה", icon: Home },
@@ -22,6 +23,7 @@ const navItems = [
   { to: "/kitchen", label: "מסך מטבח", icon: ChefHat },
   { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
   { to: "/admin/menu-options", label: "תוספות וסלטים", icon: UtensilsCrossed },
+  { to: "/admin/floor", label: "מפת שולחנות", icon: MapPinned },
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
   { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", label: "עובדים", icon: Users },

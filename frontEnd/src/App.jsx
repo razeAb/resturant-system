@@ -29,6 +29,8 @@ import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
 import ManageWorkers from "./admin/ManageWorkers";
 import WorkerLogin from "./pages/WorkerLogin";
+import FloorLayout from "./admin/FloorLayout";
+import WaiterTables from "./pages/WaiterTables";
 import { LangProvider } from "./context/LangContext";
 import LanguageToggle from "./components/common/LanguageToggle";
 const App = () => {
@@ -72,8 +74,10 @@ const App = () => {
                   <Route path="/admin/revenue" element={<RevenuePage />} />
                   <Route path="/admin/cash-register" element={<CashRegister />} />
                   <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
+                  <Route path="/admin/floor" element={<FloorLayout />} />
                   <Route path="/kitchen" element={<KitchenOrders />} />
                   <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+                  <Route path="/worker/tables" element={<WaiterTables />} />
                   <Route path="/admin/manage-shifts" element={<ManageShifts />} />
                   <Route path="/payment-success" element={<PaymentSuccess />} />
                   <Route path="/payment-failure" element={<PaymentFailure />} />
