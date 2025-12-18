@@ -17,21 +17,23 @@ import {
   MapPinned,
   ClipboardSignature,
 } from "lucide-react";
+import { useLang } from "../context/LangContext";
 const navItems = [
-  { to: "/admin/dashboard", label: "לוח בקרה", icon: Home },
-  { to: "/admin/products", label: "מוצרים", icon: LayoutGrid },
-  { to: "/admin/activeOrders", label: "הזמנות פעילות", icon: ListChecks },
-  { to: "/kitchen", label: "מסך מטבח", icon: ChefHat },
-  { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
-  { to: "/admin/menu-options", label: "תוספות וסלטים", icon: UtensilsCrossed },
-  { to: "/admin/floor", label: "מפת שולחנות", icon: MapPinned },
-  { to: "/admin/floor-orders", label: "הזמנה משולחן", icon: ClipboardSignature },
-  { to: "/admin/collections", label: "collections", icon: ClipboardList },
-  { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
-  { to: "/admin/workers", label: "עובדים", icon: Users },
+  { to: "/admin/dashboard", key: "sideMenu.dashboard", fallback: "לוח בקרה", icon: Home },
+  { to: "/admin/products", key: "sideMenu.products", fallback: "מוצרים", icon: LayoutGrid },
+  { to: "/admin/activeOrders", key: "sideMenu.activeOrders", fallback: "הזמנות פעילות", icon: ListChecks },
+  { to: "/kitchen", key: "sideMenu.kitchen", fallback: "מסך מטבח", icon: ChefHat },
+  { to: "/admin/orderHistory", key: "sideMenu.orderHistory", fallback: "היסטוריית הזמנות", icon: History },
+  { to: "/admin/menu-options", key: "sideMenu.menuOptions", fallback: "תוספות וסלטים", icon: UtensilsCrossed },
+  { to: "/admin/floor", key: "sideMenu.floor", fallback: "מפת שולחנות", icon: MapPinned },
+  { to: "/admin/floor-orders", key: "sideMenu.floorOrders", fallback: "הזמנה משולחן", icon: ClipboardSignature },
+  { to: "/admin/collections", key: "sideMenu.collections", fallback: "collections", icon: ClipboardList },
+  { to: "/admin/revenue", key: "sideMenu.revenue", fallback: "הכנסות", icon: BarChart3 },
+  { to: "/admin/workers", key: "sideMenu.workers", fallback: "עובדים", icon: Users },
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
+  const { t } = useLang();
   return (
     <aside
       dir="rtl"
@@ -74,7 +76,7 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
 
       {/* Nav */}
       <nav className="space-y-1">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, key, fallback, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -91,7 +93,7 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
             <span className="shrink-0 grid place-items-center">
               <Icon size={18} />
             </span>
-            <span className="truncate">{label}</span>
+            <span className="truncate">{t(key, fallback)}</span>
           </NavLink>
         ))}
 
@@ -108,7 +110,7 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
           <span className="shrink-0 grid place-items-center">
             <Store size={18} />
           </span>
-          <span className="truncate">קופה</span>
+          <span className="truncate">{t("sideMenu.cashRegister", "קופה")}</span>
         </a>
 
         {/* Home link */}
@@ -122,7 +124,7 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
           <span className="shrink-0 grid place-items-center">
             <ArrowRight size={18} />
           </span>
-          <span className="truncate">חזרה לדף הבית</span>
+          <span className="truncate">{t("sideMenu.backHome", "חזרה לדף הבית")}</span>
         </Link>
       </nav>
 

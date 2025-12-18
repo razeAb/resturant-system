@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import SideMenu from "../layouts/SideMenu";
+import { useLang } from "../context/LangContext";
+import { Menu } from "lucide-react";
 
 const STORAGE_KEY = "floorLayoutTables";
 
@@ -125,6 +127,7 @@ const tableTopStyle = {
 };
 
 export default function FloorLayout() {
+  const { dir } = useLang ? useLang() : { dir: "rtl" };
   const { tables, setTables, save } = useFloorTables();
   const [draggingId, setDraggingId] = useState(null);
   const [dragged, setDragged] = useState(false);
@@ -206,7 +209,7 @@ export default function FloorLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-row-reverse">
+    <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
       {/* Sidebar */}
       <div className="hidden md:block">
         <SideMenu />
@@ -217,18 +220,18 @@ export default function FloorLayout() {
           <SideMenu onClose={() => setMenuOpen(false)} />
         </div>
       )}
-      <div className="flex-1 p-4 md:p-6">
+      <div className="flex-1 p-4 md:p-6" dir={dir}>
         <div className="max-w-6xl mx-auto space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-2xl font-semibold">עיצוב מפת שולחנות</h2>
             <div className="flex items-center gap-2">
               <p className="text-sm text-slate-400 hidden sm:block">גרירת שולחנות או נשירה מפלטה | שמירה מקומית</p>
               <button
-                className="md:hidden inline-flex items-center px-3 py-2 rounded-lg bg-black text-white"
+                className="md:hidden inline-flex items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open menu"
               >
-                ☰
+                <Menu size={20} />
               </button>
             </div>
           </div>
