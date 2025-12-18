@@ -83,7 +83,7 @@ const TableIcon = ({ shape, size = 64, label }) => {
 };
 
 export default function FloorOrders() {
-  const { t, dir } = useLang();
+  const { t } = useLang();
   const [tables, setTables] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
@@ -227,32 +227,52 @@ export default function FloorOrders() {
   };
 
   const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
+  const normalizeCategoryKey = (c) => {
+    const key = (c || "").toLowerCase().trim();
+    const map = {
+      "side dishes": "sides",
+      sandwiches: "sandwiches",
+      meats: "meats",
+      drinks: "drinks",
+      starters: "starters",
+      bar: "bar",
+      booth: "booth",
+      desserts: "desserts",
+      specials: "specials",
+    };
+    return map[key] || key.replace(/\s+/g, "");
+  };
+  const catLabel = (c) => {
+    if (c === "all") return t("menu.categories.all", "הכל");
+    const key = normalizeCategoryKey(c);
+    return t(`menu.categories.${key}`, t(`menu.sections.${key}`, c));
+  };
   const filteredProducts =
     selectedCategory === "all" ? products.slice(0, 50) : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-row-reverse" dir="rtl">
       <div className="hidden md:block">
         <SideMenu />
       </div>
       {menuOpen && <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />}
       {menuOpen && (
-        <div className="md:hidden fixed inset-y-0 left-0 right-0 z-50">
+        <div className="md:hidden fixed inset-y-0 right-0 z-50 w-72 max-w-full shadow-2xl">
           <SideMenu onClose={() => setMenuOpen(false)} />
         </div>
       )}
-      <div className="flex-1 p-4 md:p-6" dir={dir}>
+      <div className="flex-1 p-4 md:p-6" dir="rtl">
         <div className="max-w-6xl mx-auto space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-semibold">{t("floorOrders.title", "הזמנה לשולחן")}</h2>
-            <div className="flex items-center gap-2">
-              <button
-                className="md:hidden inline-flex items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
-                onClick={() => setMenuOpen(true)}
-                aria-label="Open menu"
-              >
-                <Menu size={20} />
-              </button>
+          <div className="flex items-center justify-between gap-3 flex-row-reverse md:flex-row">
+            <button
+              className="md:hidden inline-flex items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex flex-col items-start text-right md:items-start md:text-right">
+              <h2 className="text-2xl font-semibold">{t("floorOrders.title", "הזמנה לשולחן")}</h2>
             </div>
           </div>
 
@@ -324,7 +344,7 @@ export default function FloorOrders() {
                       }`}
                       onClick={() => setSelectedCategory(c)}
                     >
-                      {c === "all" ? t("menu.categories.all", "הכל") : t(`menu.categories.${c}`, c)}
+                      {catLabel(c)}
                     </button>
                   ))}
                 </div>
