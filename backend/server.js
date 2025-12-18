@@ -26,7 +26,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5177", "https://hungryresturant.netlify.app"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5177",
+  "https://hungryresturant.netlify.app",
+  "https://hungrysmokedmeat.com",
+  "https://www.hungrysmokedmeat.com",
+];
 
 app.use(
   cors({
