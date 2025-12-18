@@ -4,7 +4,7 @@ const Worker = require("../models/Worker");
 const { protect } = require("../middleware/authMiddleware");
 const jwt = require("jsonwebtoken");
 
-const generateToken = (id) => jwt.sign({ workerId: id }, process.env.JWT_SECRET, { expiresIn: "8h" });
+const generateToken = (id) => jwt.sign({ workerId: id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
 // Admin: create worker
 router.post("/", protect, async (req, res) => {

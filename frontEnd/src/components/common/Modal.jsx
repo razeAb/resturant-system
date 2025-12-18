@@ -4,17 +4,7 @@ import "./Modal.css"; // Ensure this includes your existing modal and checkbox s
 
 import { useMenuOptions } from "../../context/MenuOptionsContext";
 
-const Modal = ({
-  _id,
-  img,
-  title,
-  price,
-  description,
-  options,
-  isOpen,
-  onClose,
-  onAddToCart, // not used, but kept if you need it later
-}) => {
+const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -116,8 +106,8 @@ const Modal = ({
       totalPrice: parseFloat(totalPrice),
     };
 
-    console.log("Adding to cart:", itemToAdd);
-    addToCart(itemToAdd);
+    const targetAdd = onAddToCart || addToCart;
+    targetAdd(itemToAdd);
 
     // reset modal state
     setQuantity(1);

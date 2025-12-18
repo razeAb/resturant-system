@@ -4,9 +4,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ✅ Helper to generate token
+// ✅ Helper to generate token (extended expiry to avoid forced logout)
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 // ✅ Login Route

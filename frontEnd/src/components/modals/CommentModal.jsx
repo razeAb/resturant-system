@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 
-const CommentModal = ({ _id, img, title, price, description, isOpen, onClose }) => {
+const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart }) => {
   const { addToCart } = useContext(CartContext);
   const [quantity, setQuantity] = useState(1);
   const [comment, setComment] = useState("");
@@ -27,7 +27,8 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose }) 
       comment,
       totalPrice: parseFloat(totalPrice),
     };
-    addToCart(itemToAdd);
+    const targetAdd = onAddToCart || addToCart;
+    targetAdd(itemToAdd);
     setComment("");
     setQuantity(1);
     onClose();

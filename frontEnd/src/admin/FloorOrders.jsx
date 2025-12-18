@@ -2,6 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import SideMenu from "../layouts/SideMenu";
 import api from "../api";
 import { useLang } from "../context/LangContext";
+import Modal from "../components/common/Modal";
+import WeightModal from "../components/modals/WeightModal";
+import CommentModal from "../components/modals/CommentModal";
 
 const STORAGE_KEY = "floorLayoutTables";
 
@@ -89,6 +92,8 @@ export default function FloorOrders() {
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [expanded, setExpanded] = useState(null);
+  const [modalProduct, setModalProduct] = useState(null);
+  const [modalType, setModalType] = useState(null);
 
   useEffect(() => {
     try {
@@ -133,6 +138,37 @@ export default function FloorOrders() {
     alert(`Order for table ${selectedTable.label || ""} (${guestCount} guests): ${cart.length} items`);
     setSelectedTable(null);
     setCart([]);
+  };
+
+  const needsModal = (p) => {
+    const needsModalCategory = ["Sandwiches", "Meats", "Starters"];
+    return p.isOrder || p.isModal || p.isWeighted || (p.category && needsModalCategory.includes(p.category));
+  };
+
+  const openModalForProduct = (p) => {
+    if (!needsModal(p)) {
+      addItem(p);
+      return;
+    }
+    let type = "modal";
+    if (p.category === "Meats" || p.isWeighted) type = "weighted";
+    else if (p.category === "Starters") type = "comment";
+    setModalProduct(p);
+    setModalType(type);
+    setExpanded(p._id);
+  };
+
+  const handleModalAdd = (item) => {
+    setCart((prev) => [...prev, { id: item._id || item.id, name: item.title, price: item.totalPrice || item.price }]);
+    setModalProduct(null);
+    setModalType(null);
+    setExpanded(null);
+  };
+
+  const closeModal = () => {
+    setModalProduct(null);
+    setModalType(null);
+    setExpanded(null);
   };
 
   const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
@@ -237,8 +273,7 @@ export default function FloorOrders() {
                   {loadingProducts && <div className="text-sm text-slate-400">{t("floorOrders.loading", "טוען תפריט...")}</div>}
                   {!loadingProducts &&
                     filteredProducts.map((p) => {
-                      const isOpen = expanded === p._id;
-                      const hasDetails = Boolean(p.description || p.options?.length || p.isOrder || p.isModal || p.isWeighted);
+                      const hasDetails = needsModal(p);
                       return (
                         <div key={p._id} className="rounded-lg bg-slate-800 border border-white/10 px-3 py-2 text-sm">
                           <div className="flex items-center justify-between gap-2">
@@ -248,32 +283,20 @@ export default function FloorOrders() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-slate-200">₪{p.price}</span>
-                              <button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={() => addItem(p)}>
-                                הוסף
+                              <button
+                                className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                                onClick={() => {
+                                  if (hasDetails) {
+                                    openModalForProduct(p);
+                                  } else {
+                                    addItem(p);
+                                  }
+                                }}
+                              >
+                                {hasDetails ? "פתח" : "הוסף"}
                               </button>
-                              {hasDetails && (
-                                <button className="rounded bg-slate-700 px-2 py-1 text-xs text-white" onClick={() => setExpanded(isOpen ? null : p._id)}>
-                                  {isOpen ? "סגור" : "פרטים"}
-                                </button>
-                              )}
                             </div>
                           </div>
-                          {isOpen && (
-                            <div className="mt-2 space-y-1 text-xs text-slate-200">
-                              {p.description && <div>{p.description}</div>}
-                              {p.options?.length > 0 && (
-                                <div className="space-y-1">
-                                  <div className="font-semibold">תוספות/אפשרויות:</div>
-                                  <ul className="list-disc list-inside space-y-0.5">
-                                    {p.options.map((opt, idx) => (
-                                      <li key={idx}>{typeof opt === "string" ? opt : opt?.name}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {p.isOrder && <div className="text-amber-200">דורש טיפול מיוחד (was modal)</div>}
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -307,6 +330,44 @@ export default function FloorOrders() {
           )}
         </div>
       </div>
+      {modalProduct && modalType === "modal" && (
+        <Modal
+          _id={modalProduct._id}
+          img={modalProduct.image || modalProduct.img}
+          title={modalProduct.name || modalProduct.title || "פריט"}
+          price={modalProduct.price}
+          description={modalProduct.description || ""}
+          options={modalProduct.options || {}}
+          isOpen={true}
+          onClose={closeModal}
+          onAddToCart={handleModalAdd}
+        />
+      )}
+      {modalProduct && modalType === "weighted" && (
+        <WeightModal
+          _id={modalProduct._id}
+          img={modalProduct.image || modalProduct.img}
+          title={modalProduct.name || modalProduct.title || "פריט"}
+          price={modalProduct.price}
+          description={modalProduct.description || ""}
+          options={modalProduct.options || {}}
+          isOpen={true}
+          onClose={closeModal}
+          onAddToCart={handleModalAdd}
+        />
+      )}
+      {modalProduct && modalType === "comment" && (
+        <CommentModal
+          _id={modalProduct._id}
+          img={modalProduct.image || modalProduct.img}
+          title={modalProduct.name || modalProduct.title || "פריט"}
+          price={modalProduct.price}
+          description={modalProduct.description || ""}
+          isOpen={true}
+          onClose={closeModal}
+          onAddToCart={handleModalAdd}
+        />
+      )}
     </div>
   );
 }

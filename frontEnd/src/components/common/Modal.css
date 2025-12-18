@@ -23,6 +23,7 @@
   max-height: 90vh; /* Ensure the modal doesn't exceed the screen height */
   overflow-y: auto; /* Allow scrolling inside the modal */
   position: relative;
+  color: #0f172a; /* ensure text is visible on white */
 }
 
 /* Close button styling */
@@ -196,6 +197,14 @@
   align-items: center;
   margin-bottom: 8px;
   flex-direction: row-reverse; /* To align checkboxes from right to left */
+}
+
+.checkbox-label,
+.modal-description,
+.modal-options h3,
+.addition-buttons span,
+.gram-button {
+  color: #0f172a; /* force readable text */
 }
 
 /* Gram-based button styling */

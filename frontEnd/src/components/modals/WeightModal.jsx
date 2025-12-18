@@ -71,7 +71,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       totalPrice: parseFloat(totalPrice),
     };
 
-    addToCart(itemToAdd); // Add the item to the cart via context
+    const targetAdd = onAddToCart || addToCart;
+    targetAdd(itemToAdd); // Add the item to the cart via context or caller
     setComment(""); // Clear the comment
     onClose(); // Close the modal
   };
