@@ -15,6 +15,7 @@ import {
   Users,
   UtensilsCrossed,
   MapPinned,
+  ClipboardSignature,
 } from "lucide-react";
 const navItems = [
   { to: "/admin/dashboard", label: "לוח בקרה", icon: Home },
@@ -24,6 +25,7 @@ const navItems = [
   { to: "/admin/orderHistory", label: "היסטוריית הזמנות", icon: History },
   { to: "/admin/menu-options", label: "תוספות וסלטים", icon: UtensilsCrossed },
   { to: "/admin/floor", label: "מפת שולחנות", icon: MapPinned },
+  { to: "/admin/floor-orders", label: "הזמנה משולחן", icon: ClipboardSignature },
   { to: "/admin/collections", label: "collections", icon: ClipboardList },
   { to: "/admin/revenue", label: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", label: "עובדים", icon: Users },

@@ -30,6 +30,7 @@ import ManageShifts from "./admin/ManageShifts";
 import ManageWorkers from "./admin/ManageWorkers";
 import WorkerLogin from "./pages/WorkerLogin";
 import FloorLayout from "./admin/FloorLayout";
+import FloorOrders from "./admin/FloorOrders";
 import WaiterTables from "./pages/WaiterTables";
 import { LangProvider } from "./context/LangContext";
 import LanguageToggle from "./components/common/LanguageToggle";
@@ -75,6 +76,7 @@ const App = () => {
                   <Route path="/admin/cash-register" element={<CashRegister />} />
                   <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
                   <Route path="/admin/floor" element={<FloorLayout />} />
+                  <Route path="/admin/floor-orders" element={<FloorOrders />} />
                   <Route path="/kitchen" element={<KitchenOrders />} />
                   <Route path="/worker/dashboard" element={<WorkerDashboard />} />
                   <Route path="/worker/tables" element={<WaiterTables />} />

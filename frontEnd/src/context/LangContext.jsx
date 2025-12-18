@@ -23,6 +23,10 @@ const translations = {
         meats: "בשרים במשקל",
         sides: "תוספות בצד",
         drinks: "שתיה",
+        bar: "דלפק",
+        booth: "תא",
+        desserts: "קינוחים",
+        specials: "מנות מיוחדות",
       },
       sections: {
         starters: "מנות פתיחה",
@@ -92,6 +96,10 @@ const translations = {
         meats: "Meats by weight",
         sides: "Side dishes",
         drinks: "Drinks",
+        bar: "Bar",
+        booth: "Booth",
+        desserts: "Desserts",
+        specials: "Specials",
       },
       sections: {
         starters: "Starters",
