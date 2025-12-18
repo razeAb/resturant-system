@@ -206,12 +206,14 @@ export default function FloorLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-row-reverse">
+      {/* Sidebar */}
       <div className="hidden md:block">
         <SideMenu />
       </div>
+      {menuOpen && <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />}
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
+        <div className="md:hidden fixed inset-y-0 left-0 right-0 z-50">
           <SideMenu onClose={() => setMenuOpen(false)} />
         </div>
       )}

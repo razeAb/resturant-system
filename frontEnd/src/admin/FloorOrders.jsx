@@ -126,7 +126,19 @@ export default function FloorOrders() {
   };
 
   const addItem = (p) => {
-    setCart((prev) => [...prev, { id: p._id, name: p.name, price: p.price }]);
+    setCart((prev) => [
+      ...prev,
+      {
+        product: p._id,
+        title: p.name,
+        price: Number(p.price) || 0,
+        quantity: 1,
+        isWeighted: false,
+        additions: [],
+        vegetables: [],
+        comment: "",
+      },
+    ]);
   };
 
   const removeItem = (idx) => {
@@ -134,10 +146,40 @@ export default function FloorOrders() {
   };
 
   const submitOrder = () => {
-    if (!selectedTable) return;
-    alert(`Order for table ${selectedTable.label || ""} (${guestCount} guests): ${cart.length} items`);
-    setSelectedTable(null);
-    setCart([]);
+    if (!selectedTable || cart.length === 0) {
+      alert("בחר שולחן והוסף פריטים להזמנה");
+      return;
+    }
+    const payload = {
+      items: cart.map((c) => ({
+        product: c.product,
+        title: c.title,
+        price: c.price,
+        img: c.img,
+        quantity: c.quantity || 1,
+        isWeighted: !!c.isWeighted,
+        additions: c.additions || [],
+        vegetables: c.vegetables || [],
+        comment: c.comment || "",
+      })),
+      totalPrice: cart.reduce((sum, c) => sum + (Number(c.price) || 0), 0),
+      deliveryOption: "EatIn",
+      status: "preparing",
+      customerName: `Table ${selectedTable.label || ""}`,
+      paymentDetails: { method: "Cash" },
+    };
+
+    api
+      .post("/api/orders", payload)
+      .then(() => {
+        alert("הזמנה נשלחה לשולחן ולמסך הזמנות פעילות");
+        setSelectedTable(null);
+        setCart([]);
+      })
+      .catch((err) => {
+        console.error("Failed to create order", err);
+        alert("שגיאה בשליחת ההזמנה");
+      });
   };
 
   const needsModal = (p) => {
@@ -159,7 +201,19 @@ export default function FloorOrders() {
   };
 
   const handleModalAdd = (item) => {
-    setCart((prev) => [...prev, { id: item._id || item.id, name: item.title, price: item.totalPrice || item.price }]);
+    setCart((prev) => [
+      ...prev,
+      {
+        product: item._id || item.id,
+        title: item.title,
+        price: Number(item.totalPrice || item.price) || 0,
+        quantity: item.quantity || 1,
+        isWeighted: !!item.isWeighted,
+        additions: item.selectedOptions?.additions || [],
+        vegetables: item.selectedOptions?.vegetables || [],
+        comment: item.comment || "",
+      },
+    ]);
     setModalProduct(null);
     setModalType(null);
     setExpanded(null);
@@ -176,12 +230,13 @@ export default function FloorOrders() {
     selectedCategory === "all" ? products.slice(0, 50) : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-row-reverse">
       <div className="hidden md:block">
         <SideMenu />
       </div>
+      {menuOpen && <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />}
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
+        <div className="md:hidden fixed inset-y-0 left-0 right-0 z-50">
           <SideMenu onClose={() => setMenuOpen(false)} />
         </div>
       )}
