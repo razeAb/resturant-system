@@ -311,12 +311,14 @@ export default function FloorOrders() {
               </label>
 
               <div className="space-y-2">
-                <div className="font-semibold text-sm">{t("floorOrders.quickMenu", "תפריט קצר")}</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="font-semibold text-base">{t("floorOrders.quickMenu", "תפריט קצר")}</div>
+                <div className="flex flex-wrap gap-3">
                   {categories.map((c) => (
                     <button
                       key={c}
-                      className={`px-3 py-1 rounded-full text-sm border ${selectedCategory === c ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-800 text-slate-200 border-white/10"}`}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold border shadow-sm ${
+                        selectedCategory === c ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-800 text-slate-200 border-white/10"
+                      }`}
                       onClick={() => setSelectedCategory(c)}
                     >
                       {c === "all" ? t("menu.categories.all", "הכל") : t(`menu.categories.${c}`, c)}
@@ -324,22 +326,22 @@ export default function FloorOrders() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                   {loadingProducts && <div className="text-sm text-slate-400">{t("floorOrders.loading", "טוען תפריט...")}</div>}
                   {!loadingProducts &&
                     filteredProducts.map((p) => {
                       const hasDetails = needsModal(p);
                       return (
-                        <div key={p._id} className="rounded-lg bg-slate-800 border border-white/10 px-3 py-2 text-sm">
-                          <div className="flex items-center justify-between gap-2">
+                        <div key={p._id} className="rounded-lg bg-slate-800 border border-white/10 px-4 py-3 text-sm shadow">
+                          <div className="flex items-center justify-between gap-3">
                             <div className="truncate">
-                              <div className="font-semibold truncate">{p.name}</div>
+                              <div className="font-semibold truncate text-base">{p.name}</div>
                               <div className="text-xs text-slate-300 truncate">{p.category}</div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-200">₪{p.price}</span>
+                              <span className="text-sm text-slate-200 font-semibold">₪{p.price}</span>
                               <button
-                                className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                                className="rounded bg-emerald-600 px-3 py-2 text-xs sm:text-sm text-white font-semibold shadow hover:bg-emerald-500 transition"
                                 onClick={() => {
                                   if (hasDetails) {
                                     openModalForProduct(p);
@@ -359,19 +361,19 @@ export default function FloorOrders() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span>פריטים בעגלה: {cart.length}</span>
-                  <button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-semibold" onClick={submitOrder} disabled={!cart.length}>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <span className="text-base">פריטים בעגלה: {cart.length}</span>
+                  <button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-sm sm:text-base font-semibold shadow disabled:opacity-60" onClick={submitOrder} disabled={!cart.length}>
                     שליחת הזמנה
                   </button>
                 </div>
                 {cart.length > 0 && (
                   <ul className="space-y-1">
                     {cart.map((item, idx) => (
-                      <li key={`${item.id}-${idx}`} className="flex items-center justify-between rounded border border-white/10 bg-slate-800 px-3 py-2">
+                      <li key={`${item.id}-${idx}`} className="flex items-center justify-between rounded border border-white/10 bg-slate-800 px-3 py-2 text-base">
                         <span className="truncate">{item.name}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-200">₪{item.price}</span>
+                          <span className="text-sm text-slate-200 font-semibold">₪{item.price}</span>
                           <button className="text-xs text-red-400 hover:text-red-200" onClick={() => removeItem(idx)}>
                             הסר
                           </button>
