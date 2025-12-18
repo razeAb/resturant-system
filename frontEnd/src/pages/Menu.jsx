@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DishesCard from "../layouts/DishesCard";
-import axios from "axios";
+import api from "../api";
 import { useLang } from "../context/LangContext";
 
 const Menu = () => {
@@ -20,14 +20,15 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-        const normalizedProducts = response.data.products.map((product) => ({
+        const response = await api.get("/api/products");
+        const normalizedProducts = (response.data?.products || []).map((product) => ({
           ...product,
           isActive: product.isActive === true,
         }));
         setProducts(normalizedProducts);
       } catch (error) {
         console.error("❌ Error loading menu:", error);
+        setProducts([]);
       }
     };
 
