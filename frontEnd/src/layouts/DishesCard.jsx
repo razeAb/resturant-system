@@ -34,6 +34,9 @@ const DishesCard = (props) => {
         title: props.title,
         price: props.price,
         quantity: 1,
+        isWeighted: false,
+        selectedOptions: {},
+        totalPrice: Number(props.price) || 0,
       };
       addToCart(itemToAdd);
     }
@@ -47,19 +50,28 @@ const DishesCard = (props) => {
     setIsAlertOpen(false); // Close the AlertModal
   };
 
-  const handleAddToCart = (quantity, selectedOptions) => {
+  const handleAddToCart = (itemOrQuantity, selectedOptions) => {
+    if (itemOrQuantity && typeof itemOrQuantity === "object") {
+      addToCart(itemOrQuantity);
+      setIsModalOpen(false);
+      return;
+    }
+
+    const quantity = Number(itemOrQuantity) || 1;
     const itemToAdd = {
       id: props.id,
       img: props.img,
       category: props.category,
       title: props.title,
-      price: props.price * quantity, // Multiply the price by the quantity
+      price: props.price,
       quantity,
-      selectedOptions, // Include the selected options
+      isWeighted: false,
+      selectedOptions: selectedOptions || {},
+      totalPrice: (Number(props.price) || 0) * quantity,
     };
 
-    addToCart(itemToAdd); // Add the item to the cart with options and quantity
-    setIsModalOpen(false); // Close the modal
+    addToCart(itemToAdd);
+    setIsModalOpen(false);
   };
 
   return (
@@ -113,6 +125,7 @@ const DishesCard = (props) => {
               description={props.description}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
+              onAddToCart={handleAddToCart}
             />
           ) : null}
         </>
@@ -126,4 +139,3 @@ const DishesCard = (props) => {
 };
 
 export default DishesCard;
-

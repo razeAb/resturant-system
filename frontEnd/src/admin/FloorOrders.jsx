@@ -132,6 +132,7 @@ export default function FloorOrders() {
       {
         product: p._id,
         title: p.name,
+        img: p.image || p.img,
         price: Number(p.price) || 0,
         quantity: 1,
         isWeighted: false,
@@ -393,8 +394,8 @@ export default function FloorOrders() {
                 {cart.length > 0 && (
                   <ul className="space-y-1">
                     {cart.map((item, idx) => (
-                      <li key={`${item.id}-${idx}`} className="flex items-center justify-between rounded border border-white/10 bg-slate-800 px-3 py-2 text-base">
-                        <span className="truncate">{item.name}</span>
+                      <li key={`${item.product}-${idx}`} className="flex items-center justify-between rounded border border-white/10 bg-slate-800 px-3 py-2 text-base">
+                        <span className="truncate">{item.title}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-200 font-semibold">₪{item.price}</span>
                           <button className="text-xs text-red-400 hover:text-red-200" onClick={() => removeItem(idx)}>
