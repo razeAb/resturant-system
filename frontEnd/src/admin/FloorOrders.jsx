@@ -261,7 +261,7 @@ export default function FloorOrders() {
     selectedCategory === "all" ? products.slice(0, 50) : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex md:flex-row-reverse" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
       <div className="hidden md:block">
         <SideMenu />
       </div>
