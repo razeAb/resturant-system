@@ -207,7 +207,7 @@ export default function FloorLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-white flex md:flex-row-reverse" dir="rtl">
       {/* Sidebar */}
       <div className="hidden md:block">
         <SideMenu />
