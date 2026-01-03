@@ -261,13 +261,13 @@ export default function FloorOrders() {
     selectedCategory === "all" ? products.slice(0, 50) : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-row-reverse" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
       <div className="hidden md:block">
         <SideMenu />
       </div>
-      {menuOpen && <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />}
+      {menuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMenuOpen(false)} />}
       {menuOpen && (
-        <div className="md:hidden fixed inset-y-0 right-0 z-50 w-72 max-w-full shadow-2xl">
+        <div className="md:hidden">
           <SideMenu onClose={() => setMenuOpen(false)} />
         </div>
       )}

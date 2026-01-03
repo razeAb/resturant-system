@@ -9,30 +9,22 @@ const CashRegister = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#2a2a2a] text-white relative">
+    <div className="min-h-screen bg-[#2a2a2a] text-white flex" dir="rtl">
       {/* Desktop Sidebar */}
-      <aside className="w-60 bg-[#2c2c2e] hidden md:block">
-        <SideMenu />
-      </aside>
-
-      {/* Mobile Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-[#2c2c2e] z-50 transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:hidden`}
-      >
-        <div className="flex justify-end p-4">
-          <button onClick={() => setIsSidebarOpen(false)} className="text-white text-lg">
-            ❌
-          </button>
-        </div>
+      <div className="hidden md:block">
         <SideMenu />
       </div>
 
-      {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+      {/* Mobile Sidebar */}
+      {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+      {isSidebarOpen && (
+        <div className="md:hidden">
+          <SideMenu onClose={() => setIsSidebarOpen(false)} />
+        </div>
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col" dir="rtl">
+      <div className="flex-1 flex flex-col">
         {/* Top Bar for Mobile */}
         <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center">
           <button onClick={() => setIsSidebarOpen(true)} className="bg-[#2c2c2e] text-white px-4 py-3">
