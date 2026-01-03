@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import { useMenuOptions } from "../../context/MenuOptionsContext";
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
+const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart, name_en, name_he }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -63,6 +63,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       id: `${title}-${Math.random().toString(36).substring(7)}`, // מזהה ייחודי פנימי לעגלה
       img,
       title,
+      name_en,
+      name_he,
       price: parseFloat(price),
       quantity: selectedGrams,
       isWeighted: true,

@@ -13,8 +13,8 @@ router.get("/dashboard", protect, async (req, res) => {
     }
 
     const users = await User.find().select("name email orderCount points");
-    const products = await Product.find().select("name stock price image category isActive");
-    const orders = await Order.find().populate("items.product", "name price");
+    const products = await Product.find().select("name name_he name_en description description_he description_en stock price image category isActive");
+    const orders = await Order.find().populate("items.product", "name name_he name_en price");
 
     const topCustomers = users
       .filter((user) => user.orderCount > 0)
@@ -44,6 +44,8 @@ router.get("/dashboard", protect, async (req, res) => {
 
     const hotProducts = sortedProducts.slice(0, 5).map((item) => ({
       name: item.product.name,
+      name_he: item.product.name_he,
+      name_en: item.product.name_en,
       orders: item.orderCount,
     }));
 
@@ -52,6 +54,8 @@ router.get("/dashboard", protect, async (req, res) => {
       .reverse()
       .map((item) => ({
         name: item.product.name,
+        name_he: item.product.name_he,
+        name_en: item.product.name_en,
         orders: item.orderCount,
       }));
 

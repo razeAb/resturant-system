@@ -6,7 +6,11 @@ import { useLang } from "../context/LangContext";
 const Menu = () => {
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const { t, dir } = useLang();
+  const { t, dir, lang } = useLang();
+
+  const resolveName = (item) => (lang === "en" ? item.name_en ?? item.name : item.name_he ?? item.name);
+  const resolveDescription = (item) =>
+    lang === "en" ? item.description_en ?? item.description : item.description_he ?? item.description;
 
   const categoriesList = [
     { id: "all", label: t("menu.categories.all", "הכל") },
@@ -48,9 +52,13 @@ const Menu = () => {
               key={item._id}
               id={item._id}
               img={item.image}
-              title={item.name}
+              title={resolveName(item)}
+              name_en={item.name_en}
+              name_he={item.name_he}
               price={item.price}
-              description={item.description}
+              description={resolveDescription(item)}
+              description_en={item.description_en}
+              description_he={item.description_he}
               category={item.category}
               isWeighted={item.isWeighted}
               isActive={item.isActive}

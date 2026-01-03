@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useLang } from "../context/LangContext";
 import api from "../api";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import Button from "../components/common/Button";
@@ -53,6 +54,9 @@ export default function AdminDashboard() {
 
   // revenue view
   const [revenueView, setRevenueView] = useState("year"); // "year" | "week" | "day"
+  const { lang } = useLang();
+  const resolveProductName = (p) =>
+    lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name;
 
   /** Fetch **/
   const fetchDashboard = useCallback(async (signal) => {
@@ -514,7 +518,7 @@ export default function AdminDashboard() {
                   <ul className="divide-y divide-[#1f2a36]">
                     {hotProducts.map((p, i) => (
                       <li key={p?.id || p?._id || p?.name || i} className="flex justify-between py-2">
-                        <span className="text-red-400 font-medium truncate pr-1">{p?.name || "ללא שם"}</span>
+                        <span className="text-red-400 font-medium truncate pr-1">{resolveProductName(p) || "ללא שם"}</span>
                         <span className="text-[12px] text-[#aab2c4]">{p?.orders ?? 0} הזמנות</span>
                       </li>
                     ))}
@@ -529,7 +533,7 @@ export default function AdminDashboard() {
                   <ul className="divide-y divide-[#1f2a36]">
                     {coldProducts.map((p, i) => (
                       <li key={p?.id || p?._id || p?.name || i} className="flex justify-between py-2">
-                        <span className="text-blue-400 font-medium truncate pr-1">{p?.name || "ללא שם"}</span>
+                        <span className="text-blue-400 font-medium truncate pr-1">{resolveProductName(p) || "ללא שם"}</span>
                         <span className="text-[12px] text-[#aab2c4]">{p?.orders ?? 0} הזמנות</span>
                       </li>
                     ))}

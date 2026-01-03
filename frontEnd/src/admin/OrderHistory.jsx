@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLang } from "../context/LangContext";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import { Menu } from "lucide-react";
@@ -24,6 +25,13 @@ const getOrderHistory = async () => {
 export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const { lang } = useLang();
+  const resolveOrderItemName = (item) => {
+    const product = item?.product || {};
+    return lang === "en"
+      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Unknown"
+      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "לא ידוע";
+  };
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -184,7 +192,7 @@ export default function OrderHistory() {
                                       {Array.isArray(order.items) &&
                                         order.items.map((item, idx) => (
                                           <li key={idx} className="leading-6">
-                                            <strong>{item.product?.name || item.title || "לא ידוע"}</strong> — כמות: {item.quantity}{" "}
+                                            <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
                                             {item.isWeighted ? "גרם" : ""}
                                             <div className="text-white/70">
                                               ירקות:{" "}

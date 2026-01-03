@@ -6,11 +6,19 @@ import chefGif from "../assets/chef.gif";
 import scooterGif from "../assets/delivery-scooter.gif";
 import doneGif from "../assets/verified.gif";
 import { ORDER_STATUS } from "../../constants/orderStatus";
+import { useLang } from "../context/LangContext";
 
 const OrderStatus = () => {
   const [phone, setPhone] = useState("");
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
+  const { lang } = useLang();
+  const resolveOrderItemName = (item) => {
+    const product = item?.product || {};
+    return lang === "en"
+      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Unknown item"
+      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט לא ידוע";
+  };
 
   // Logs for debugging
   useEffect(() => {
@@ -144,7 +152,7 @@ const OrderStatus = () => {
                   {Array.isArray(order.items) && order.items.length > 0 ? (
                     order.items.map((item, idx) => (
                       <li key={idx}>
-                        <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> - כמות: {item.quantity}{" "}
+                        <strong>{resolveOrderItemName(item)}</strong> - כמות: {item.quantity}{" "}
                         {item.isWeighted ? "גרם" : ""}
                         <br />
                         ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}

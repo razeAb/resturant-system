@@ -5,6 +5,7 @@ import AddProductModal from "./modals/AddProductMoadl"; // keep your original fi
 import EditProductModal from "./modals/EditProductModal";
 import Button from "../components/common/Button";
 import { Menu, Pencil, Trash2, Power } from "lucide-react";
+import { useLang } from "../context/LangContext";
 import { ResponsiveContainer, PieChart, Pie, Tooltip, Label } from "recharts";
 
 /** Spinner (ring) */
@@ -58,6 +59,8 @@ export default function AdminProducts() {
 
   // ---- סטטיסטיקות
   const [categoryStats, setCategoryStats] = useState([]); // [{name, count}]
+  const { lang } = useLang();
+  const resolveName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
 
   /** טעינת מוצרים + סטטיסטיקות */
   useEffect(() => {
@@ -158,12 +161,12 @@ export default function AdminProducts() {
   /** חיפוש בלבד */
   const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        !q ||
-        (p.name || "").toLowerCase().includes(q) ||
-        (p.description || "").toLowerCase().includes(q)
-    );
+    return products.filter((p) => {
+      if (!q) return true;
+      const nameText = `${p.name_en || ""} ${p.name_he || ""} ${p.name || ""}`.toLowerCase();
+      const descText = `${p.description_en || ""} ${p.description_he || ""} ${p.description || ""}`.toLowerCase();
+      return nameText.includes(q) || descText.includes(q);
+    });
   }, [products, query]);
 
   /** חיפוש + קטגוריה */
@@ -344,7 +347,7 @@ export default function AdminProducts() {
                           {/* תמונה */}
                           <div className="relative h-40 bg-[#0d1219]">
                             {product.image ? (
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                              <img src={product.image} alt={resolveName(product)} className="w-full h-full object-cover" loading="lazy" />
                             ) : (
                               <div className="w-full h-full grid place-items-center text-white/30 text-sm">אין תמונה</div>
                             )}
@@ -354,7 +357,7 @@ export default function AdminProducts() {
                           {/* גוף הכרטיס */}
                           <div className="p-3 space-y-2">
                             <div className="flex items-start justify-between gap-3">
-                              <h3 className="text-sm font-semibold leading-tight line-clamp-2">{product.name}</h3>
+                              <h3 className="text-sm font-semibold leading-tight line-clamp-2">{resolveName(product)}</h3>
                               <span className="text-emerald-300 text-sm shrink-0">₪{product.price}</span>
                             </div>
                             <div className="text-[12px] text-white/50">מלאי: {product.stock ?? "אין"}</div>

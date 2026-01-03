@@ -83,7 +83,12 @@ const TableIcon = ({ shape, size = 64, label }) => {
 };
 
 export default function FloorOrders() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
+  const resolveProductDescription = (p) =>
+    lang === "en" ? p?.description_en ?? p?.description : p?.description_he ?? p?.description;
+  const resolveItemName = (item) =>
+    lang === "en" ? item?.name_en ?? item?.name ?? item?.title : item?.name_he ?? item?.name ?? item?.title;
   const [tables, setTables] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
@@ -131,7 +136,9 @@ export default function FloorOrders() {
       ...prev,
       {
         product: p._id,
-        title: p.name,
+        title: resolveProductName(p),
+        name_en: p.name_en,
+        name_he: p.name_he,
         img: p.image || p.img,
         price: Number(p.price) || 0,
         quantity: 1,
@@ -208,6 +215,8 @@ export default function FloorOrders() {
       {
         product: item._id || item.id,
         title: item.title,
+        name_en: item.name_en || modalProduct?.name_en,
+        name_he: item.name_he || modalProduct?.name_he,
         price: Number(item.totalPrice || item.price) || 0,
         quantity: item.quantity || 1,
         isWeighted: !!item.isWeighted,
@@ -359,7 +368,7 @@ export default function FloorOrders() {
                         <div key={p._id} className="rounded-lg bg-slate-800 border border-white/10 px-4 py-3 text-sm shadow">
                           <div className="flex items-center justify-between gap-3">
                             <div className="truncate">
-                              <div className="font-semibold truncate text-base">{p.name}</div>
+                              <div className="font-semibold truncate text-base">{resolveProductName(p)}</div>
                               <div className="text-xs text-slate-300 truncate">{p.category}</div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -395,7 +404,7 @@ export default function FloorOrders() {
                   <ul className="space-y-1">
                     {cart.map((item, idx) => (
                       <li key={`${item.product}-${idx}`} className="flex items-center justify-between rounded border border-white/10 bg-slate-800 px-3 py-2 text-base">
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate">{resolveItemName(item)}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-slate-200 font-semibold">₪{item.price}</span>
                           <button className="text-xs text-red-400 hover:text-red-200" onClick={() => removeItem(idx)}>
@@ -415,9 +424,11 @@ export default function FloorOrders() {
         <Modal
           _id={modalProduct._id}
           img={modalProduct.image || modalProduct.img}
-          title={modalProduct.name || modalProduct.title || "פריט"}
+          title={resolveProductName(modalProduct) || modalProduct.title || "פריט"}
           price={modalProduct.price}
-          description={modalProduct.description || ""}
+          description={resolveProductDescription(modalProduct) || ""}
+          name_en={modalProduct?.name_en}
+          name_he={modalProduct?.name_he}
           options={modalProduct.options || {}}
           isOpen={true}
           onClose={closeModal}
@@ -428,9 +439,11 @@ export default function FloorOrders() {
         <WeightModal
           _id={modalProduct._id}
           img={modalProduct.image || modalProduct.img}
-          title={modalProduct.name || modalProduct.title || "פריט"}
+          title={resolveProductName(modalProduct) || modalProduct.title || "פריט"}
           price={modalProduct.price}
-          description={modalProduct.description || ""}
+          description={resolveProductDescription(modalProduct) || ""}
+          name_en={modalProduct?.name_en}
+          name_he={modalProduct?.name_he}
           options={modalProduct.options || {}}
           isOpen={true}
           onClose={closeModal}
@@ -441,9 +454,11 @@ export default function FloorOrders() {
         <CommentModal
           _id={modalProduct._id}
           img={modalProduct.image || modalProduct.img}
-          title={modalProduct.name || modalProduct.title || "פריט"}
+          title={resolveProductName(modalProduct) || modalProduct.title || "פריט"}
           price={modalProduct.price}
-          description={modalProduct.description || ""}
+          description={resolveProductDescription(modalProduct) || ""}
+          name_en={modalProduct?.name_en}
+          name_he={modalProduct?.name_he}
           isOpen={true}
           onClose={closeModal}
           onAddToCart={handleModalAdd}

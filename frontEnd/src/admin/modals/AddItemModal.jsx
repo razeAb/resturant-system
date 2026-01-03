@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLang } from "../../context/LangContext";
 import api from "../../api";
 
 const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
@@ -6,6 +7,8 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const { lang } = useLang();
+  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -39,7 +42,9 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
 
     const item = {
       product: product._id,
-      title: product.name,
+      title: resolveProductName(product),
+      name_en: product.name_en,
+      name_he: product.name_he,
       price: product.price,
       quantity: quantity,
       isWeighted: isMeat, // optional: in case you need to flag it as a gram item
@@ -93,7 +98,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
           <option value="">בחר פריט</option>
           {filteredProducts.map((p) => (
             <option key={p._id} value={p._id}>
-              {p.name} - ₪{p.price}
+              {resolveProductName(p)} - ₪{p.price}
             </option>
           ))}
         </select>

@@ -32,6 +32,8 @@ const DishesCard = (props) => {
         img: props.img,
         category: props.category,
         title: props.title,
+        name_en: props.name_en,
+        name_he: props.name_he,
         price: props.price,
         quantity: 1,
         isWeighted: false,
@@ -63,6 +65,8 @@ const DishesCard = (props) => {
       img: props.img,
       category: props.category,
       title: props.title,
+      name_en: props.name_en,
+      name_he: props.name_he,
       price: props.price,
       quantity,
       isWeighted: false,
@@ -98,6 +102,8 @@ const DishesCard = (props) => {
               _id={props.id} // ⬅️ חשוב
               img={props.img}
               title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
               price={props.price}
               description={props.description}
               isOpen={isModalOpen}
@@ -109,6 +115,8 @@ const DishesCard = (props) => {
               _id={props.id} // ⬅️ חשוב
               img={props.img}
               title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
               price={props.price}
               description={props.description}
               options={props.options}
@@ -121,6 +129,8 @@ const DishesCard = (props) => {
               _id={props.id}
               img={props.img}
               title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
               price={props.price}
               description={props.description}
               isOpen={isModalOpen}

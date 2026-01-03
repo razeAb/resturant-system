@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useLang } from "../context/LangContext";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
 import { ORDER_STATUS } from "../../constants/orderStatus";
@@ -68,6 +69,13 @@ const dedupeOrders = (orders = []) => {
 export default function ActiveOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const { lang } = useLang();
+  const resolveOrderItemName = (item) => {
+    const product = item?.product || {};
+    return lang === "en"
+      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item"
+      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט";
+  };
   const audioRef = useRef(null);
   const audioReadyRef = useRef(false);
 
@@ -478,7 +486,7 @@ export default function ActiveOrdersPage() {
                                   return (
                                     <li key={idx} className="leading-6">
                                       <div className="flex items-center justify-between">
-                                        <strong>{item.product?.name || item.title || "פריט"}</strong>
+                                        <strong>{resolveOrderItemName(item)}</strong>
                                         {/* Line total on the right */}
                                         <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
                                       </div>

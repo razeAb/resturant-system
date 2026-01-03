@@ -4,7 +4,7 @@ import "./Modal.css"; // Ensure this includes your existing modal and checkbox s
 
 import { useMenuOptions } from "../../context/MenuOptionsContext";
 
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart }) => {
+const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart, name_en, name_he }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -98,6 +98,8 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       id: `${title}-${Math.random().toString(36).substring(7)}`, // מזהה ייחודי פנימי לעגלה
       img,
       title,
+      name_en,
+      name_he,
       price: parseFloat(price),
       quantity,
       isWeighted: false,

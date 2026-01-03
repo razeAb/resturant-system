@@ -33,6 +33,13 @@ const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "ב
 export default function KitchenOrders() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const { lang } = useLang();
+  const resolveOrderItemName = (item) => {
+    const product = item?.product || {};
+    return lang === "en"
+      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Unknown item"
+      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט לא ידוע";
+  };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -197,7 +204,7 @@ export default function KitchenOrders() {
                                           : "אין";
                                       return (
                                         <li key={idx} className="leading-6">
-                                          <strong>{item.product?.name || item.title || "פריט לא ידוע"}</strong> — כמות: {item.quantity}{" "}
+                                          <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
                                           {item.isWeighted ? "גרם" : ""}
                                           <div className="text-white/70">
                                             ירקות: {vegs} · תוספות: {adds}

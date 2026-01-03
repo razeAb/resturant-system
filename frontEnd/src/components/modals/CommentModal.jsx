@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 
-const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart }) => {
+const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he }) => {
   const { addToCart } = useContext(CartContext);
   const [quantity, setQuantity] = useState(1);
   const [comment, setComment] = useState("");
@@ -20,6 +20,8 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
       id: `${title}-${Math.random().toString(36).substring(7)}`,
       img,
       title,
+      name_en,
+      name_he,
       price: parseFloat(price),
       quantity,
       isWeighted: false,

@@ -4,6 +4,7 @@ import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
 import api from "../../api";
 import { AuthContext } from "../../context/AuthContext"; // ✅ Also make sure you import AuthContext
+import { useLang } from "../../context/LangContext";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
@@ -31,6 +32,9 @@ const CartPage = () => {
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [policyChecked, setPolicyChecked] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const { lang } = useLang();
+  const resolveItemName = (item) =>
+    lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
 
   useEffect(() => {
     let interval;
@@ -185,7 +189,7 @@ const CartPage = () => {
     const itemsForBackend = groupedItems
       .map((item) => ({
         product: item._id || item.id,
-        title: item.title,
+        title: resolveItemName(item),
         price: item.price,
         img: item.img,
         quantity: item.quantity,
@@ -391,7 +395,7 @@ const CartPage = () => {
 
         if (item.id >= 10 && item.id <= 17) {
           return `
-            מוצר: ${item.title}
+            מוצר: ${resolveItemName(item)}
             כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
 
             מחיר ליחידה: ${item.price} ILS
@@ -401,7 +405,7 @@ const CartPage = () => {
         }
 
         return `
-          מוצר: ${item.title}
+          מוצר: ${resolveItemName(item)}
           כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
 
           ירקות: ${vegetables}
@@ -491,9 +495,9 @@ const CartPage = () => {
                 return (
                   <tr key={index}>
                     <td data-label="תמונה">
-                      <img src={item.img} alt={item.title} style={{ width: "100px", borderRadius: "8px" }} />
+                      <img src={item.img} alt={resolveItemName(item)} style={{ width: "100px", borderRadius: "8px" }} />
                     </td>
-                    <td data-label="שם מוצר">{item.title}</td>
+                    <td data-label="שם מוצר">{resolveItemName(item)}</td>
                     <td data-label="כמות">{item.isWeighted ? `${item.quantity} גרם` : item.quantity}</td>
 
                     {/* Show vegetables and additions for all items */}
@@ -624,7 +628,7 @@ const CartPage = () => {
                   <ul style={{ listStyleType: "none", padding: 0 }}>
                     {groupCartItems().map((item, idx) => (
                       <li key={idx}>
-                        {item.title} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
+                        {resolveItemName(item)} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
                       </li>
                     ))}
                   </ul>
