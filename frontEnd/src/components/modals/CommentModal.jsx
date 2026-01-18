@@ -2,10 +2,32 @@ import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 
-const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he }) => {
+const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he, isWingsMeal }) => {
   const { addToCart } = useContext(CartContext);
   const [quantity, setQuantity] = useState(1);
   const [comment, setComment] = useState("");
+  const normalizedTitle = (title || "").toLowerCase();
+  const normalizedNameEn = (name_en || "").toLowerCase();
+  const normalizedNameHe = name_he || "";
+  const normalizedTitlePlain = normalizedTitle.replace(/\s+/g, " ").trim();
+  const normalizedNameHePlain = normalizedNameHe.replace(/\s+/g, " ").trim();
+  const wingsNameRegex = /כנפ[יים]*\s+מעוש/i;
+  const matchesWingsName =
+    normalizedTitle.includes("wings") ||
+    normalizedNameEn.includes("wings") ||
+    normalizedTitle.includes("wing") ||
+    normalizedNameEn.includes("wing") ||
+    normalizedTitle.includes("כנפ") ||
+    normalizedNameHe.includes("כנפ") ||
+    wingsNameRegex.test(normalizedTitlePlain) ||
+    wingsNameRegex.test(normalizedNameHePlain);
+  const showSauceOptions = isWingsMeal || matchesWingsName;
+  const sauceOptions = [
+    { value: "sweet", label: "🍯 מתוק" },
+    { value: "hot", label: "🌶️ חריף" },
+    { value: "mix", label: "🔥 מיקס מתוק/חריף" },
+  ];
+  const [sauceChoice, setSauceChoice] = useState(sauceOptions[0].value);
 
   if (!isOpen) return null;
 
@@ -15,6 +37,8 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
 
   const handleAddToCart = () => {
     const totalPrice = parseFloat(price) * quantity;
+    const selectedSauceLabel = sauceOptions.find((option) => option.value === sauceChoice)?.label || sauceOptions[0].label;
+    const sauceAdditions = showSauceOptions ? [{ addition: `רוטב: ${selectedSauceLabel}`, price: 0 }] : [];
     const itemToAdd = {
       _id,
       id: `${title}-${Math.random().toString(36).substring(7)}`,
@@ -25,7 +49,7 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
       price: parseFloat(price),
       quantity,
       isWeighted: false,
-      selectedOptions: {},
+      selectedOptions: showSauceOptions ? { additions: sauceAdditions, vegetables: [] } : {},
       comment,
       totalPrice: parseFloat(totalPrice),
     };
@@ -33,6 +57,9 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
     targetAdd(itemToAdd);
     setComment("");
     setQuantity(1);
+    if (showSauceOptions) {
+      setSauceChoice(sauceOptions[0].value);
+    }
     onClose();
   };
 
@@ -45,6 +72,33 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
         <img src={img} alt={title} className="modal-img" />
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
         {description && <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>}
+        {showSauceOptions && (
+          <div className="modal-options text-right" dir="rtl">
+            <h3 className="text-2xl font-semibold text-center pb-6">:בחר רוטב</h3>
+            <div className="flex flex-col gap-3 items-end">
+              {sauceOptions.map((option, index) => (
+                <div key={option.value} className="checkbox-wrapper-30 checkbox-container w-full justify-end">
+                  <span className="checkbox">
+                    <input
+                      type="radio"
+                      id={`sauce-option-${index}-${_id || title}`}
+                      name={`sauce-choice-${_id || title}`}
+                      value={option.value}
+                      checked={sauceChoice === option.value}
+                      onChange={() => setSauceChoice(option.value)}
+                    />
+                    <svg>
+                      <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                    </svg>
+                  </span>
+                  <label htmlFor={`sauce-option-${index}-${_id || title}`} className="checkbox-label pl-2 text-right">
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="modal-comment">
           <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
           <textarea
@@ -80,6 +134,16 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
             <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{(parseFloat(price) * quantity).toFixed(2)}</span>
           </button>
         </div>
+        <svg xmlns="http://www.w3.org/2000/svg" style={{ display: "none" }}>
+          <symbol id="checkbox-30" viewBox="0 0 22 22">
+            <path
+              fill="none"
+              stroke="currentColor"
+              d="M5.5,11.3L9,14.8L20.2,3.3l0,0c-0.5-1-1.5-1.8-2.7-1.8h-13c-1.7,0-3,1.3-3,3v13c0,1.7,1.3,3,3,3h13
+               c1.7,0,3-1.3,3-3v-13c0-0.4-0.1-0.8-0.3-1.2"
+            />
+          </symbol>
+        </svg>
       </div>
     </div>
   );

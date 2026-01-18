@@ -53,7 +53,7 @@ function normalizeStatus({ method, rawStatus }) {
 // ✅ Create pre-payment order and return stable ID used as ud1
 router.post("/create-pre-payment", async (req, res) => {
   try {
-    const { items, totalPrice, deliveryOption, user, phone, customerName, paymentDetails, couponUsed } = req.body;
+    const { items, totalPrice, deliveryOption, user, phone, customerName, paymentDetails, couponUsed, couponCode, couponDiscount } = req.body;
 
     // minimal checks so we don't store trash documents
     if (!Array.isArray(items) || items.length === 0) {
@@ -82,6 +82,8 @@ router.post("/create-pre-payment", async (req, res) => {
         method: paymentDetails?.method || "Card",
       },
       couponUsed: couponUsed || undefined,
+      couponCode: couponCode || undefined,
+      couponDiscount: Number(couponDiscount) || 0,
       items: cleaned,
       totalPrice: priceNumber, // ✅ parsed (you had an undefined parsedPrice before)
       deliveryOption,
@@ -102,7 +104,7 @@ router.post("/create-pre-payment", async (req, res) => {
 // ✅ Create a New Order (VALIDATED)
 router.post("/", async (req, res) => {
   try {
-    const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed } = req.body;
+    const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, paymentDetails, couponUsed, couponCode, couponDiscount } = req.body;
 
     console.log("🟢 incoming /api/orders payload:", {
       totalPrice,
@@ -146,6 +148,8 @@ router.post("/", async (req, res) => {
         method: normalizedMethod, // prevent enum crash if schema restricts it
       },
       couponUsed: couponUsed || undefined,
+      couponCode: couponCode || undefined,
+      couponDiscount: Number(couponDiscount) || 0,
       items: cleaned,
       totalPrice: priceNumber,
       deliveryOption,

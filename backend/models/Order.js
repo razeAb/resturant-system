@@ -68,6 +68,15 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     enum: ["drink", "side"],
   },
+  couponCode: {
+    type: String,
+    trim: true,
+    uppercase: true,
+  },
+  couponDiscount: {
+    type: Number,
+    default: 0,
+  },
   status: {
     type: String,
     // Unified set of order statuses used across the app

@@ -19,6 +19,11 @@ const CartPage = () => {
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [isCouponChecking, setIsCouponChecking] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
   const [eligibleReward, setEligibleReward] = useState(null); // 'drink' or 'side'
   const [deliveryOption, setDeliveryOption] = useState(null);
@@ -97,6 +102,10 @@ const CartPage = () => {
     setShowCardPayment(false);
     setPhoneNumber("");
     setGuestName("");
+    setCouponCode("");
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponError("");
     setCouponApplied(false);
     setEligibleReward(null);
     setShowConfirmationModal(false);
@@ -205,7 +214,7 @@ const CartPage = () => {
 
     const loggedInUserId = user?._id;
 
-    const totalPrice = parseFloat(calculateCartTotal());
+    const totalPrice = parseFloat(calculateFinalTotal());
 
     return {
       ...(loggedInUserId && { user: loggedInUserId }),
@@ -217,6 +226,7 @@ const CartPage = () => {
       paymentDetails: { method: paymentMethod },
       status: ORDER_STATUS.PENDING,
       createdAt: new Date(),
+      ...(appliedCoupon && { couponCode: appliedCoupon, couponDiscount }),
       ...(couponApplied && { couponUsed: eligibleReward }),
     };
   };
@@ -365,10 +375,62 @@ const CartPage = () => {
   };
   console.log("Final total price sent:", calculateCartTotal());
 
+  useEffect(() => {
+    if (!appliedCoupon) {
+      setCouponDiscount(0);
+      return;
+    }
+    const subtotal = parseFloat(calculateCartTotal());
+    setIsCouponChecking(true);
+    api
+      .post("/api/coupons/validate", { code: appliedCoupon, subtotal })
+      .then((res) => {
+        const discount = Number(res.data?.discount) || 0;
+        setCouponDiscount(parseFloat(discount.toFixed(2)));
+        setCouponError("");
+      })
+      .catch((err) => {
+        setCouponDiscount(0);
+        setCouponError(err?.response?.data?.message || "קופון לא תקין");
+      })
+      .finally(() => setIsCouponChecking(false));
+  }, [appliedCoupon, cartItems, couponApplied, eligibleReward]);
+
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) {
+      setCouponError("אנא הזן קוד קופון");
+      return;
+    }
+    const subtotal = parseFloat(calculateCartTotal());
+    setIsCouponChecking(true);
+    api
+      .post("/api/coupons/validate", { code, subtotal })
+      .then((res) => {
+        const discount = Number(res.data?.discount) || 0;
+        setAppliedCoupon(res.data?.code || code);
+        setCouponDiscount(parseFloat(discount.toFixed(2)));
+        setCouponError("");
+      })
+      .catch((err) => {
+        setCouponError(err?.response?.data?.message || "קוד קופון לא תקין");
+        setAppliedCoupon(null);
+        setCouponDiscount(0);
+      })
+      .finally(() => setIsCouponChecking(false));
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponError("");
+  };
+
   // calculate final total including delivery fee if selected
   const calculateFinalTotal = () => {
     const base = parseFloat(calculateCartTotal());
-    return base.toFixed(2); // Removed + deliveryFee
+    const finalTotal = Math.max(base - couponDiscount, 0);
+    return finalTotal.toFixed(2); // Removed + deliveryFee
   };
 
   const _sendWhatsAppOrder = (deliveryOption) => {
@@ -533,8 +595,84 @@ const CartPage = () => {
           </table>
         </div>
         <div className="cart-total">
-          סה&quot;כ: {calculateFinalTotal()} ILS <br />
+          <div>סה&quot;כ ביניים: {calculateCartTotal()} ILS</div>
+          {couponDiscount > 0 && <div>הנחת קופון: -{couponDiscount.toFixed(2)} ILS</div>}
+          <div>סה&quot;כ לתשלום: {calculateFinalTotal()} ILS</div>
         </div>{" "}
+        <div
+          style={{
+            marginTop: "15px",
+            padding: "10px",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            maxWidth: "360px",
+            width: "100%",
+            direction: "rtl",
+            textAlign: "right",
+            fontSize: "13px",
+            boxSizing: "border-box",
+          }}
+        >
+          <h4 style={{ margin: "0 0 6px 0", fontSize: "14px" }}>קוד קופון</h4>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", width: "100%" }}>
+            <input
+              type="text"
+              placeholder="הכנס קוד"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              style={{
+                flex: "1 1 160px",
+                width: "100%",
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                fontSize: "12px",
+                boxSizing: "border-box",
+              }}
+            />
+            {!appliedCoupon ? (
+              <button
+                onClick={handleApplyCoupon}
+                style={{
+                  backgroundColor: "#2563eb",
+                  color: "#fff",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  minWidth: "80px",
+                }}
+              >
+                החל
+              </button>
+            ) : (
+              <button
+                onClick={handleRemoveCoupon}
+                style={{
+                  backgroundColor: "#ef4444",
+                  color: "#fff",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  minWidth: "80px",
+                }}
+              >
+                הסר
+              </button>
+            )}
+          </div>
+          {appliedCoupon && <div style={{ marginTop: "6px", color: "#16a34a" }}>הקופון הופעל: {appliedCoupon}</div>}
+          {isCouponChecking && <div style={{ marginTop: "6px", color: "#6b7280" }}>בודק קופון...</div>}
+          {couponError && <div style={{ marginTop: "6px", color: "#dc2626" }}>{couponError}</div>}
+          {!appliedCoupon && (
+            <div style={{ marginTop: "6px", fontSize: "11px", color: "#6b7280" }}>הזן קוד קופון תקף</div>
+          )}
+        </div>
         <div style={{ marginTop: "20px" }}>
           <button
             onClick={handleOrderNow}
@@ -632,6 +770,7 @@ const CartPage = () => {
                       </li>
                     ))}
                   </ul>
+                  {couponDiscount > 0 && <p>הנחת קופון: -{couponDiscount.toFixed(2)} ILS</p>}
                   <p>סה&quot;כ לתשלום: {calculateFinalTotal()} ILS</p>{" "}
                   <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
                 </div>

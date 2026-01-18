@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   MapPinned,
   ClipboardSignature,
+  Tag,
 } from "lucide-react";
 import { useLang } from "../context/LangContext";
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { to: "/kitchen", key: "sideMenu.kitchen", fallback: "מסך מטבח", icon: ChefHat },
   { to: "/admin/orderHistory", key: "sideMenu.orderHistory", fallback: "היסטוריית הזמנות", icon: History },
   { to: "/admin/menu-options", key: "sideMenu.menuOptions", fallback: "תוספות וסלטים", icon: UtensilsCrossed },
+  { to: "/admin/coupons", key: "sideMenu.coupons", fallback: "קופונים", icon: Tag },
   { to: "/admin/floor", key: "sideMenu.floor", fallback: "מפת שולחנות", icon: MapPinned },
   { to: "/admin/floor-orders", key: "sideMenu.floorOrders", fallback: "הזמנה משולחן", icon: ClipboardSignature },
   { to: "/admin/collections", key: "sideMenu.collections", fallback: "collections", icon: ClipboardList },

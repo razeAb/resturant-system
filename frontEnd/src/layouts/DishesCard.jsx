@@ -14,11 +14,28 @@ const DishesCard = (props) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false); // State for AlertModal
   const { addToCart } = useContext(CartContext); // Get the addToCart function from context
   const isActive = props.isActive === true;
+  const normalizedTitle = (props.title || "").toLowerCase();
+  const normalizedNameEn = (props.name_en || "").toLowerCase();
+  const normalizedNameHe = props.name_he || "";
+  const normalizedTitlePlain = normalizedTitle.replace(/\s+/g, " ").trim();
+  const normalizedNameHePlain = normalizedNameHe.replace(/\s+/g, " ").trim();
+  const wingsNameRegex = /כנפ[יים]*\s+מעוש/i;
+  const isWingsMeal =
+    normalizedTitle.includes("wings") ||
+    normalizedNameEn.includes("wings") ||
+    normalizedTitle.includes("wing") ||
+    normalizedNameEn.includes("wing") ||
+    normalizedTitle.includes("כנפ") ||
+    normalizedNameHe.includes("כנפ") ||
+    wingsNameRegex.test(normalizedTitlePlain) ||
+    wingsNameRegex.test(normalizedNameHePlain);
 
   const handleButtonClick = () => {
     console.log("isOrder:", props.isOrder);
     if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
+    } else if (isWingsMeal) {
+      setIsModalOpen(true); // Wings/comment modal
     } else if (props.category === "Meats") {
       setIsModalOpen(true); // Weighted modal
     } else if (props.category === "Sandwiches") {
@@ -95,9 +112,27 @@ const DishesCard = (props) => {
         </div>
       </div>
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || props.category === "Meats" || props.category === "Starters") && (
+      {(props.isWeighted ||
+        props.category === "Sandwiches" ||
+        props.category === "Meats" ||
+        props.category === "Starters" ||
+        isWingsMeal) && (
         <>
-          {props.category === "Meats" ? (
+          {isWingsMeal ? (
+            <CommentModal
+              _id={props.id}
+              img={props.img}
+              title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
+              price={props.price}
+              description={props.description}
+              isWingsMeal={isWingsMeal}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+              onAddToCart={handleAddToCart}
+            />
+          ) : props.category === "Meats" ? (
             <WeightedModal
               _id={props.id} // ⬅️ חשוב
               img={props.img}
@@ -133,6 +168,7 @@ const DishesCard = (props) => {
               name_he={props.name_he}
               price={props.price}
               description={props.description}
+              isWingsMeal={isWingsMeal}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}

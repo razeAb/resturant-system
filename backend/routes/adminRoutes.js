@@ -4,13 +4,20 @@ const { protect } = require("../middleware/authMiddleware");
 const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const Coupon = require("../models/Coupon");
+
+const ensureAdmin = (req, res) => {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ message: "❌ Unauthorized access." });
+    return false;
+  }
+  return true;
+};
 
 // ✅ Get Admin Dashboard Data
 router.get("/dashboard", protect, async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "❌ Unauthorized access." });
-    }
+    if (!ensureAdmin(req, res)) return;
 
     const users = await User.find().select("name email orderCount points");
     const products = await Product.find().select("name name_he name_en description description_he description_en stock price image category isActive");
@@ -79,9 +86,7 @@ router.get("/dashboard", protect, async (req, res) => {
 // ✅ Calculate collection totals for a date range
 router.get("/collections", protect, async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "❌ Unauthorized access." });
-    }
+    if (!ensureAdmin(req, res)) return;
 
     let { startDate, endDate } = req.query;
     const now = new Date();
@@ -118,9 +123,7 @@ router.get("/collections", protect, async (req, res) => {
 // ✅ Category stats (orders per category)
 router.get("/category-stats", protect, async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "❌ Unauthorized access." });
-    }
+    if (!ensureAdmin(req, res)) return;
 
     const { period = "month" } = req.query;
     const now = new Date();
@@ -152,6 +155,59 @@ router.get("/category-stats", protect, async (req, res) => {
     res.json({ categories });
   } catch (error) {
     console.error("❌ Error calculating category stats:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+});
+
+// ✅ Coupons (admin)
+router.get("/coupons", protect, async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    res.json({ coupons });
+  } catch (error) {
+    console.error("❌ Error fetching coupons:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+});
+
+router.post("/coupons", protect, async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const { code, type, value, active = true } = req.body;
+
+    const normalizedCode = typeof code === "string" ? code.trim().toUpperCase() : "";
+    const numericValue = Number(value);
+    if (!normalizedCode) return res.status(400).json({ message: "חובה להזין קוד קופון" });
+    if (!["percent", "fixed"].includes(type)) return res.status(400).json({ message: "סוג קופון לא תקין" });
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return res.status(400).json({ message: "ערך קופון לא תקין" });
+    if (type === "percent" && numericValue > 100) return res.status(400).json({ message: "אחוז הנחה חייב להיות עד 100" });
+
+    const coupon = await Coupon.create({
+      code: normalizedCode,
+      type,
+      value: numericValue,
+      active: Boolean(active),
+    });
+
+    res.status(201).json({ coupon });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "קוד קופון כבר קיים" });
+    }
+    console.error("❌ Error creating coupon:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+});
+
+router.delete("/coupons/:id", protect, async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+    const coupon = await Coupon.findByIdAndDelete(req.params.id);
+    if (!coupon) return res.status(404).json({ message: "קופון לא נמצא" });
+    res.json({ message: "קופון הוסר" });
+  } catch (error) {
+    console.error("❌ Error deleting coupon:", error);
     res.status(500).json({ message: "❌ Server error." });
   }
 });
