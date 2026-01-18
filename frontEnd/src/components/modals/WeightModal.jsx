@@ -2,6 +2,8 @@ import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import { useMenuOptions } from "../../context/MenuOptionsContext";
+import { useLang } from "../../context/LangContext";
+import { translateOptionLabel } from "../../utils/optionTranslations";
 const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart, name_en, name_he }) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
@@ -10,6 +12,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   });
 
   const { addToCart } = useContext(CartContext); // Access addToCart function from CartContext
+  const { t, lang } = useLang();
 
   const [comment, setComment] = useState(""); // Initial comment is an empty string
 
@@ -81,7 +84,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" dir="ltr" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
@@ -92,7 +95,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
         {/* Options for Vegetables */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">:ירקות בצד למנה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.vegetablesSide", ":ירקות בצד למנה")}</h3>
           {availableVegetables.map((vegetable, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
@@ -102,7 +105,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
                 </svg>
               </span>
               <label htmlFor={`vegetable-option-${index}`} className="checkbox-label pl-2">
-                {vegetable}
+                {translateOptionLabel(vegetable, lang)}
               </label>
             </div>
           ))}
@@ -110,7 +113,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
         {/* Options for Additions */}
         <div className="modal-options">
-          <h3 className="text-2xl font-semibold text-center pb-10">:תוספת למנה רגילה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.additionsRegular", ":תוספת למנה רגילה")}</h3>
           {availableFixedAdditions.map((addition, index) => (
             <div key={index} className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
@@ -125,15 +128,15 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
                 </svg>
               </span>
               <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {addition.name} (₪{addition.price}){" "}
+                {translateOptionLabel(addition.name, lang)} (₪{addition.price}){" "}
               </label>
             </div>
           ))}
 
           <div className="modal-comment">
-            <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
+            <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.addComment", ":הוסף הערה")}</h3>
             <textarea
-              placeholder="הוסף הערה (לא חובה)"
+              placeholder={t("modal.commentPlaceholder", "הוסף הערה (לא חובה)")}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={{
@@ -141,8 +144,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
                 padding: "10px",
                 borderRadius: "5px",
                 border: "1px solid #ccc",
-                direction: "rtl",
-                textAlign: "right",
                 margin: "10px 0",
               }}
             ></textarea>
@@ -166,7 +167,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
             onClick={handleAddToCart}
             className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-base sm:text-base"
           >
-            <span>הוספה לעגלה</span>
+            <span>{t("modal.addToCart", "הוספה לעגלה")}</span>
             <span className="font-bold text-2xl sm:text-base whitespace-nowrap">₪{calculateTotalPrice()}</span>
           </button>
         </div>

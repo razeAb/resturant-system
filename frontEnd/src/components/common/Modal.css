@@ -196,7 +196,7 @@
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  flex-direction: row-reverse; /* To align checkboxes from right to left */
+  flex-direction: row;
 }
 
 .checkbox-label,
@@ -217,37 +217,44 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: #f7f7f7;
-  flex-direction: row-reverse;
+  flex-direction: row;
 }
 
 .addition-buttons span {
   flex-grow: 1;
   font-size: 16px;
-  text-align: right;
+  text-align: left;
 }
 
 .gram-button {
-  background-color: gray;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  color: #0f172a;
+  border: 1px solid #cbd5f5;
+  border-radius: 999px;
+  padding: 6px 12px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  font-size: 13px;
   margin-left: 10px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  direction: rtl;
+  gap: 8px;
+  direction: ltr;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
 }
 
 .gram-button:hover {
-  background-color: #0056b3;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border-color: #818cf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.15);
 }
 
 .gram-button.selected {
-  background-color: #0056b3;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-color: #4338ca;
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(67, 56, 202, 0.25);
 }
 
 .gram-weight {

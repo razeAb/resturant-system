@@ -1,9 +1,11 @@
 import React, { useContext, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
+import { useLang } from "../../context/LangContext";
 
 const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he, isWingsMeal }) => {
   const { addToCart } = useContext(CartContext);
+  const { t } = useLang();
   const [quantity, setQuantity] = useState(1);
   const [comment, setComment] = useState("");
   const normalizedTitle = (title || "").toLowerCase();
@@ -23,9 +25,9 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
     wingsNameRegex.test(normalizedNameHePlain);
   const showSauceOptions = isWingsMeal || matchesWingsName;
   const sauceOptions = [
-    { value: "sweet", label: "🍯 מתוק" },
-    { value: "hot", label: "🌶️ חריף" },
-    { value: "mix", label: "🔥 מיקס מתוק/חריף" },
+    { value: "sweet", label: `🍯 ${t("modal.sauceSweet", "מתוק")}` },
+    { value: "hot", label: `🌶️ ${t("modal.sauceHot", "חריף")}` },
+    { value: "mix", label: `🔥 ${t("modal.sauceMix", "מיקס מתוק/חריף")}` },
   ];
   const [sauceChoice, setSauceChoice] = useState(sauceOptions[0].value);
 
@@ -65,7 +67,7 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" dir="ltr" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
@@ -73,8 +75,8 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
         {description && <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>}
         {showSauceOptions && (
-          <div className="modal-options text-right" dir="rtl">
-            <h3 className="text-2xl font-semibold text-center pb-6">:בחר רוטב</h3>
+          <div className="modal-options">
+            <h3 className="text-2xl font-semibold text-center pb-6">{t("modal.chooseSauce", ":בחר רוטב")}</h3>
             <div className="flex flex-col gap-3 items-end">
               {sauceOptions.map((option, index) => (
                 <div key={option.value} className="checkbox-wrapper-30 checkbox-container w-full justify-end">
@@ -100,9 +102,9 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
           </div>
         )}
         <div className="modal-comment">
-          <h3 className="text-2xl font-semibold text-center pb-10">:הוסף הערה</h3>
+          <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.addComment", ":הוסף הערה")}</h3>
           <textarea
-            placeholder="הוסף הערה (לא חובה)"
+            placeholder={t("modal.commentPlaceholder", "הוסף הערה (לא חובה)")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             style={{
@@ -110,8 +112,6 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
               padding: "10px",
               borderRadius: "5px",
               border: "1px solid #ccc",
-              direction: "rtl",
-              textAlign: "right",
               margin: "10px 0",
             }}
           ></textarea>
@@ -130,7 +130,7 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
             onClick={handleAddToCart}
             className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
           >
-            <span>הוספה לעגלה</span>
+            <span>{t("modal.addToCart", "הוספה לעגלה")}</span>
             <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{(parseFloat(price) * quantity).toFixed(2)}</span>
           </button>
         </div>
