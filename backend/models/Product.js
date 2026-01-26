@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
   description_en: { type: String },
   image: { type: String },
   category: { type: String, required: true }, // ✅ Added required category
+  fullSandwichPrice: { type: Number, default: 0 },
   isActive:{
     type: Boolean,
     default: true

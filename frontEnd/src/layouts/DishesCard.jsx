@@ -153,6 +153,7 @@ const DishesCard = (props) => {
               name_en={props.name_en}
               name_he={props.name_he}
               price={props.price}
+              fullSandwichPrice={props.fullSandwichPrice}
               description={props.description}
               options={props.options}
               isOpen={isModalOpen}

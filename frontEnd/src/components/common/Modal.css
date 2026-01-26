@@ -197,6 +197,7 @@
   align-items: center;
   margin-bottom: 8px;
   flex-direction: row;
+  gap: 10px;
 }
 
 .checkbox-label,
@@ -212,26 +213,30 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f7f7f7;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
   flex-direction: row;
+  gap: 12px;
 }
 
 .addition-buttons span {
   flex-grow: 1;
   font-size: 16px;
+  font-weight: 600;
   text-align: left;
+  color: #0b1324;
 }
 
 .gram-button {
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  color: #0f172a;
-  border: 1px solid #cbd5f5;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  color: #111827;
+  border: 1px solid #c7d2fe;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 8px 14px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   font-size: 13px;
@@ -240,21 +245,21 @@
   align-items: center;
   gap: 8px;
   direction: ltr;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.12);
 }
 
 .gram-button:hover {
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  border-color: #818cf8;
+  background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+  border-color: #6366f1;
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.2);
 }
 
 .gram-button.selected {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  border-color: #4338ca;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border-color: #c2410c;
   color: #fff;
-  box-shadow: 0 10px 18px rgba(67, 56, 202, 0.25);
+  box-shadow: 0 12px 20px rgba(234, 88, 12, 0.35);
 }
 
 .gram-weight {
@@ -264,8 +269,8 @@
 .gram-price {
   direction: ltr;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 2px 8px;
   border-radius: 4px;
 }
 

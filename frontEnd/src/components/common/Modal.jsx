@@ -6,7 +6,20 @@ import { useMenuOptions } from "../../context/MenuOptionsContext";
 import { useLang } from "../../context/LangContext";
 import { translateOptionLabel } from "../../utils/optionTranslations";
 
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart, name_en, name_he }) => {
+const Modal = ({
+  _id,
+  img,
+  title,
+  price,
+  fullSandwichPrice,
+  description,
+  options,
+  isOpen,
+  onClose,
+  onAddToCart,
+  name_en,
+  name_he,
+}) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -26,6 +39,20 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   if (!isOpen) return null;
 
+  const basePrice = Number(price) || 0;
+  const fullPrice = Number(fullSandwichPrice);
+  const hasFullSandwichOption = Number.isFinite(fullPrice) && fullPrice > 0;
+  const fullSandwichExtra = hasFullSandwichOption ? fullPrice - basePrice : 0;
+
+  const formatAdditionLabel = (name, suffix, priceValue) => `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
+  const formatPrice = (value) => (Number.isInteger(value) ? value : Number(value).toFixed(2));
+
+  const calculateTotalPrice = () => {
+    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
+    const totalPrice = basePrice * quantity + additionsTotal;
+    return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
+  };
+
   const handleQuantityChange = (delta) => {
     setQuantity((prev) => Math.max(1, prev + delta));
   };
@@ -38,8 +65,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         : [...prev.vegetables, vegetable],
     }));
   };
-
-  const formatAdditionLabel = (name, suffix, priceValue) => `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
 
   const handleWeightedAdditionChange = (addition, grams) => {
     setSelectedOptions((prev) => {
@@ -86,13 +111,6 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     });
   };
 
-  const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
-    const basePrice = parseFloat(price) || 0;
-    const totalPrice = basePrice * quantity + additionsTotal;
-    return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
-  };
-
   const handleAddToCart = () => {
     const totalPrice = calculateTotalPrice();
 
@@ -122,6 +140,25 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     });
     setComment(""); // Clear the comment
     onClose(); // Close the modal
+  };
+
+  const handleFullSandwichToggle = () => {
+    const fullSandwichLabel = t("modal.fullSandwich", "סנדוויץ' מלא");
+    const extraPrice = Math.max(0, fullSandwichExtra);
+
+    setSelectedOptions((prev) => {
+      const withoutFull = prev.additions.filter((item) => !item.fullSandwich);
+      const isSelected = prev.additions.some((item) => item.fullSandwich);
+
+      if (isSelected) {
+        return { ...prev, additions: withoutFull };
+      }
+
+      return {
+        ...prev,
+        additions: [...withoutFull, { addition: fullSandwichLabel, price: extraPrice, fullSandwich: true }],
+      };
+    });
   };
 
   return (
@@ -162,6 +199,29 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         {/* Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.additionsRegular", ":תוספת למנה רגילה")}</h3>
+
+          {hasFullSandwichOption && (
+            <div className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input
+                  type="checkbox"
+                  id="full-sandwich-option"
+                  onChange={handleFullSandwichToggle}
+                  checked={selectedOptions.additions.some((item) => item.fullSandwich)}
+                />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor="full-sandwich-option" className="checkbox-label pl-2">
+                {t("modal.fullSandwich", "סנדוויץ' מלא")}
+                <span className="pl-2 text-sm text-gray-500">
+                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", "סה\"כ")} ₪
+                  {formatPrice(fullPrice)})
+                </span>
+              </label>
+            </div>
+          )}
 
           {/* Gram-based additions */}
           {availableWeightedAdditions.map((addition, index) => (

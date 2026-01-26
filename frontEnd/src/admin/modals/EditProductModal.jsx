@@ -13,6 +13,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
     image: product?.image ?? "",
     category: product?.category ?? "",
     description: product?.description ?? "",
+    fullSandwichPrice: product?.fullSandwichPrice ?? "",
     isActive: product?.isActive ?? true,
   };
 
@@ -97,9 +98,10 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
           image: form.image?.trim(),
           category: form.category?.trim(),
           description: form.description?.trim(),
+          fullSandwichPrice: form.category === "Sandwiches" ? toNumberOrUndefined(form.fullSandwichPrice) : undefined,
           isActive: !!form.isActive,
         },
-        ["name", "title", "price", "stock", "image", "category", "description", "isActive"]
+        ["name", "title", "price", "stock", "image", "category", "description", "fullSandwichPrice", "isActive"]
       );
 
       const response = await api.put(`/api/products/${product._id}`, payload, {
@@ -155,6 +157,21 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
             required
             className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
           />
+
+          {form.category === "Sandwiches" && (
+            <>
+              <label className="block text-sm">מחיר סנדוויץ' מלא</label>
+              <input
+                type="number"
+                name="fullSandwichPrice"
+                inputMode="decimal"
+                value={form.fullSandwichPrice}
+                onChange={handleChange}
+                placeholder="מחיר סנדוויץ' מלא"
+                className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+              />
+            </>
+          )}
 
           <label className="block text-sm">מלאי (אופציונלי)</label>
           <input

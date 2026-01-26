@@ -19,13 +19,13 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
     }
 
-    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted });
+    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted, fullSandwichPrice });
     await newProduct.save();
 
     res.status(201).json({ message: "✅ Product added successfully.", product: newProduct });
@@ -86,12 +86,12 @@ router.post("/add-products", protect, async (req, res) => {
 // ✅ Edit/Update Product by ID
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice } = req.body;
     const productId = req.params.id;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
-      { name, price, stock, description, image, category, isWeighted },
+      { name, price, stock, description, image, category, isWeighted, fullSandwichPrice },
       { new: true, runValidators: true }
     );
 

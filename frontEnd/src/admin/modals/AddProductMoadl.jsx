@@ -8,6 +8,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     category: "",
     stock: "",
     price: "",
+    fullSandwichPrice: "",
     isActive: true,
   });
 
@@ -30,17 +31,17 @@ const AddProductModal = ({ onClose, onAdd }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await api.post(
-        `/api/products`,
-        {
-          ...form,
-          stock: Number(form.stock),
-          price: Number(form.price),
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const payload = {
+        ...form,
+        stock: Number(form.stock),
+        price: Number(form.price),
+        fullSandwichPrice:
+          form.category === "Sandwiches" && form.fullSandwichPrice !== "" ? Number(form.fullSandwichPrice) : undefined,
+      };
+
+      const response = await api.post(`/api/products`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       onAdd(response.data.product);
       onClose();
@@ -157,6 +158,17 @@ const AddProductModal = ({ onClose, onAdd }) => {
           value={form.price}
           className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
         />
+
+        {form.category === "Sandwiches" && (
+          <input
+            name="fullSandwichPrice"
+            placeholder="מחיר סנדוויץ' מלא"
+            type="number"
+            onChange={handleChange}
+            value={form.fullSandwichPrice}
+            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+          />
+        )}
 
         <label className="flex items-center gap-2 mt-2 mb-4">
           <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
