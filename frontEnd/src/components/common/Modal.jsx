@@ -147,7 +147,7 @@ const Modal = ({
     const extraPrice = Math.max(0, fullSandwichExtra);
 
     setSelectedOptions((prev) => {
-      const withoutFull = prev.additions.filter((item) => !item.fullSandwich);
+      const withoutFull = prev.additions.filter((item) => !item.fullSandwich && !item.halfSandwich);
       const isSelected = prev.additions.some((item) => item.fullSandwich);
 
       if (isSelected) {
@@ -157,6 +157,24 @@ const Modal = ({
       return {
         ...prev,
         additions: [...withoutFull, { addition: fullSandwichLabel, price: extraPrice, fullSandwich: true }],
+      };
+    });
+  };
+
+  const handleHalfSandwichToggle = () => {
+    const halfSandwichLabel = t("modal.halfSandwich", "חצי סנדוויץ'");
+
+    setSelectedOptions((prev) => {
+      const withoutHalf = prev.additions.filter((item) => !item.fullSandwich && !item.halfSandwich);
+      const isSelected = prev.additions.some((item) => item.halfSandwich);
+
+      if (isSelected) {
+        return { ...prev, additions: withoutHalf };
+      }
+
+      return {
+        ...prev,
+        additions: [...withoutHalf, { addition: halfSandwichLabel, price: 0, halfSandwich: true }],
       };
     });
   };
@@ -172,6 +190,54 @@ const Modal = ({
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
 
         <p className="modal-description font-semibold text-center text-xl pt-6">{description}</p>
+
+        {/* Sandwich size */}
+        {hasFullSandwichOption && (
+          <div className="modal-options">
+            <h3 className="text-2xl font-semibold text-center pb-10">
+              {t("modal.sandwichSize", ":גודל סנדוויץ'")}
+            </h3>
+            <div className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input
+                  type="checkbox"
+                  id="half-sandwich-option"
+                  onChange={handleHalfSandwichToggle}
+                  checked={selectedOptions.additions.some((item) => item.halfSandwich)}
+                />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor="half-sandwich-option" className="checkbox-label pl-2">
+                🥪 {t("modal.halfSandwich", "חצי סנדוויץ'")}
+                <span className="pl-2 text-sm text-gray-500">
+                  ({t("modal.halfSandwichPrice", "מחיר חצי")} ₪{formatPrice(basePrice)})
+                </span>
+              </label>
+            </div>
+            <div className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input
+                  type="checkbox"
+                  id="full-sandwich-option"
+                  onChange={handleFullSandwichToggle}
+                  checked={selectedOptions.additions.some((item) => item.fullSandwich)}
+                />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor="full-sandwich-option" className="checkbox-label pl-2">
+                🥪 {t("modal.fullSandwich", "סנדוויץ' מלא")}
+                <span className="pl-2 text-sm text-gray-500">
+                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", "סה\"כ")} ₪
+                  {formatPrice(fullPrice)})
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Vegetables */}
         <div className="modal-options">
@@ -199,29 +265,6 @@ const Modal = ({
         {/* Additions */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.additionsRegular", ":תוספת למנה רגילה")}</h3>
-
-          {hasFullSandwichOption && (
-            <div className="checkbox-wrapper-30 checkbox-container">
-              <span className="checkbox">
-                <input
-                  type="checkbox"
-                  id="full-sandwich-option"
-                  onChange={handleFullSandwichToggle}
-                  checked={selectedOptions.additions.some((item) => item.fullSandwich)}
-                />
-                <svg>
-                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                </svg>
-              </span>
-              <label htmlFor="full-sandwich-option" className="checkbox-label pl-2">
-                {t("modal.fullSandwich", "סנדוויץ' מלא")}
-                <span className="pl-2 text-sm text-gray-500">
-                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", "סה\"כ")} ₪
-                  {formatPrice(fullPrice)})
-                </span>
-              </label>
-            </div>
-          )}
 
           {/* Gram-based additions */}
           {availableWeightedAdditions.map((addition, index) => (
