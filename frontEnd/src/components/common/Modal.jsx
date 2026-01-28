@@ -194,9 +194,7 @@ const Modal = ({
         {/* Sandwich size */}
         {hasFullSandwichOption && (
           <div className="modal-options">
-            <h3 className="text-2xl font-semibold text-center pb-10">
-              {t("modal.sandwichSize", ":גודל סנדוויץ'")}
-            </h3>
+            <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.sandwichSize", "גודל סנדוויץ'")}</h3>
             <div className="checkbox-wrapper-30 checkbox-container">
               <span className="checkbox">
                 <input
