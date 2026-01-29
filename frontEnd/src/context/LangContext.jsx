@@ -138,13 +138,6 @@ const translations = {
       deliveryOptionLabel: "אפשרות משלוח",
       whatsappTotalLabel: 'סה"כ',
     },
-    checkoutSteps: {
-      label: "שלבי הזמנה",
-      cart: "עגלה",
-      billing: "חיוב",
-      shipping: "משלוח",
-      payment: "תשלום",
-    },
     sideMenu: {
       dashboard: "לוח בקרה",
       products: "מוצרים",
@@ -330,13 +323,6 @@ const translations = {
       whatsappOrderDetails: "Order details",
       deliveryOptionLabel: "Delivery option",
       whatsappTotalLabel: "Total",
-    },
-    checkoutSteps: {
-      label: "Checkout steps",
-      cart: "Cart",
-      billing: "Billing",
-      shipping: "Shipping",
-      payment: "Payment",
     },
     sideMenu: {
       dashboard: "Dashboard",
