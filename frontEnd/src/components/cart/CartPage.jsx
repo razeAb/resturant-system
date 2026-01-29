@@ -15,7 +15,6 @@ const isValidPhoneNumber = (phone) => {
 
 const CartPage = () => {
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -37,7 +36,7 @@ const CartPage = () => {
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [policyChecked, setPolicyChecked] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
 
@@ -68,24 +67,6 @@ const CartPage = () => {
     setIsClosedModalOpen(false);
   };
 
-  const handleOrderNow = () => {
-    setShowConfirmationModal(true);
-  };
-
-  const closeModal = () => {
-    setShowConfirmationModal(false);
-
-    setPaymentMethod(null);
-    setDeliveryOption(null);
-    setShowCardPayment(false);
-
-    setPaymentResult(null);
-    setOrderSubmitted(false);
-    setPolicyChecked(false);
-    setShowPolicyModal(false);
-
-    setIsOrderReady(false);
-  };
   //vegetables Order
   const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
 
@@ -108,7 +89,6 @@ const CartPage = () => {
     setCouponError("");
     setCouponApplied(false);
     setEligibleReward(null);
-    setShowConfirmationModal(false);
     setIsClosedModalOpen(false);
     setIsOrderReady(false);
     setOrderSubmitted(false);
@@ -156,25 +136,25 @@ const CartPage = () => {
     if (orderSubmitted) return;
 
     if (!checkOrderReadiness()) {
-      alert("אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה");
+      alert(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
       return;
     }
 
     if (isGuest()) {
       if (!guestName.trim()) {
-        alert("אנא הזן שם לפני השלמת ההזמנה");
+        alert(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
         return;
       }
 
       if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
-        alert("אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות");
+        alert(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
         return;
       }
     }
 
     if (paymentMethod === "Card") {
       if (!orderId) {
-        alert("התשלום בכרטיס לא הושלם");
+        alert(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
         return;
       }
       setOrderSubmitted(true);
@@ -284,11 +264,11 @@ const CartPage = () => {
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
-        alert("החיבור שלך פג תוקף. אנא התחבר מחדש");
+        alert(t("cartPage.sessionExpired", "החיבור שלך פג תוקף. אנא התחבר מחדש"));
         window.location.reload();
       } else {
         console.error("❌ Failed to submit order:", error.response?.data || error.message);
-        alert("שגיאה בשליחת ההזמנה");
+        alert(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
       }
     }
   };
@@ -391,7 +371,7 @@ const CartPage = () => {
       })
       .catch((err) => {
         setCouponDiscount(0);
-        setCouponError(err?.response?.data?.message || "קופון לא תקין");
+        setCouponError(err?.response?.data?.message || t("cartPage.couponInvalid", "קופון לא תקין"));
       })
       .finally(() => setIsCouponChecking(false));
   }, [appliedCoupon, cartItems, couponApplied, eligibleReward]);
@@ -399,7 +379,7 @@ const CartPage = () => {
   const handleApplyCoupon = () => {
     const code = couponCode.trim().toUpperCase();
     if (!code) {
-      setCouponError("אנא הזן קוד קופון");
+      setCouponError(t("cartPage.couponEmpty", "אנא הזן קוד קופון"));
       return;
     }
     const subtotal = parseFloat(calculateCartTotal());
@@ -413,7 +393,7 @@ const CartPage = () => {
         setCouponError("");
       })
       .catch((err) => {
-        setCouponError(err?.response?.data?.message || "קוד קופון לא תקין");
+        setCouponError(err?.response?.data?.message || t("cartPage.couponInvalidCode", "קוד קופון לא תקין"));
         setAppliedCoupon(null);
         setCouponDiscount(0);
       })
@@ -442,49 +422,336 @@ const CartPage = () => {
       return; // Stop execution here to prevent sending the WhatsApp message
     }
 
-    const deliveryOptionHebrew = deliveryOption === "Pickup" ? "איסוף עצמי" : deliveryOption === "Delivery" ? "משלוח" : "אכילה במסעדה";
+    const deliveryOptionLabel =
+      deliveryOption === "Pickup"
+        ? t("cartPage.pickup", "איסוף עצמי")
+        : deliveryOption === "Delivery"
+        ? t("cartPage.delivery", "משלוח")
+        : t("cartPage.eatIn", "אכילה במסעדה");
 
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables = item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || "כל הירקות";
+        const vegetables =
+          item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || t("cartPage.allVegetables", "כל הירקות");
         const additions =
           item.id >= 10 && item.id <= 16
             ? ""
-            : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || "אין";
+            : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || t("cartPage.noAdditions", "אין");
 
-        const comment = item.comment ? `הערות: ${item.comment}` : "הערות: אין";
+        const comment = item.comment
+          ? `${t("cartPage.commentLabel", "הערות")}: ${item.comment}`
+          : `${t("cartPage.commentLabel", "הערות")}: ${t("cartPage.noComment", "אין")}`;
 
         if (item.id >= 10 && item.id <= 17) {
           return `
-            מוצר: ${resolveItemName(item)}
-            כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
+            ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
+            ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
 
-            מחיר ליחידה: ${item.price} ILS
+            ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
                         ${comment}
-            מחיר סופי: ${itemTotalPrice} ILS
+            ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
           `.trim();
         }
 
         return `
-          מוצר: ${resolveItemName(item)}
-          כמות: ${item.isWeighted ? `${item.quantity} גרם` : item.quantity}
+          ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
+          ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
 
-          ירקות: ${vegetables}
-          תוספות: ${additions}
-          מחיר ליחידה: ${item.price} ILS
+          ${t("cartPage.vegetablesLabel", "ירקות")}: ${vegetables}
+          ${t("cartPage.additionsLabel", "תוספות")}: ${additions}
+          ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
                     ${comment}
-          מחיר סופי: ${itemTotalPrice} ILS
+          ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
         `.trim();
       })
       .join("\n\n");
 
     const totalPrice = groupCartItems().reduce((total, item) => total + parseFloat(calculateItemTotal(item)), 0);
 
-    const message = `פרטי הזמנה:\n\n${orderDetails}\n\nאפשרות משלוח: ${deliveryOptionHebrew}\n\nסה"כ: ${totalPrice} ILS`;
+    const message = `${t("cartPage.whatsappOrderDetails", "פרטי הזמנה")}:\n\n${orderDetails}\n\n${t(
+      "cartPage.deliveryOptionLabel",
+      "אפשרות משלוח"
+    )}: ${deliveryOptionLabel}\n\n${t("cartPage.whatsappTotalLabel", "סה\"כ")}: ${totalPrice} ILS`;
     const whatsappUrl = `https://wa.me/+972507203099?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
+
+  const renderCheckoutContent = (inline = false) => (
+    <div className={inline ? "checkout-panel" : "modal-content"} onClick={(e) => e.stopPropagation()}>
+      <h2 style={{ direction: "rtl", textAlign: "right" }}>{t("cartPage.confirmTitle", "אישור הזמנה")}</h2>
+      <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
+        {t("cartPage.confirmSubtitle", "אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ")}
+      </p>
+      {isGuest() && (
+        <>
+          <div style={{ marginBottom: "10px" }}>
+            <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>{t("cartPage.customerName", "שם לקוח")}:</h4>
+            <input
+              type="text"
+              placeholder={t("cartPage.customerNamePlaceholder", "הכנס שם")}
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: "5px" }}>
+            <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>
+              {t("cartPage.phoneForStatus", "מספר טלפון לסטטוס הזמנה")}:
+            </h4>
+            <input
+              type="tel"
+              placeholder={t("cartPage.phonePlaceholder", "הכנס מספר טלפון")}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              required
+              pattern="^05\\d{8}$"
+              title={t("cartPage.phoneTitle", "יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות")}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+        </>
+      )}
+      <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
+        <h4>{t("cartPage.orderSummary", "סיכום הזמנה")}:</h4>
+        <ul style={{ listStyleType: "none", padding: 0 }}>
+          {groupCartItems().map((item, idx) => (
+            <li key={idx}>
+              {resolveItemName(item)} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
+            </li>
+          ))}
+        </ul>
+        {couponDiscount > 0 && (
+          <p>
+            {t("cartPage.couponDiscount", "הנחת קופון")}: -{couponDiscount.toFixed(2)} ILS
+          </p>
+        )}
+        <p>
+          {t("cartPage.total", "סה\"כ לתשלום")}: {calculateFinalTotal()} ILS
+        </p>
+        <p style={{ fontSize: "14px", color: "#555" }}>
+          {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
+        </p>
+      </div>
+      <div style={{ marginTop: "5px" }}>
+        <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>
+          {t("cartPage.choosePayment", "בחר אמצעי תשלום")}:
+        </h4>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+          <button
+            onClick={() => {
+              setPaymentMethod("Cash");
+              setShowCardPayment(false);
+              setPaymentResult(null);
+            }}
+            style={{
+              flex: "1",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 20px",
+              backgroundColor: paymentMethod === "Cash" ? "#16a34a" : "#22c55e",
+              border: paymentMethod === "Cash" ? "3px solid black" : "1px solid transparent",
+              color: "#fff",
+              borderRadius: "5px",
+            }}
+          >
+            <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
+            {t("cartPage.payCash", "מזומן")}
+          </button>
+          <button
+            onClick={async () => {
+              if (!deliveryOption) {
+                alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
+                return;
+              }
+              setPaymentMethod("Card");
+              setPaymentResult(null);
+              try {
+                if (!orderId) {
+                  await createPrePaymentOrder("Card");
+                }
+                setShowCardPayment(true);
+              } catch (err) {
+                console.error("❌ Failed to create pre-payment order:", err);
+                          alert(t("cartPage.createOrderError", "שגיאה ביצירת ההזמנה"));
+              }
+            }}
+            style={{
+              flex: "1",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 20px",
+              backgroundColor: paymentMethod === "Card" ? "#1d4ed8" : "#2563eb",
+              border: paymentMethod === "Card" ? "3px solid black" : "1px solid transparent",
+              color: "#fff",
+              borderRadius: "5px",
+            }}
+          >
+            <img src="/svg/visa.svg" alt="Card Icon" style={{ width: "20px", height: "20px" }} />
+            {t("cartPage.payCard", "כרטיס אשראי")}
+          </button>
+        </div>
+      </div>
+      <div
+        className="modal-delivery-buttons"
+        style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
+      >
+        <button
+          onClick={() => {
+            setDeliveryOption("Pickup");
+          }}
+          style={{
+            flex: "1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "12px 24px",
+            border: "2px solid #f97316",
+            color: deliveryOption === "Pickup" ? "#ffffff" : "#f97316",
+            backgroundColor: deliveryOption === "Pickup" ? "#f97316" : "transparent",
+            borderRadius: "8px",
+            fontWeight: "600",
+            fontSize: "16px",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
+          {t("cartPage.pickup", "איסוף עצמי")}
+        </button>
+
+        <button
+          onClick={() => {
+            setDeliveryOption("Delivery");
+          }}
+          style={{
+            flex: "1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "12px 24px",
+            border: "2px solid #f97316",
+            color: deliveryOption === "Delivery" ? "#ffffff" : "#f97316",
+            backgroundColor: deliveryOption === "Delivery" ? "#f97316" : "transparent",
+            borderRadius: "8px",
+            fontWeight: "600",
+            fontSize: "16px",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
+          {t("cartPage.delivery", "משלוח")}
+        </button>
+
+        <button
+          onClick={() => {
+            setDeliveryOption("EatIn");
+          }}
+          style={{
+            flex: "1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "12px 24px",
+            border: "2px solid #f97316",
+            color: deliveryOption === "EatIn" ? "#ffffff" : "#f97316",
+            backgroundColor: deliveryOption === "EatIn" ? "#f97316" : "transparent",
+            borderRadius: "8px",
+            fontWeight: "600",
+            fontSize: "16px",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <img src="/photos/dish.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
+          {t("cartPage.eatIn", "אכילה במסעדה")}
+        </button>
+      </div>
+      {deliveryOption === "Delivery" && (
+        <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
+          {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
+        </p>
+      )}
+      {paymentMethod === "Card" && showCardPayment && !paymentResult && orderId && <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />}
+      {paymentResult === "success" && (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <img src="/icons/check-success.svg" alt="Success" style={{ width: "60px", marginBottom: "10px" }} />
+          <h3 style={{ color: "#16a34a" }}>{t("cartPage.paymentSuccessTitle", "התשלום הצליח!")}</h3>
+          <p>{t("cartPage.paymentSuccessBody", "ניתן כעת להשלים את ההזמנה")}</p>
+        </div>
+      )}
+      {paymentResult === "failure" && (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <img src="/icons/fail-icon.svg" alt="Failure" style={{ width: "60px", marginBottom: "10px" }} />
+          <h3 style={{ color: "#dc2626" }}>{t("cartPage.paymentFailureTitle", "התשלום נכשל")}</h3>
+          <p>{t("cartPage.paymentFailureBody", "אנא נסה שוב או נסה אמצעי תשלום אחר")}</p>
+          <button
+            onClick={() => {
+              setPaymentResult(null);
+              setShowCardPayment(true);
+            }}
+            style={{
+              marginTop: "15px",
+              padding: "10px 20px",
+              backgroundColor: "#1d4ed8",
+              color: "white",
+              borderRadius: "8px",
+              border: "none",
+            }}
+          >
+            {t("cartPage.tryAgain", "נסה שוב")}
+          </button>
+        </div>
+      )}
+      <div style={{ marginTop: "15px", direction: "rtl", textAlign: "right" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input type="checkbox" checked={policyChecked} onChange={(e) => setPolicyChecked(e.target.checked)} />
+          <span>
+            {t("cartPage.policyLabel", "אני מאשר/ת שקראתי את")}{" "}
+            <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => setShowPolicyModal(true)}>
+              {t("cartPage.policyLink", "התקנון ומדיניות הביטולים")}
+            </span>
+          </span>
+        </label>
+      </div>
+      <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
+        <button
+          onClick={handleFinalSubmit}
+          disabled={orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked}
+          style={{
+            padding: "12px 24px",
+            backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "bold",
+            borderRadius: "8px",
+            cursor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
+            border: "none",
+          }}
+        >
+          {t("cartPage.sendOrder", "שלח הזמנה")}
+          {orderSubmitted ? t("cartPage.orderSubmitted", "הזמנה נשלחה") : ""}
+        </button>
+      </div>
+    </div>
+  );
 
   if (user === undefined) {
     return null; // Wait for AuthContext to resolve
@@ -517,12 +784,14 @@ const CartPage = () => {
             }}
           >
             <img src={checkGif} alt="Order Confirmed" style={{ width: "120px", marginBottom: "16px" }} />
-            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>ההזמנה נשלחה בהצלחה!</p>
+            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>
+              {t("cartPage.orderSuccessToast", "ההזמנה נשלחה בהצלחה!")}
+            </p>
           </div>
         )}
 
         <div style={{ padding: "20px" }}>
-          <h2>העגלה שלך ריקה</h2>
+          <h2>{t("cartPage.empty", "העגלה שלך ריקה")}</h2>
         </div>
       </>
     );
@@ -531,491 +800,115 @@ const CartPage = () => {
   return (
     <>
       <CartNavbar />
-      <div style={{ padding: "20px" }}>
-        <h2>העגלה שלך</h2>
-        <div className="cart-table-container">
-          <table className="cart-table">
-            <thead>
-              <tr>
-                <th>תמונה</th>
-                <th>שם מוצר</th>
-                <th>כמות</th>
-                {groupCartItems().some((item) => item.id < 11 || item.id > 17) && (
-                  <>
-                    <th>ירקות</th>
-                    <th>תוספות</th>
-                  </>
-                )}
-                <th>מחיר ליחידה</th>
-                <th>מחיר סופי</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupCartItems().map((item, index) => {
-                const itemTotalPrice = calculateItemTotal(item, index);
-                return (
-                  <tr key={index}>
-                    <td data-label="תמונה">
-                      <img src={item.img} alt={resolveItemName(item)} style={{ width: "100px", borderRadius: "8px" }} />
-                    </td>
-                    <td data-label="שם מוצר">{resolveItemName(item)}</td>
-                    <td data-label="כמות">{item.isWeighted ? `${item.quantity} גרם` : item.quantity}</td>
+      <div className="cart-layout">
+        <div className="cart-main">
+          <div className="cart-header">
+            <h2>{t("cartPage.title", "העגלה שלך")}</h2>
+            <p className="cart-subtitle">
+              {t("cartPage.itemsCount", "יש לך")} {groupCartItems().length} {t("cartPage.itemsSuffix", "פריטים בעגלה")}
+            </p>
+          </div>
+          <div className="cart-items-list">
+            {groupCartItems().map((item, index) => {
+              const itemTotalPrice = calculateItemTotal(item, index);
+              const vegetables =
+                Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
+                  ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
+                  : t("cartPage.allVegetables", "כל הירקות");
+              const additions = item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין");
 
-                    {/* Show vegetables and additions for all items */}
-                    <td data-label="ירקות">
-                      {Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
-                        ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
-                        : "כל הירקות"}
-                    </td>
-
-                    <td data-label="תוספות">{item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || "אין"}</td>
-
-                    <td data-label="מחיר ליחידה">{item.price} ILS</td>
-                    <td data-label="מחיר סופי">{itemTotalPrice} ILS</td>
-                    <td data-label="פעולות">
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        style={{
-                          padding: "8px 12px",
-                          backgroundColor: "#ff6f61",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        הסר
+              return (
+                <div className="cart-item-card" key={index}>
+                  <img className="cart-item-image" src={item.img} alt={resolveItemName(item)} />
+                  <div className="cart-item-details">
+                    <div className="cart-item-top">
+                      <div>
+                        <h3 className="cart-item-title">{resolveItemName(item)}</h3>
+                        <p className="cart-item-sub">
+                          {item.isWeighted
+                            ? `${item.quantity} ${t("modal.grams", "גרם")}`
+                            : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
+                        </p>
+                      </div>
+                      <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
+                        {t("cartPage.remove", "הסר")}
                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="cart-total">
-          <div>סה&quot;כ ביניים: {calculateCartTotal()} ILS</div>
-          {couponDiscount > 0 && <div>הנחת קופון: -{couponDiscount.toFixed(2)} ILS</div>}
-          <div>סה&quot;כ לתשלום: {calculateFinalTotal()} ILS</div>
-        </div>{" "}
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "10px",
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            maxWidth: "360px",
-            width: "100%",
-            direction: "rtl",
-            textAlign: "right",
-            fontSize: "13px",
-            boxSizing: "border-box",
-          }}
-        >
-          <h4 style={{ margin: "0 0 6px 0", fontSize: "14px" }}>קוד קופון</h4>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", width: "100%" }}>
-            <input
-              type="text"
-              placeholder="הכנס קוד"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              style={{
-                flex: "1 1 160px",
-                width: "100%",
-                padding: "6px 8px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                fontSize: "12px",
-                boxSizing: "border-box",
-              }}
-            />
-            {!appliedCoupon ? (
+                    </div>
+                    <div className="cart-item-meta">
+                      <span>
+                        {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
+                      </span>
+                      <span>
+                        {t("cartPage.additionsLabel", "תוספות")}: {additions}
+                      </span>
+                    </div>
+                    <div className="cart-item-bottom">
+                      <span className="cart-item-unit">₪{item.price}</span>
+                      <span className="cart-item-total">₪{itemTotalPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="cart-coupon">
+            <h4>{t("cartPage.couponTitle", "קוד קופון")}</h4>
+            <div className="cart-coupon-row">
+              <input
+                type="text"
+                placeholder={t("cartPage.couponPlaceholder", "הכנס קוד")}
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+              />
+              {!appliedCoupon ? (
+                <button onClick={handleApplyCoupon}>{t("cartPage.couponApply", "החל")}</button>
+              ) : (
+                <button className="danger" onClick={handleRemoveCoupon}>
+                  {t("cartPage.couponRemove", "הסר")}
+                </button>
+              )}
+            </div>
+            {appliedCoupon && (
+              <div className="cart-coupon-success">
+                {t("cartPage.couponApplied", "הקופון הופעל")}: {appliedCoupon}
+              </div>
+            )}
+            {isCouponChecking && <div className="cart-coupon-muted">{t("cartPage.couponChecking", "בודק קופון...")}</div>}
+            {couponError && <div className="cart-coupon-error">{couponError}</div>}
+            {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
+          </div>
+          <div className="cart-actions">
+            {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
+            {eligibleReward && !couponApplied && (
               <button
-                onClick={handleApplyCoupon}
-                style={{
-                  backgroundColor: "#2563eb",
-                  color: "#fff",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "12px",
-                  minWidth: "80px",
-                }}
+                className="cart-reward-button"
+                onClick={() => setCouponApplied(true)}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
               >
-                החל
-              </button>
-            ) : (
-              <button
-                onClick={handleRemoveCoupon}
-                style={{
-                  backgroundColor: "#ef4444",
-                  color: "#fff",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "12px",
-                  minWidth: "80px",
-                }}
-              >
-                הסר
+                🎉{" "}
+                {eligibleReward === "drink" ? t("cartPage.rewardDrink", "קופון לשתייה חינם") : t("cartPage.rewardSide", "קופון לתוספת חינם")}
               </button>
             )}
           </div>
-          {appliedCoupon && <div style={{ marginTop: "6px", color: "#16a34a" }}>הקופון הופעל: {appliedCoupon}</div>}
-          {isCouponChecking && <div style={{ marginTop: "6px", color: "#6b7280" }}>בודק קופון...</div>}
-          {couponError && <div style={{ marginTop: "6px", color: "#dc2626" }}>{couponError}</div>}
-          {!appliedCoupon && (
-            <div style={{ marginTop: "6px", fontSize: "11px", color: "#6b7280" }}>הזן קוד קופון תקף</div>
-          )}
         </div>
-        <div style={{ marginTop: "20px" }}>
-          <button
-            onClick={handleOrderNow}
-            style={{
-              backgroundColor: "#22c55e", // Tailwind green-500
-              color: "#fff",
-              padding: "10px 20px",
-              borderRadius: "5px",
-              fontWeight: "bold",
-              fontSize: "16px",
-              marginTop: "10px",
-              cursor: "pointer",
-            }}
-          >
-            הזמן עכשיו
-          </button>{" "}
-          {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
-          {eligibleReward && !couponApplied && (
-            <button
-              onClick={() => setCouponApplied(true)}
-              style={{
-                backgroundColor: "#10b981", // Tailwind emerald-500
-                padding: "12px 20px",
-                borderRadius: "10px",
-                fontWeight: "bold",
-                marginTop: "20px",
-                fontSize: "16px",
-                color: "#fff",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")} // darker green
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
-            >
-              🎉 {eligibleReward === "drink" ? "קופון לשתייה חינם" : "קופון לתוספת חינם"}
-            </button>
-          )}
-        </div>
-        {showConfirmationModal && !isClosedModalOpen && (
-          <>
-            <div className="modal-overlay" onClick={closeModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2 style={{ direction: "rtl", textAlign: "right" }}>אישור הזמנה</h2>
-                <p style={{ direction: "rtl", textAlign: "right", paddingBottom: "20px" }}>
-                  {" "}
-                  אנא בחר באפשרות משלוח, איסוף עצמי, או אכילה במקום להשלמת ההזמנה שתישלח לוואטסאפ{" "}
-                </p>{" "}
-                {isGuest() && (
-                  <>
-                    <div style={{ marginBottom: "10px" }}>
-                      <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>שם לקוח:</h4>
-                      <input
-                        type="text"
-                        placeholder="הכנס שם"
-                        value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
-                        required
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          borderRadius: "5px",
-                          border: "1px solid #ccc",
-                        }}
-                      />
-                    </div>
-                    <div style={{ marginBottom: "5px" }}>
-                      <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>מספר טלפון לסטטוס הזמנה:</h4>
-                      <input
-                        type="tel"
-                        placeholder="הכנס מספר טלפון"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        required
-                        pattern="^05\d{8}$"
-                        title="יש להזין מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          borderRadius: "5px",
-                          border: "1px solid #ccc",
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
-                <div style={{ textAlign: "right", direction: "rtl", margin: "10px 0" }}>
-                  <h4>סיכום הזמנה:</h4>
-                  <ul style={{ listStyleType: "none", padding: 0 }}>
-                    {groupCartItems().map((item, idx) => (
-                      <li key={idx}>
-                        {resolveItemName(item)} x {item.quantity} - {calculateItemTotal(item, idx)} ILS
-                      </li>
-                    ))}
-                  </ul>
-                  {couponDiscount > 0 && <p>הנחת קופון: -{couponDiscount.toFixed(2)} ILS</p>}
-                  <p>סה&quot;כ לתשלום: {calculateFinalTotal()} ILS</p>{" "}
-                  <p style={{ fontSize: "14px", color: "#555" }}>מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות</p>
-                </div>
-                <div style={{ marginTop: "5px" }}>
-                  <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "10px" }}>בחר אמצעי תשלום:</h4>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-                    <button
-                      onClick={() => {
-                        setPaymentMethod("Cash");
-                        setShowCardPayment(false);
-                        setPaymentResult(null);
-                      }}
-                      style={{
-                        flex: "1",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "10px 20px",
-                        backgroundColor: paymentMethod === "Cash" ? "#16a34a" : "#22c55e", // ✅ green/dark green
-                        border: paymentMethod === "Cash" ? "3px solid black" : "1px solid transparent", // Black border if selected
-
-                        color: "#fff",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      <img src="/svg/coins.png" alt="Cash Icon" style={{ width: "20px", height: "20px" }} />
-                      מזומן
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!deliveryOption) {
-                          alert("אנא בחר אפשרות משלוח לפני תשלום בכרטיס");
-                          return;
-                        }
-                        setPaymentMethod("Card");
-                        setPaymentResult(null);
-                        try {
-                          if (!orderId) {
-                            await createPrePaymentOrder("Card");
-                          }
-                          setShowCardPayment(true);
-                        } catch (err) {
-                          console.error("❌ Failed to create pre-payment order:", err);
-                          alert("שגיאה ביצירת ההזמנה");
-                        }
-                      }}
-                      style={{
-                        flex: "1",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "10px 20px",
-                        backgroundColor: paymentMethod === "Card" ? "#1d4ed8" : "#2563eb",
-                        border: paymentMethod === "Card" ? "3px solid black" : "1px solid transparent",
-
-                        color: "#fff",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      <img src="/svg/visa.svg" alt="Card Icon" style={{ width: "20px", height: "20px" }} />
-                      כרטיס אשראי
-                    </button>
-                  </div>
-                </div>
-                {/* ✅ Delivery buttons */}
-                <div
-                  className="modal-delivery-buttons"
-                  style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
-                >
-                  <button
-                    onClick={() => {
-                      setDeliveryOption("Pickup");
-                    }}
-                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "10px",
-                      padding: "12px 24px",
-                      border: "2px solid #f97316",
-                      color: deliveryOption === "Pickup" ? "#ffffff" : "#f97316",
-                      backgroundColor: deliveryOption === "Pickup" ? "#f97316" : "transparent",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      fontSize: "16px",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <img src="/photos/waiter.svg" alt="Pickup Icon" style={{ width: "20px", height: "20px" }} />
-                    איסוף עצמי
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setDeliveryOption("Delivery");
-                    }}
-                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "10px",
-                      padding: "12px 24px",
-                      border: "2px solid #f97316",
-                      color: deliveryOption === "Delivery" ? "#ffffff" : "#f97316",
-                      backgroundColor: deliveryOption === "Delivery" ? "#f97316" : "transparent",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      fontSize: "16px",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <img src="/photos/scooter.svg" alt="Delivery Icon" style={{ width: "20px", height: "20px" }} />
-                    משלוח
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setDeliveryOption("EatIn");
-                    }}
-                    style={{
-                      flex: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "10px",
-                      padding: "12px 24px",
-                      border: "2px solid #f97316",
-                      color: deliveryOption === "EatIn" ? "#ffffff" : "#f97316",
-                      backgroundColor: deliveryOption === "EatIn" ? "#f97316" : "transparent",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      fontSize: "16px",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <img src="/photos/dish.svg" alt="EatIn Icon" style={{ width: "20px", height: "20px" }} />
-                    אכילה במסעדה
-                  </button>
-                </div>
-                {deliveryOption === "Delivery" && (
-                  <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
-                    שימו לב: מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות
-                  </p>
-                )}
-                {paymentMethod === "Card" && showCardPayment && !paymentResult && orderId && (
-                  <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />
-                )}
-                {paymentResult === "success" && (
-                  <div style={{ textAlign: "center", marginTop: "20px" }}>
-                    <img src="/icons/check-success.svg" alt="Success" style={{ width: "60px", marginBottom: "10px" }} />
-                    <h3 style={{ color: "#16a34a" }}>התשלום הצליח!</h3>
-                    <p>ניתן כעת להשלים את ההזמנה</p>
-                  </div>
-                )}
-                {paymentResult === "failure" && (
-                  <div style={{ textAlign: "center", marginTop: "20px" }}>
-                    <img src="/icons/fail-icon.svg" alt="Failure" style={{ width: "60px", marginBottom: "10px" }} />
-                    <h3 style={{ color: "#dc2626" }}>התשלום נכשל</h3>
-                    <p>אנא נסה שוב או נסה אמצעי תשלום אחר</p>
-                    <button
-                      onClick={() => {
-                        setPaymentResult(null);
-                        setShowCardPayment(true);
-                      }}
-                      style={{
-                        marginTop: "15px",
-                        padding: "10px 20px",
-                        backgroundColor: "#1d4ed8",
-                        color: "white",
-                        borderRadius: "8px",
-                        border: "none",
-                      }}
-                    >
-                      נסה שוב
-                    </button>
-                  </div>
-                )}
-                <div style={{ marginTop: "15px", direction: "rtl", textAlign: "right" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input type="checkbox" checked={policyChecked} onChange={(e) => setPolicyChecked(e.target.checked)} />
-                    <span>
-                      אני מאשר/ת שקראתי את{" "}
-                      <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => setShowPolicyModal(true)}>
-                        התקנון ומדיניות הביטולים
-                      </span>
-                    </span>
-                  </label>
-                </div>
-                {/* ✅ Send and Cancel buttons */}
-                <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-                  <button
-                    onClick={handleFinalSubmit}
-                    disabled={orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked}
-                    style={{
-                      padding: "12px 24px",
-                      backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
-                      color: "white",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                      borderRadius: "8px",
-                      cursor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
-                      border: "none",
-                    }}
-                  >
-                    שלח הזמנה
-                    {orderSubmitted ? "הזמנה נשלחה" : ""}
-                  </button>
-
-                  <button
-                    onClick={closeModal}
-                    style={{
-                      padding: "12px 24px",
-                      backgroundColor: "black",
-                      color: "white",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      border: "none",
-                    }}
-                  >
-                    בטל
-                  </button>
-                </div>
+        <aside className="cart-checkout" id="checkout-panel">
+          {renderCheckoutContent(true)}
+        </aside>
+        {showPolicyModal && (
+          <div className="modal-overlay" onClick={() => setShowPolicyModal(false)} style={{ zIndex: 3000 }}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2 style={{ direction: "rtl", textAlign: "right" }}>{t("cartPage.policyTitle", "מדיניות ביטולים והחזרים")}:</h2>
+              <div style={{ direction: "rtl", textAlign: "right", maxHeight: "70vh", overflowY: "auto" }}>
+                <p>• {t("cartPage.policyLine1", "ניתן לבטל הזמנה תוך 5 דקות ממועד ההזמנה כל עוד לא התחילה ההכנה.")}</p>
+                <p>• {t("cartPage.policyLine2", "לאחר תחילת ההכנה או יציאת המשלוח – לא ניתן לבטל את ההזמנה.")}</p>
+                <p>
+                  • {t("cartPage.policyLine3", "החזר כספי יתבצע באותו אמצעי תשלום, עד 5% או 100 ₪ דמי ביטול (הנמוך מביניהם) בהתאם לחוק.")}
+                </p>
+                <p>• {t("cartPage.policyLine4", "במקרה של טעות מצד המסעדה (למשל מנה לא נכונה או לא סופקה) – הלקוח זכאי להחזר מלא או אספקה מחדש.")}</p>
               </div>
             </div>
-            {showPolicyModal && (
-              <div className="modal-overlay" onClick={() => setShowPolicyModal(false)} style={{ zIndex: 3000 }}>
-                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                  <h2 style={{ direction: "rtl", textAlign: "right" }}>מדיניות ביטולים והחזרים:</h2>
-                  <div style={{ direction: "rtl", textAlign: "right", maxHeight: "70vh", overflowY: "auto" }}>
-                    <p>• ניתן לבטל הזמנה תוך 5 דקות ממועד ההזמנה כל עוד לא התחילה ההכנה.</p>
-                    <p>• לאחר תחילת ההכנה או יציאת המשלוח – לא ניתן לבטל את ההזמנה.</p>
-                    <p>• החזר כספי יתבצע באותו אמצעי תשלום, עד 5% או 100 ₪ דמי ביטול (הנמוך מביניהם) בהתאם לחוק.</p>
-                    <p>• במקרה של טעות מצד המסעדה (למשל מנה לא נכונה או לא סופקה) – הלקוח זכאי להחזר מלא או אספקה מחדש.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
 
@@ -1033,6 +926,224 @@ const CartPage = () => {
 .animate-fadeOut {
   animation: fadeOut 3s forwards;
 }
+        .cart-layout {
+          display: flex;
+          padding: 100px 20px 20px;
+          gap: 24px;
+          align-items: flex-start;
+        }
+
+        .cart-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .cart-header h2 {
+          font-size: 24px;
+          font-weight: 700;
+          margin: 0 0 6px 0;
+        }
+
+        .cart-subtitle {
+          color: #6b7280;
+          font-size: 14px;
+          margin-bottom: 16px;
+        }
+
+        .cart-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .cart-item-card {
+          display: flex;
+          gap: 16px;
+          background: #ffffff;
+          border-radius: 16px;
+          padding: 14px;
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+        }
+
+        .cart-item-image {
+          width: 92px;
+          height: 92px;
+          border-radius: 12px;
+          object-fit: cover;
+        }
+
+        .cart-item-details {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .cart-item-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .cart-item-title {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .cart-item-sub {
+          margin: 4px 0 0 0;
+          color: #64748b;
+          font-size: 13px;
+        }
+
+        .cart-item-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 13px;
+          color: #475569;
+        }
+
+        .cart-item-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-weight: 600;
+        }
+
+        .cart-item-unit {
+          color: #0f172a;
+          font-size: 14px;
+        }
+
+        .cart-item-total {
+          color: #111827;
+          font-size: 16px;
+        }
+
+        .cart-remove {
+          background: #fee2e2;
+          color: #b91c1c;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 999px;
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        .cart-summary {
+          margin-top: 18px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 12px 16px;
+          font-weight: 600;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .cart-coupon {
+          margin-top: 16px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 12px 16px;
+          max-width: 420px;
+          direction: rtl;
+          text-align: right;
+          font-size: 13px;
+        }
+
+        .cart-coupon h4 {
+          margin: 0 0 8px 0;
+          font-size: 14px;
+        }
+
+        .cart-coupon-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .cart-coupon-row input {
+          flex: 1 1 160px;
+          padding: 6px 8px;
+          border-radius: 6px;
+          border: 1px solid #cbd5f5;
+          font-size: 12px;
+          box-sizing: border-box;
+        }
+
+        .cart-coupon-row button {
+          background: #2563eb;
+          color: #fff;
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: none;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        .cart-coupon-row button.danger {
+          background: #ef4444;
+        }
+
+        .cart-coupon-success {
+          margin-top: 6px;
+          color: #16a34a;
+        }
+
+        .cart-coupon-muted {
+          margin-top: 6px;
+          color: #6b7280;
+          font-size: 11px;
+        }
+
+        .cart-coupon-error {
+          margin-top: 6px;
+          color: #dc2626;
+        }
+
+        .cart-actions {
+          margin-top: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .cart-reward-button {
+          background: #10b981;
+          color: #fff;
+          padding: 12px 20px;
+          border-radius: 999px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          transition: all 0.3s ease;
+        }
+
+        .cart-checkout {
+          width: 380px;
+          position: sticky;
+          top: 20px;
+          align-self: flex-start;
+        }
+
+        .checkout-panel {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 18px;
+          padding: 20px;
+          box-shadow: 0 14px 30px rgba(15, 23, 42, 0.15);
+        }
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -1265,6 +1376,80 @@ const CartPage = () => {
             .modal-buttons {
               flex-direction: column;
           gap: 10px;
+        }
+
+        @media (max-width: 1024px) {
+          .cart-layout {
+            flex-direction: column;
+          }
+
+          .cart-checkout {
+            width: 100%;
+            position: static;
+            top: auto;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .cart-layout {
+            padding: 88px 14px 20px;
+            gap: 18px;
+          }
+
+          .cart-item-card {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .cart-item-image {
+            width: 100%;
+            height: 180px;
+          }
+
+          .cart-item-top {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .cart-remove {
+            align-self: flex-start;
+          }
+
+          .cart-item-bottom {
+            width: 100%;
+          }
+
+          .cart-summary,
+          .cart-coupon,
+          .checkout-panel {
+            width: 100%;
+          }
+
+          .cart-coupon-row {
+            flex-direction: column;
+          }
+
+          .cart-coupon-row button {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .cart-layout {
+            padding-top: 80px;
+          }
+
+          .cart-item-image {
+            height: 160px;
+          }
+
+          .cart-item-title {
+            font-size: 16px;
+          }
+
+          .cart-item-total {
+            font-size: 15px;
+          }
         }
 
         .order-success {
