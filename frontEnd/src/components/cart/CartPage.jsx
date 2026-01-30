@@ -18,6 +18,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [toast, setToast] = useState(null);
   const [drawerStep, setDrawerStep] = useState("items");
 
   const [couponCode, setCouponCode] = useState("");
@@ -42,6 +43,11 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
 
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
     if (isDrawer && isOpen) {
       setDrawerStep("items");
@@ -55,7 +61,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         try {
           const res = await api.get(`/api/orders/${orderId}`);
           if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
-            console.log("✅ Payment confirmed via webhook");
             setIsPaymentConfirmed(true);
             clearInterval(interval);
           }
@@ -128,7 +133,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             },
             { headers: { Authorization: `Bearer ${token}` } }
           )
-          .then(() => console.log("✅ Order count and drink coupon reset"))
+          .then(() => {})
           .catch((err) => console.error("❌ Reset error:", err.response?.data || err.message));
       }
     }
@@ -144,25 +149,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     if (orderSubmitted) return;
 
     if (!checkOrderReadiness()) {
-      alert(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
+      showToast(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
       return;
     }
 
     if (isGuest()) {
       if (!guestName.trim()) {
-        alert(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
+        showToast(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
         return;
       }
 
       if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
-        alert(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
+        showToast(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
         return;
       }
     }
 
     if (paymentMethod === "Card") {
       if (!orderId) {
-        alert(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
+        showToast(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
         return;
       }
       setOrderSubmitted(true);
@@ -226,7 +231,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       ...(payload.paymentDetails || {}),
       method: forcedMethod || payload.paymentDetails?.method || "Card",
     };
-    console.log("📦 Creating pre-payment order:", payload);
     const res = await api.post(`/api/orders/create-pre-payment`, payload);
     setOrderId(res.data.orderId);
   };
@@ -235,15 +239,12 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const submitOrderToBackend = async () => {
     const payload = buildOrderPayload();
 
-    console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
       const response = await api.post(`/api/orders`, payload);
-      console.log("✅ Order submitted:", response.data);
 
       const createdOrder = response.data.order; // ✅ Get full order object
       const orderId = createdOrder._id; // ✅ This is the MongoDB _id
-      console.log("📦 Order ID (MongoDB _id):", orderId);
 
       setOrderId(orderId);
 
@@ -270,11 +271,11 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
-        alert(t("cartPage.sessionExpired", "החיבור שלך פג תוקף. אנא התחבר מחדש"));
+        showToast(t("cartPage.sessionExpired", "החיבור שלך פג תוקף. אנא התחבר מחדש"));
         window.location.reload();
       } else {
         console.error("❌ Failed to submit order:", error.response?.data || error.message);
-        alert(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
+        showToast(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
       }
     }
   };
@@ -359,7 +360,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }, 0)
       .toFixed(2);
   };
-  console.log("Final total price sent:", calculateCartTotal());
 
   useEffect(() => {
     if (!appliedCoupon) {
@@ -581,7 +581,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             className="payment-button"
             onClick={async () => {
               if (!deliveryOption) {
-                alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
+                showToast(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
                 return;
               }
               setPaymentMethod("Card");
@@ -593,7 +593,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 setShowCardPayment(true);
               } catch (err) {
                 console.error("❌ Failed to create pre-payment order:", err);
-                          alert(t("cartPage.createOrderError", "שגיאה ביצירת ההזמנה"));
+                showToast(t("cartPage.createOrderError", "שגיאה ביצירת ההזמנה"));
               }
             }}
             style={{
@@ -849,7 +849,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
       </div>
       <div className="cart-actions">
-        {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
         {eligibleReward && !couponApplied && (
           <button
             className="cart-reward-button"
@@ -902,6 +901,11 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>
             {t("cartPage.orderSuccessToast", "ההזמנה נשלחה בהצלחה!")}
           </p>
+        </div>
+      )}
+      {toast && (
+        <div className={`cart-toast ${toast.type}`} role="status" aria-live="polite">
+          {toast.message}
         </div>
       )}
 
@@ -1825,6 +1829,30 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           border-radius: 8px;
           z-index: 1100;
           animation: fadeOut 3s forwards;
+        }
+
+        .cart-toast {
+          position: fixed;
+          bottom: 90px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #111827;
+          color: #ffffff;
+          padding: 10px 16px;
+          border-radius: 999px;
+          font-size: 13px;
+          max-width: 90vw;
+          text-align: center;
+          z-index: 2000;
+          box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+        }
+
+        .cart-toast.error {
+          background: #ef4444;
+        }
+
+        .cart-toast.success {
+          background: #16a34a;
         }
 
         @keyframes fadeOut {
