@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Navbar from "./layouts/Navbar"; // For main pages with scroll
 import Home from "./pages/Home";
@@ -36,6 +36,8 @@ import WaiterTables from "./pages/WaiterTables";
 import { LangProvider } from "./context/LangContext";
 import LanguageToggle from "./components/common/LanguageToggle";
 const App = () => {
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+
   return (
     <LangProvider>
       <AuthProvider>
@@ -90,7 +92,8 @@ const App = () => {
                 </Routes>
 
                 {/* CartIcon should be placed here to appear on all pages */}
-                <CartIcon />
+                <CartIcon onOpen={() => setIsCartDrawerOpen(true)} />
+                <CartPage variant="drawer" isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
                 <LanguageToggle />
               </div>
             </Router>

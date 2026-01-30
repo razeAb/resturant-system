@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import CartContext from "../../context/CartContext.jsx";
 import "./CartIcon.css";
 
-const CartIcon = () => {
+const CartIcon = ({ onOpen }) => {
   const { totalItems } = useContext(CartContext);
   const location = useLocation();
 
@@ -15,12 +15,10 @@ const CartIcon = () => {
   }
 
   return (
-    <Link to="/cart">
-      <div className="cart-container">
-        <FontAwesomeIcon icon={faCartShopping} size="2x" color="white" />
-        {totalItems > 0 && <span className="cart-counter">{totalItems}</span>}
-      </div>
-    </Link>
+    <button className="cart-container" type="button" onClick={onOpen} aria-label="Open cart">
+      <FontAwesomeIcon icon={faCartShopping} size="2x" color="white" />
+      {totalItems > 0 && <span className="cart-counter">{totalItems}</span>}
+    </button>
   );
 };
 

@@ -13,10 +13,12 @@ const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
 
-const CartPage = () => {
+const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
+  const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [drawerStep, setDrawerStep] = useState("items");
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -39,6 +41,12 @@ const CartPage = () => {
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
+
+  useEffect(() => {
+    if (isDrawer && isOpen) {
+      setDrawerStep("items");
+    }
+  }, [isDrawer, isOpen]);
 
   useEffect(() => {
     let interval;
@@ -161,7 +169,6 @@ const CartPage = () => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
-      setShowConfirmationModal(false);
       setGuestName("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
@@ -257,7 +264,6 @@ const CartPage = () => {
         }
       }
 
-      setShowConfirmationModal(false);
       setGuestName("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
@@ -550,6 +556,7 @@ const CartPage = () => {
         </h4>
         <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
           <button
+            className="payment-button"
             onClick={() => {
               setPaymentMethod("Cash");
               setShowCardPayment(false);
@@ -571,6 +578,7 @@ const CartPage = () => {
             {t("cartPage.payCash", "מזומן")}
           </button>
           <button
+            className="payment-button"
             onClick={async () => {
               if (!deliveryOption) {
                 alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
@@ -610,6 +618,7 @@ const CartPage = () => {
         style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}
       >
         <button
+          className="delivery-button"
           onClick={() => {
             setDeliveryOption("Pickup");
           }}
@@ -635,6 +644,7 @@ const CartPage = () => {
         </button>
 
         <button
+          className="delivery-button"
           onClick={() => {
             setDeliveryOption("Delivery");
           }}
@@ -660,6 +670,7 @@ const CartPage = () => {
         </button>
 
         <button
+          className="delivery-button"
           onClick={() => {
             setDeliveryOption("EatIn");
           }}
@@ -703,6 +714,7 @@ const CartPage = () => {
           <h3 style={{ color: "#dc2626" }}>{t("cartPage.paymentFailureTitle", "התשלום נכשל")}</h3>
           <p>{t("cartPage.paymentFailureBody", "אנא נסה שוב או נסה אמצעי תשלום אחר")}</p>
           <button
+            className="payment-retry-button"
             onClick={() => {
               setPaymentResult(null);
               setShowCardPayment(true);
@@ -733,6 +745,7 @@ const CartPage = () => {
       </div>
       <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
         <button
+          className="submit-order-button"
           onClick={handleFinalSubmit}
           disabled={orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked}
           style={{
@@ -753,164 +766,228 @@ const CartPage = () => {
     </div>
   );
 
+  const renderItemsSection = () => (
+    <div className="cart-main">
+      <div className="cart-header">
+        <h2>{t("cartPage.title", "העגלה שלך")}</h2>
+        <p className="cart-subtitle">
+          {t("cartPage.itemsCount", "יש לך")} {groupCartItems().length} {t("cartPage.itemsSuffix", "פריטים בעגלה")}
+        </p>
+      </div>
+      <div className="cart-items-list">
+        {groupCartItems().map((item, index) => {
+          const itemTotalPrice = calculateItemTotal(item, index);
+          const vegetables =
+            Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
+              ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
+              : t("cartPage.allVegetables", "כל הירקות");
+          const additions = item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין");
+
+          return (
+            <div className="cart-item-card" key={index}>
+              <img className="cart-item-image" src={item.img} alt={resolveItemName(item)} />
+              <div className="cart-item-details">
+                <div className="cart-item-top">
+                  <div>
+                    <h3 className="cart-item-title">{resolveItemName(item)}</h3>
+                    <p className="cart-item-sub">
+                      {item.isWeighted
+                        ? `${item.quantity} ${t("modal.grams", "גרם")}`
+                        : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
+                    </p>
+                  </div>
+                  <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
+                    {t("cartPage.remove", "הסר")}
+                  </button>
+                </div>
+                <div className="cart-item-meta">
+                  <span>
+                    {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
+                  </span>
+                  <span>
+                    {t("cartPage.additionsLabel", "תוספות")}: {additions}
+                  </span>
+                  {item.comment && (
+                    <span>
+                      {t("cartPage.commentLabel", "הערות")}: {item.comment}
+                    </span>
+                  )}
+                </div>
+                <div className="cart-item-bottom">
+                  <span className="cart-item-unit">₪{item.price}</span>
+                  <span className="cart-item-total">₪{itemTotalPrice}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="cart-coupon">
+        <h4>{t("cartPage.couponTitle", "קוד קופון")}</h4>
+        <div className="cart-coupon-row">
+          <input
+            type="text"
+            placeholder={t("cartPage.couponPlaceholder", "הכנס קוד")}
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+          />
+          {!appliedCoupon ? (
+            <button onClick={handleApplyCoupon}>{t("cartPage.couponApply", "החל")}</button>
+          ) : (
+            <button className="danger" onClick={handleRemoveCoupon}>
+              {t("cartPage.couponRemove", "הסר")}
+            </button>
+          )}
+        </div>
+        {appliedCoupon && (
+          <div className="cart-coupon-success">
+            {t("cartPage.couponApplied", "הקופון הופעל")}: {appliedCoupon}
+          </div>
+        )}
+        {isCouponChecking && <div className="cart-coupon-muted">{t("cartPage.couponChecking", "בודק קופון...")}</div>}
+        {couponError && <div className="cart-coupon-error">{couponError}</div>}
+        {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
+      </div>
+      <div className="cart-actions">
+        {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
+        {eligibleReward && !couponApplied && (
+          <button
+            className="cart-reward-button"
+            onClick={() => setCouponApplied(true)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
+          >
+            🎉 {eligibleReward === "drink" ? t("cartPage.rewardDrink", "קופון לשתייה חינם") : t("cartPage.rewardSide", "קופון לתוספת חינם")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   if (user === undefined) {
     return null; // Wait for AuthContext to resolve
   }
-
-  if (cartItems.length === 0) {
-    return (
-      <>
-        <CartNavbar />
-        {showSuccess && (
-          <div
-            className="order-success"
-            role="alert"
-            aria-live="assertive"
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "#ffffff",
-              padding: "24px",
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
-              zIndex: 9999,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              animation: "fadeOut 3s forwards",
-            }}
-          >
-            <img src={checkGif} alt="Order Confirmed" style={{ width: "120px", marginBottom: "16px" }} />
-            <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>
-              {t("cartPage.orderSuccessToast", "ההזמנה נשלחה בהצלחה!")}
-            </p>
-          </div>
-        )}
-
-        <div style={{ padding: "20px" }}>
-          <h2>{t("cartPage.empty", "העגלה שלך ריקה")}</h2>
-        </div>
-      </>
-    );
+  if (isDrawer && !isOpen) {
+    return null;
   }
+
+  const isEmptyCart = cartItems.length === 0;
 
   return (
     <>
-      <CartNavbar />
-      <div className="cart-layout">
-        <div className="cart-main">
-          <div className="cart-header">
-            <h2>{t("cartPage.title", "העגלה שלך")}</h2>
-            <p className="cart-subtitle">
-              {t("cartPage.itemsCount", "יש לך")} {groupCartItems().length} {t("cartPage.itemsSuffix", "פריטים בעגלה")}
-            </p>
-          </div>
-          <div className="cart-items-list">
-            {groupCartItems().map((item, index) => {
-              const itemTotalPrice = calculateItemTotal(item, index);
-              const vegetables =
-                Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
-                  ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
-                  : t("cartPage.allVegetables", "כל הירקות");
-              const additions = item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין");
+      {!isDrawer && <CartNavbar />}
+      {showSuccess && (
+        <div
+          className="order-success"
+          role="alert"
+          aria-live="assertive"
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "#ffffff",
+            padding: "24px",
+            borderRadius: "12px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            animation: "fadeOut 3s forwards",
+          }}
+        >
+          <img src={checkGif} alt="Order Confirmed" style={{ width: "120px", marginBottom: "16px" }} />
+          <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>
+            {t("cartPage.orderSuccessToast", "ההזמנה נשלחה בהצלחה!")}
+          </p>
+        </div>
+      )}
 
-              return (
-                <div className="cart-item-card" key={index}>
-                  <img className="cart-item-image" src={item.img} alt={resolveItemName(item)} />
-                  <div className="cart-item-details">
-                    <div className="cart-item-top">
-                      <div>
-                        <h3 className="cart-item-title">{resolveItemName(item)}</h3>
-                        <p className="cart-item-sub">
-                          {item.isWeighted
-                            ? `${item.quantity} ${t("modal.grams", "גרם")}`
-                            : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
-                        </p>
-                      </div>
-                      <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
-                        {t("cartPage.remove", "הסר")}
-                      </button>
-                    </div>
-                    <div className="cart-item-meta">
-                      <span>
-                        {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
-                      </span>
-                      <span>
-                        {t("cartPage.additionsLabel", "תוספות")}: {additions}
-                      </span>
-                    </div>
-                    <div className="cart-item-bottom">
-                      <span className="cart-item-unit">₪{item.price}</span>
-                      <span className="cart-item-total">₪{itemTotalPrice}</span>
-                    </div>
-                  </div>
+      {isDrawer ? (
+        <div className="cart-drawer-overlay" onClick={onClose}>
+          <div className="cart-drawer-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="cart-drawer-header">
+              <button className="cart-drawer-close" type="button" onClick={onClose} aria-label="Close cart">
+                ×
+              </button>
+              <div className="cart-drawer-title">
+                <h2>{t("cartPage.title", "העגלה שלך")}</h2>
+                <span className="cart-drawer-subtitle">
+                  {t("cartPage.itemsCount", "יש לך")} {groupCartItems().length} {t("cartPage.itemsSuffix", "פריטים בעגלה")}
+                </span>
+              </div>
+              <div className="cart-drawer-steps" aria-hidden="true">
+                <span className={`cart-drawer-step-icon ${drawerStep === "items" ? "active" : ""}`}>
+                  <img src="/shopping-bag.png" alt="" />
+                </span>
+                <span className={`cart-drawer-step-icon ${drawerStep === "checkout" ? "active" : ""}`}>
+                  <img src="/payment.png" alt="" />
+                </span>
+              </div>
+            </div>
+            <div className="cart-drawer-body">
+              {isEmptyCart ? (
+                <div className="cart-drawer-empty">
+                  <h2>{t("cartPage.empty", "העגלה שלך ריקה")}</h2>
                 </div>
-              );
-            })}
-          </div>
-          <div className="cart-coupon">
-            <h4>{t("cartPage.couponTitle", "קוד קופון")}</h4>
-            <div className="cart-coupon-row">
-              <input
-                type="text"
-                placeholder={t("cartPage.couponPlaceholder", "הכנס קוד")}
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-              />
-              {!appliedCoupon ? (
-                <button onClick={handleApplyCoupon}>{t("cartPage.couponApply", "החל")}</button>
+              ) : drawerStep === "items" ? (
+                renderItemsSection()
               ) : (
-                <button className="danger" onClick={handleRemoveCoupon}>
-                  {t("cartPage.couponRemove", "הסר")}
-                </button>
+                <div className="cart-checkout" id="checkout-panel">
+                  {renderCheckoutContent(true)}
+                </div>
               )}
             </div>
-            {appliedCoupon && (
-              <div className="cart-coupon-success">
-                {t("cartPage.couponApplied", "הקופון הופעל")}: {appliedCoupon}
+            {!isEmptyCart && (
+              <div className="cart-drawer-footer">
+                {drawerStep === "items" ? (
+                  <>
+                    <div className="cart-drawer-total">
+                      {t("cartPage.total", "סה\"כ לתשלום")}: {calculateFinalTotal()} ILS
+                    </div>
+                    <button className="cart-drawer-primary" type="button" onClick={() => setDrawerStep("checkout")}>
+                      {t("cartPage.toCheckout", "להמשך לתשלום")}
+                    </button>
+                  </>
+                ) : (
+                  <button className="cart-drawer-secondary" type="button" onClick={() => setDrawerStep("items")}>
+                    {t("cartPage.backToCart", "חזרה לעגלה")}
+                  </button>
+                )}
               </div>
-            )}
-            {isCouponChecking && <div className="cart-coupon-muted">{t("cartPage.couponChecking", "בודק קופון...")}</div>}
-            {couponError && <div className="cart-coupon-error">{couponError}</div>}
-            {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
-          </div>
-          <div className="cart-actions">
-            {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
-            {eligibleReward && !couponApplied && (
-              <button
-                className="cart-reward-button"
-                onClick={() => setCouponApplied(true)}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
-              >
-                🎉{" "}
-                {eligibleReward === "drink" ? t("cartPage.rewardDrink", "קופון לשתייה חינם") : t("cartPage.rewardSide", "קופון לתוספת חינם")}
-              </button>
             )}
           </div>
         </div>
-        <aside className="cart-checkout" id="checkout-panel">
-          {renderCheckoutContent(true)}
-        </aside>
-        {showPolicyModal && (
-          <div className="modal-overlay" onClick={() => setShowPolicyModal(false)} style={{ zIndex: 3000 }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ direction: "rtl", textAlign: "right" }}>{t("cartPage.policyTitle", "מדיניות ביטולים והחזרים")}:</h2>
-              <div style={{ direction: "rtl", textAlign: "right", maxHeight: "70vh", overflowY: "auto" }}>
-                <p>• {t("cartPage.policyLine1", "ניתן לבטל הזמנה תוך 5 דקות ממועד ההזמנה כל עוד לא התחילה ההכנה.")}</p>
-                <p>• {t("cartPage.policyLine2", "לאחר תחילת ההכנה או יציאת המשלוח – לא ניתן לבטל את ההזמנה.")}</p>
-                <p>
-                  • {t("cartPage.policyLine3", "החזר כספי יתבצע באותו אמצעי תשלום, עד 5% או 100 ₪ דמי ביטול (הנמוך מביניהם) בהתאם לחוק.")}
-                </p>
-                <p>• {t("cartPage.policyLine4", "במקרה של טעות מצד המסעדה (למשל מנה לא נכונה או לא סופקה) – הלקוח זכאי להחזר מלא או אספקה מחדש.")}</p>
-              </div>
+      ) : isEmptyCart ? (
+        <div style={{ padding: "20px" }}>
+          <h2>{t("cartPage.empty", "העגלה שלך ריקה")}</h2>
+        </div>
+      ) : (
+        <div className="cart-layout">
+          {renderItemsSection()}
+          <aside className="cart-checkout" id="checkout-panel">
+            {renderCheckoutContent(true)}
+          </aside>
+        </div>
+      )}
+
+      {showPolicyModal && (
+        <div className="modal-overlay" onClick={() => setShowPolicyModal(false)} style={{ zIndex: 3000 }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ direction: "rtl", textAlign: "right" }}>{t("cartPage.policyTitle", "מדיניות ביטולים והחזרים")}:</h2>
+            <div style={{ direction: "rtl", textAlign: "right", maxHeight: "70vh", overflowY: "auto" }}>
+              <p>• {t("cartPage.policyLine1", "ניתן לבטל הזמנה תוך 5 דקות ממועד ההזמנה כל עוד לא התחילה ההכנה.")}</p>
+              <p>• {t("cartPage.policyLine2", "לאחר תחילת ההכנה או יציאת המשלוח – לא ניתן לבטל את ההזמנה.")}</p>
+              <p>
+                • {t("cartPage.policyLine3", "החזר כספי יתבצע באותו אמצעי תשלום, עד 5% או 100 ₪ דמי ביטול (הנמוך מביניהם) בהתאם לחוק.")}
+              </p>
+              <p>• {t("cartPage.policyLine4", "במקרה של טעות מצד המסעדה (למשל מנה לא נכונה או לא סופקה) – הלקוח זכאי להחזר מלא או אספקה מחדש.")}</p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <style>{`
 
@@ -1144,6 +1221,183 @@ const CartPage = () => {
           padding: 20px;
           box-shadow: 0 14px 30px rgba(15, 23, 42, 0.15);
         }
+
+        .cart-drawer-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.45);
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          z-index: 1200;
+        }
+
+        .cart-drawer-panel {
+          width: min(920px, 100%);
+          max-height: 92vh;
+          background: #f8fafc;
+          border-radius: 24px 24px 0 0;
+          box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.25);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: slideUp 0.25s ease-out;
+        }
+
+        .cart-drawer-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 18px 22px;
+          background: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
+          gap: 16px;
+        }
+
+        .cart-drawer-title h2 {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .cart-drawer-subtitle {
+          display: block;
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+
+        .cart-drawer-steps {
+          display: flex;
+          gap: 8px;
+        }
+
+        .cart-drawer-step-icon {
+          width: 28px;
+          height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          background: #e2e8f0;
+          font-size: 14px;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .cart-drawer-step-icon img {
+          width: 16px;
+          height: 16px;
+          object-fit: contain;
+        }
+
+        .cart-drawer-step-icon.active {
+          background: #F4511F;
+          transform: scale(1.05);
+        }
+
+        .cart-drawer-close {
+          border: 1px solid #000000 !important;
+          background: #000000 !important;
+          color: #ffffff !important;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          font-size: 18px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: none;
+          outline: none;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .cart-drawer-close:hover {
+          transform: translateY(-1px);
+          box-shadow: none;
+          border-color: #000000;
+        }
+
+        .cart-drawer-body {
+          padding: 18px 22px 10px;
+          overflow-y: auto;
+          flex: 1;
+        }
+
+        .cart-drawer-body .cart-checkout {
+          width: 100%;
+          position: static;
+        }
+
+        .cart-drawer-empty {
+          padding: 40px 10px;
+          text-align: center;
+        }
+
+        .cart-drawer-footer {
+          padding: 16px 22px 24px;
+          background: #ffffff;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .cart-drawer-total {
+          font-weight: 700;
+          color: #0f172a;
+          font-size: 16px;
+        }
+
+        .cart-drawer-primary {
+          background: #16a34a;
+          color: #ffffff;
+          border: none;
+          padding: 12px 22px;
+          border-radius: 999px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .cart-drawer-secondary {
+          background: #e2e8f0;
+          color: #0f172a;
+          border: none;
+          padding: 10px 18px;
+          border-radius: 999px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .cart-drawer-panel button:not(.cart-remove):not(.cart-drawer-close):not(.payment-button):not(.delivery-button):not(.submit-order-button):not(.payment-retry-button) {
+          background-color: #0f172a !important;
+          border-color: #0f172a !important;
+          color: #ffffff !important;
+        }
+
+        .cart-drawer-panel button:disabled {
+          background-color: #6b7280 !important;
+          border-color: #6b7280 !important;
+          cursor: not-allowed !important;
+        }
+
+        .cart-drawer-panel .cart-remove {
+          background-color: #ef4444 !important;
+          border-color: #ef4444 !important;
+          color: #ffffff !important;
+        }
+
+        @keyframes slideUp {
+          from {
+            transform: translateY(30%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -1256,7 +1510,8 @@ const CartPage = () => {
           font-size: 16px;
         }
 
-        button {
+        .cart-layout button,
+        .cart-drawer-panel button {
           padding: 10px 20px;
           background-color: #007bff;
           color: #fff;
@@ -1264,120 +1519,6 @@ const CartPage = () => {
           font-size: 16px;
           cursor: pointer;
         }
-
-        @media (max-width: 460px) {
-          .cart-table {
-            display: block;
-            width: 100%;
-            overflow-x: auto;
-            position: relative;
-          }
-
-          thead {
-            display: none;
-          }
-
-          tbody {
-            display: block;
-          }
-
-          tr {
-            display: block;
-            border-bottom: 1px solid #ccc;
-            padding: 10px 0;
-            margin-bottom: 10px;
-          }
-
-          td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border: none;
-          }
-
-          td:after {
-            content: attr(data-label);
-            flex: 0 0 100px;
-            font-weight: bold;
-            color: #555;
-          }
-
-          .cart-table td img {
-            width: 80px;
-            margin-bottom: 10px;
-          }
-
-          .modal-content {
-            padding: 20px;
-            width: 95%;
-          }
-
-          .modal-buttons button {
-            width: 100%; /* Stack buttons on small screens */
-          }
-
-          .modal-content h2 {
-            font-size: 18px;
-          }
-
-          .modal-content p {
-            font-size: 14px;
-          }
-          @media (max-width: 460px) {
-            .cart-table {
-              display: block;
-              width: 100%;
-              overflow-x: auto;
-              position: relative;
-            }
-
-            thead {
-              display: none;
-            }
-
-            tbody {
-              display: block;
-            }
-
-            tr {
-              display: block;
-              border-bottom: 1px solid #ccc;
-              padding: 10px 0;
-              margin-bottom: 10px;
-            }
-
-            td {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 10px 0;
-              border: none;
-            }
-
-            td:after {
-              content: attr(data-label);
-              flex: 0 0 100px;
-              font-weight: bold;
-              color: #555;
-            }
-
-            .cart-table td img {
-              width: 80px;
-              margin-bottom: 10px;
-            }
-
-            .modal-content {
-              padding: 20px;
-              width: 95%;
-            }
-
-            /* 💥 Add this */
-            .modal-buttons {
-              flex-direction: column;
-          gap: 10px;
-        }
-
         @media (max-width: 1024px) {
           .cart-layout {
             flex-direction: column;
@@ -1432,6 +1573,128 @@ const CartPage = () => {
           .cart-coupon-row button {
             width: 100%;
           }
+
+          .cart-drawer-panel .cart-coupon-row input {
+            height: 22px !important;
+            max-height: 22px !important;
+            padding: 3px 6px !important;
+            font-size: 11px !important;
+            line-height: 1 !important;
+          }
+
+          .modal-delivery-buttons {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .modal-delivery-buttons button {
+            width: 100%;
+          }
+
+          .cart-drawer-header {
+            flex-wrap: wrap;
+            align-items: flex-start;
+          }
+
+          .cart-drawer-title h2 {
+            font-size: 18px;
+          }
+
+          .cart-drawer-subtitle {
+            font-size: 11px;
+          }
+
+          .cart-drawer-footer {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .cart-drawer-primary,
+          .cart-drawer-secondary {
+            width: 100%;
+            text-align: center;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .cart-drawer-panel .cart-header {
+            display: none;
+          }
+
+          .cart-drawer-panel .cart-items-list {
+            gap: 10px;
+          }
+
+          .cart-drawer-panel .cart-item-card {
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 10px;
+            gap: 12px;
+          }
+
+          .cart-drawer-panel .cart-item-image {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+          }
+
+          .cart-drawer-panel .cart-item-details {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            width: 100%;
+          }
+
+          .cart-drawer-panel .cart-item-details {
+            position: relative;
+            padding-bottom: 26px;
+          }
+
+          .cart-drawer-panel .cart-item-top {
+            flex: 1;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 8px;
+          }
+
+          .cart-drawer-panel .cart-item-title {
+            font-size: 15px;
+          }
+
+          .cart-drawer-panel .cart-item-sub {
+            font-size: 12px;
+          }
+
+          .cart-drawer-panel .cart-item-meta {
+            display: grid;
+            gap: 2px;
+            font-size: 11px;
+          }
+
+          .cart-drawer-panel .cart-item-bottom {
+            align-self: flex-start;
+            text-align: left;
+            min-width: 0;
+          }
+
+          .cart-drawer-panel .cart-item-unit {
+            display: none;
+          }
+
+          .cart-drawer-panel .cart-item-unit,
+          .cart-drawer-panel .cart-item-total {
+            font-size: 13px;
+          }
+
+          .cart-drawer-panel .cart-remove {
+            order: -1;
+            padding: 6px 10px;
+            font-size: 12px;
+            align-self: flex-start;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+          }
         }
 
         @media (max-width: 480px) {
@@ -1440,15 +1703,114 @@ const CartPage = () => {
           }
 
           .cart-item-image {
-            height: 160px;
+            height: 130px;
           }
 
           .cart-item-title {
-            font-size: 16px;
+            font-size: 15px;
           }
 
           .cart-item-total {
-            font-size: 15px;
+            font-size: 14px;
+          }
+
+          .cart-item-card {
+            padding: 10px;
+            gap: 12px;
+          }
+
+          .cart-item-details {
+            gap: 8px;
+          }
+
+          .cart-item-meta {
+            font-size: 12px;
+          }
+
+          .cart-coupon {
+            padding: 10px 12px;
+            font-size: 12px;
+          }
+
+          .cart-coupon h4 {
+            font-size: 13px;
+          }
+
+          .cart-coupon-row input {
+            padding: 6px 8px;
+            font-size: 12px;
+            height: 34px;
+          }
+
+          .cart-drawer-panel .cart-coupon-row input {
+            padding: 2px 6px !important;
+            font-size: 10px !important;
+            height: 20px !important;
+            min-height: 0 !important;
+            line-height: 1 !important;
+          }
+
+          .cart-coupon-row button {
+            padding: 6px 10px;
+            font-size: 12px;
+          }
+
+          .modal-content {
+            padding: 20px;
+            width: 95%;
+          }
+
+          .modal-buttons {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .modal-buttons button {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 460px) {
+          .cart-table {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            position: relative;
+          }
+
+          thead {
+            display: none;
+          }
+
+          tbody {
+            display: block;
+          }
+
+          tr {
+            display: block;
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+            margin-bottom: 10px;
+          }
+
+          td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border: none;
+          }
+
+          td:after {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-weight: bold;
+            color: #555;
+          }
+
+          .cart-table td img {
+            width: 80px;
+            margin-bottom: 10px;
           }
         }
 
@@ -1470,20 +1832,7 @@ const CartPage = () => {
           100% { opacity: 0; }
         }
 
-            .modal-buttons button {
-              width: 100%;
-            }
-              @media (max-width: 460px) {
-  .modal-delivery-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .modal-delivery-buttons button {
-    width: 100%;
-  }
-          }
-        }
+        
       `}</style>
 
       <ClosedModal isOpen={isClosedModalOpen} onClose={handleCloseModal} />
