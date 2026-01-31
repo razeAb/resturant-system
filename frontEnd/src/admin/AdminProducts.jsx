@@ -4,7 +4,7 @@ import SideMenu from "../layouts/SideMenu";
 import AddProductModal from "./modals/AddProductMoadl"; // keep your original filename
 import EditProductModal from "./modals/EditProductModal";
 import Button from "../components/common/Button";
-import { Menu, Pencil, Trash2, Power } from "lucide-react";
+import { Menu, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { ResponsiveContainer, PieChart, Pie, Tooltip, Label } from "recharts";
 
@@ -375,10 +375,10 @@ export default function AdminProducts() {
                               <button
                                 onClick={() => handleToggleActive(product._id, product.isActive)}
                                 className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[12px] ${product.isActive ? "bg-amber-500/90 hover:bg-amber-500" : "bg-emerald-600/90 hover:bg-emerald-600"}`}
-                                title={product.isActive ? "השבת מוצר" : "הפעל מוצר"}
+                                title={product.isActive ? "הסתר מהתפריט" : "הצג בתפריט"}
                               >
-                                <Power size={14} />
-                                {product.isActive ? "השבת" : "הפעל"}
+                                {product.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
+                                {product.isActive ? "הסתר" : "הצג"}
                               </button>
                             </div>
                           </div>

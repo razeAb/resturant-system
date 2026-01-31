@@ -40,7 +40,7 @@ const Menu = () => {
   }, []);
 
   const renderSection = (title, categoryFilter) => {
-    const filtered = products.filter((p) => categoryFilter.includes(p.category));
+    const filtered = products.filter((p) => categoryFilter.includes(p.category) && p.isActive);
     if (filtered.length === 0) return null;
 
     return (
