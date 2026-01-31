@@ -82,6 +82,23 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
 
   //vegetables Order
   const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
+  const hasVegetableOptions = (item) => Array.isArray(item.selectedOptions?.vegetables);
+  const hasAdditionOptions = (item) => Array.isArray(item.selectedOptions?.additions);
+  const normalizeVegetable = (vegetable) => {
+    const normalized = String(vegetable || "").replace(/^[^A-Za-z\u0590-\u05FF]+/g, "").trim();
+    return normalized || String(vegetable || "").trim();
+  };
+  const formatVegetables = (vegetables) => {
+    const normalized = (vegetables || []).map(normalizeVegetable).filter(Boolean);
+    if (normalized.length === 0) return t("cartPage.allVegetables", "כל הירקות");
+
+    const ordered = [
+      ...VEGETABLES_ORDER.filter((v) => normalized.includes(v)),
+      ...normalized.filter((v) => !VEGETABLES_ORDER.includes(v)),
+    ];
+
+    return ordered.join(", ");
+  };
 
   //isguest component
   const isGuest = () => !user;
@@ -438,38 +455,34 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables =
-          item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || t("cartPage.allVegetables", "כל הירקות");
-        const additions =
-          item.id >= 10 && item.id <= 16
-            ? ""
-            : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || t("cartPage.noAdditions", "אין");
+        const vegetables = hasVegetableOptions(item)
+          ? formatVegetables(item.selectedOptions?.vegetables)
+          : "";
+        const additions = hasAdditionOptions(item)
+          ? item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || t("cartPage.noAdditions", "אין")
+          : "";
 
         const comment = item.comment
           ? `${t("cartPage.commentLabel", "הערות")}: ${item.comment}`
           : `${t("cartPage.commentLabel", "הערות")}: ${t("cartPage.noComment", "אין")}`;
 
-        if (item.id >= 10 && item.id <= 17) {
-          return `
-            ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
-            ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
+        const detailLines = [
+          `${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}`,
+          `${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}`,
+        ];
 
-            ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
-                        ${comment}
-            ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
-          `.trim();
+        if (hasVegetableOptions(item)) {
+          detailLines.push(`${t("cartPage.vegetablesLabel", "ירקות")}: ${vegetables}`);
         }
 
-        return `
-          ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
-          ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
+        if (hasAdditionOptions(item)) {
+          detailLines.push(`${t("cartPage.additionsLabel", "תוספות")}: ${additions}`);
+        }
 
-          ${t("cartPage.vegetablesLabel", "ירקות")}: ${vegetables}
-          ${t("cartPage.additionsLabel", "תוספות")}: ${additions}
-          ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
-                    ${comment}
-          ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
-        `.trim();
+        detailLines.push(`${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS`, comment);
+        detailLines.push(`${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS`);
+
+        return detailLines.join("\n");
       })
       .join("\n\n");
 
@@ -777,11 +790,10 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       <div className="cart-items-list">
         {groupCartItems().map((item, index) => {
           const itemTotalPrice = calculateItemTotal(item, index);
-          const vegetables =
-            Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
-              ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
-              : t("cartPage.allVegetables", "כל הירקות");
-          const additions = item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין");
+          const vegetables = hasVegetableOptions(item) ? formatVegetables(item.selectedOptions?.vegetables) : "";
+          const additions = hasAdditionOptions(item)
+            ? item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין")
+            : "";
 
           return (
             <div className="cart-item-card" key={index}>
@@ -801,12 +813,16 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                   </button>
                 </div>
                 <div className="cart-item-meta">
-                  <span>
-                    {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
-                  </span>
-                  <span>
-                    {t("cartPage.additionsLabel", "תוספות")}: {additions}
-                  </span>
+                  {hasVegetableOptions(item) && (
+                    <span>
+                      {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
+                    </span>
+                  )}
+                  {hasAdditionOptions(item) && (
+                    <span>
+                      {t("cartPage.additionsLabel", "תוספות")}: {additions}
+                    </span>
+                  )}
                   {item.comment && (
                     <span>
                       {t("cartPage.commentLabel", "הערות")}: {item.comment}

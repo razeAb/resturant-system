@@ -51,6 +51,9 @@ const translatePaymentMethod = (method) =>
     ? "Apple Pay"
     : method || " לא ידוע";
 
+const hasAdditionOptions = (item) => Array.isArray(item?.additions);
+const hasVegetableOptions = (item) => Array.isArray(item?.vegetables);
+
 // Normalize an order ID that might arrive as _id or clientOrderId
 const normalizeId = (o) => o?._id || o?.clientOrderId;
 
@@ -501,38 +504,46 @@ export default function ActiveOrdersPage() {
                                         </div>
 
                                         {/* Additions list with individual costs */}
-                                        <div className="mt-1">
-                                          תוספות:
-                                          {Array.isArray(item.additions) && item.additions.length ? (
-                                            <ul className="list-disc mr-4 mt-1 space-y-0.5">
-                                              {item.additions.map((a, i2) => {
-                                                const aPrice =
-                                                  a?.price != null
-                                                    ? num(a.price)
-                                                    : a?.grams && a?.pricePer100g
-                                                    ? (num(a.grams) / 100) * num(a.pricePer100g)
-                                                    : 0;
+                                        {hasAdditionOptions(item) && (
+                                          <div className="mt-1">
+                                            תוספות:
+                                            {item.additions.length ? (
+                                              <ul className="list-disc mr-4 mt-1 space-y-0.5">
+                                                {item.additions.map((a, i2) => {
+                                                  const aPrice =
+                                                    a?.price != null
+                                                      ? num(a.price)
+                                                      : a?.grams && a?.pricePer100g
+                                                      ? (num(a.grams) / 100) * num(a.pricePer100g)
+                                                      : 0;
 
-                                                return (
-                                                  <li key={i2}>
-                                                    {a.addition || a.name || "תוספת"}{" "}
-                                                    <span className="text-white/90">(+{fmtILS(aPrice)})</span>
-                                                    {a?.grams ? ` · ${a.grams} גרם` : ""}
-                                                  </li>
-                                                );
-                                              })}
-                                            </ul>
-                                          ) : (
-                                            <span> אין</span>
-                                          )}
-                                        </div>
+                                                  return (
+                                                    <li key={i2}>
+                                                      {a.addition || a.name || "תוספת"}{" "}
+                                                      <span className="text-white/90">(+{fmtILS(aPrice)})</span>
+                                                      {a?.grams ? ` · ${a.grams} גרם` : ""}
+                                                    </li>
+                                                  );
+                                                })}
+                                              </ul>
+                                            ) : (
+                                              <span> אין</span>
+                                            )}
+                                          </div>
+                                        )}
 
                                         {/* Vegetables & comment unchanged */}
-                                        <div className="mt-1">
-                                          ירקות:{" "}
-                                          {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                          {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                        </div>
+                                        {(hasVegetableOptions(item) || item.comment) && (
+                                          <div className="mt-1">
+                                            {hasVegetableOptions(item) && (
+                                              <>
+                                                ירקות: {item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                                                {item.comment ? " · " : ""}
+                                              </>
+                                            )}
+                                            {item.comment ? `הערות: ${item.comment}` : ""}
+                                          </div>
+                                        )}
                                       </div>
                                     </li>
                                   );

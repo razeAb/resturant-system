@@ -51,7 +51,7 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
       price: parseFloat(price),
       quantity,
       isWeighted: false,
-      selectedOptions: showSauceOptions ? { additions: sauceAdditions, vegetables: [] } : {},
+      selectedOptions: showSauceOptions ? { additions: sauceAdditions } : {},
       comment,
       totalPrice: parseFloat(totalPrice),
     };

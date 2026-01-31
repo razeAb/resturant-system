@@ -150,24 +150,36 @@ const OrderStatus = () => {
                 <h4 className="text-lg font-bold">פרטי הזמנה</h4>
                 <ul className="text-sm space-y-2">
                   {Array.isArray(order.items) && order.items.length > 0 ? (
-                    order.items.map((item, idx) => (
+                    order.items.map((item, idx) => {
+                      const hasVegetables = Array.isArray(item.vegetables);
+                      const hasAdditions = Array.isArray(item.additions);
+
+                      return (
                       <li key={idx}>
                         <strong>{resolveOrderItemName(item)}</strong> - כמות: {item.quantity}{" "}
                         {item.isWeighted ? "גרם" : ""}
                         <br />
-                        ירקות: {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                        <br />
-                        תוספות:{" "}
-                        {Array.isArray(item.additions) && item.additions.length
-                          ? item.additions
-                              .map((a) => (typeof a === "string" ? a : a.addition || ""))
-                              .filter((v) => v)
-                              .join(", ")
-                          : "אין"}
-                        <br />
+                        {hasVegetables && (
+                          <>
+                            ירקות: {item.vegetables.length ? item.vegetables.join(", ") : "אין"}
+                            <br />
+                          </>
+                        )}
+                        {hasAdditions && (
+                          <>
+                            תוספות:{" "}
+                            {item.additions.length
+                              ? item.additions
+                                  .map((a) => (typeof a === "string" ? a : a.addition || ""))
+                                  .filter((v) => v)
+                                  .join(", ")
+                              : "אין"}
+                            <br />
+                          </>
+                        )}
                         הערות: {item.comment || "אין הערות"}
                       </li>
-                    ))
+                    )})
                   ) : (
                     <li>לא נמצאו פריטים בהזמנה</li>
                   )}
