@@ -808,8 +808,12 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                         : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
                     </p>
                   </div>
-                  <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
-                    {t("cartPage.remove", "הסר")}
+                  <button
+                    className="cart-remove"
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label={t("cartPage.remove", "הסר")}
+                  >
+                    <img src="/bin.png" alt={t("cartPage.remove", "הסר")} className="cart-remove-icon" />
                   </button>
                 </div>
                 <div className="cart-item-meta">
@@ -1129,6 +1133,13 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           border-radius: 999px;
           font-size: 12px;
           cursor: pointer;
+        }
+
+        .cart-remove-icon {
+          width: 16px;
+          height: 16px;
+          display: block;
+          filter: brightness(0) invert(1);
         }
 
         .cart-summary {
