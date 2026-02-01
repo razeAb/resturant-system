@@ -823,7 +823,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                       size="sm"
                       variant="cart"
                       label={t("cartPage.quantityLabel", "כמות")}
-                      onChange={(nextQuantity) => updateItemQuantity(item.id, nextQuantity - item.quantity)}
+                      onChange={(nextQuantity) => updateItemQuantity(item.id, nextQuantity)}
                     />
                   )}
                   <button

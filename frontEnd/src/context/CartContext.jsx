@@ -33,19 +33,19 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update item quantity (non-weighted items only)
-  const updateItemQuantity = (itemId, delta) => {
+  const updateItemQuantity = (itemId, nextQuantity) => {
     setCartItems((prevItems) =>
       prevItems.flatMap((item) => {
         if (item.id !== itemId || item.isWeighted) return [item];
-        const nextQuantity = (item.quantity || 0) + delta;
-        if (nextQuantity <= 0) return [];
+        const safeQuantity = Number(nextQuantity);
+        if (!Number.isFinite(safeQuantity) || safeQuantity <= 0) return [];
         const additionsTotal = item.selectedOptions?.additions?.reduce((sum, add) => sum + add.price, 0) || 0;
         const unitPrice = Number(item.price) + additionsTotal;
         return [
           {
             ...item,
-            quantity: nextQuantity,
-            totalPrice: Number.isFinite(unitPrice) ? unitPrice * nextQuantity : item.totalPrice,
+            quantity: safeQuantity,
+            totalPrice: Number.isFinite(unitPrice) ? unitPrice * safeQuantity : item.totalPrice,
           },
         ];
       })
