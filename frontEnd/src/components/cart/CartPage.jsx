@@ -778,11 +778,10 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       <div className="cart-items-list">
         {groupCartItems().map((item, index) => {
           const itemTotalPrice = calculateItemTotal(item, index);
-          const vegetables =
-            Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0
-              ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ")
-              : t("cartPage.allVegetables", "כל הירקות");
-          const additions = item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין");
+          const hasVegetables = Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0;
+          const hasAdditions = Array.isArray(item.selectedOptions?.additions) && item.selectedOptions.additions.length > 0;
+          const vegetables = hasVegetables ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ") : "";
+          const additions = hasAdditions ? item.selectedOptions.additions.map((add) => add.addition).join(", ") : "";
 
           return (
             <div className="cart-item-card" key={index}>
@@ -801,12 +800,16 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                   </div>
                 </div>
                 <div className="cart-item-meta">
-                  <span>
-                    {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
-                  </span>
-                  <span>
-                    {t("cartPage.additionsLabel", "תוספות")}: {additions}
-                  </span>
+                  {hasVegetables && (
+                    <span>
+                      {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
+                    </span>
+                  )}
+                  {hasAdditions && (
+                    <span>
+                      {t("cartPage.additionsLabel", "תוספות")}: {additions}
+                    </span>
+                  )}
                   {item.comment && (
                     <span>
                       {t("cartPage.commentLabel", "הערות")}: {item.comment}

@@ -190,23 +190,26 @@ export default function OrderHistory() {
                                     <h4 className="font-semibold mb-2">פרטי ההזמנה</h4>
                                     <ul className="space-y-2">
                                       {Array.isArray(order.items) &&
-                                        order.items.map((item, idx) => (
-                                          <li key={idx} className="leading-6">
-                                            <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
-                                            {item.isWeighted ? "גרם" : ""}
-                                            <div className="text-white/70">
-                                              ירקות:{" "}
-                                              {Array.isArray(item.vegetables) && item.vegetables.length
-                                                ? item.vegetables.join(", ")
-                                                : "אין"}{" "}
-                                              · תוספות:{" "}
-                                              {Array.isArray(item.additions) && item.additions.length
-                                                ? item.additions.map((a) => a.addition).join(", ")
-                                                : "אין"}
-                                              {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                            </div>
-                                          </li>
-                                        ))}
+                                        order.items.map((item, idx) => {
+                                          const hasVegetables = Array.isArray(item.vegetables) && item.vegetables.length;
+                                          const hasAdditions = Array.isArray(item.additions) && item.additions.length;
+                                          const hasMeta = hasVegetables || hasAdditions || item.comment;
+
+                                          return (
+                                            <li key={idx} className="leading-6">
+                                              <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
+                                              {item.isWeighted ? "גרם" : ""}
+                                              {hasMeta ? (
+                                                <div className="text-white/70">
+                                                  {hasVegetables ? `ירקות: ${item.vegetables.join(", ")}` : ""}
+                                                  {hasVegetables && hasAdditions ? " · " : ""}
+                                                  {hasAdditions ? `תוספות: ${item.additions.map((a) => a.addition).join(", ")}` : ""}
+                                                  {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                                </div>
+                                              ) : null}
+                                            </li>
+                                          );
+                                        })}
                                     </ul>
                                   </div>
                                 </div>

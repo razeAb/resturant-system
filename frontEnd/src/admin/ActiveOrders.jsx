@@ -500,10 +500,9 @@ export default function ActiveOrdersPage() {
                                           {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
                                         </div>
 
-                                        {/* Additions list with individual costs */}
-                                        <div className="mt-1">
-                                          תוספות:
-                                          {Array.isArray(item.additions) && item.additions.length ? (
+                                        {Array.isArray(item.additions) && item.additions.length ? (
+                                          <div className="mt-1">
+                                            תוספות:
                                             <ul className="list-disc mr-4 mt-1 space-y-0.5">
                                               {item.additions.map((a, i2) => {
                                                 const aPrice =
@@ -522,17 +521,14 @@ export default function ActiveOrdersPage() {
                                                 );
                                               })}
                                             </ul>
-                                          ) : (
-                                            <span> אין</span>
-                                          )}
-                                        </div>
+                                          </div>
+                                        ) : null}
 
-                                        {/* Vegetables & comment unchanged */}
-                                        <div className="mt-1">
-                                          ירקות:{" "}
-                                          {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                          {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                        </div>
+                                        {Array.isArray(item.vegetables) && item.vegetables.length ? (
+                                          <div className="mt-1">ירקות: {item.vegetables.join(", ")}</div>
+                                        ) : null}
+
+                                        {item.comment ? <div className="mt-1">הערות: {item.comment}</div> : null}
                                       </div>
                                     </li>
                                   );
