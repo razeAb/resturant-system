@@ -32,12 +32,36 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
   };
 
+  // Update item quantity (non-weighted items only)
+  const updateItemQuantity = (itemId, delta) => {
+    setCartItems((prevItems) =>
+      prevItems.flatMap((item) => {
+        if (item.id !== itemId || item.isWeighted) return [item];
+        const nextQuantity = (item.quantity || 0) + delta;
+        if (nextQuantity <= 0) return [];
+        const additionsTotal = item.selectedOptions?.additions?.reduce((sum, add) => sum + add.price, 0) || 0;
+        const unitPrice = Number(item.price) + additionsTotal;
+        return [
+          {
+            ...item,
+            quantity: nextQuantity,
+            totalPrice: Number.isFinite(unitPrice) ? unitPrice * nextQuantity : item.totalPrice,
+          },
+        ];
+      })
+    );
+  };
+
   // Calculate total number of items
   const totalItems = cartItems.reduce((acc, item) => {
     const qty = item.isWeighted ? 1 : item.quantity || 0;
     return acc + qty;
   }, 0);
-  return <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, totalItems }}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems }}>
+      {children}
+    </CartContext.Provider>
+  );
 };
 
 export default CartContext;

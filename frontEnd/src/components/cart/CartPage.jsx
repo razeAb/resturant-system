@@ -8,13 +8,14 @@ import { useLang } from "../../context/LangContext";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
+import { QuantitySelector } from "../QuantitySelector";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
 
 const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
-  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, updateItemQuantity, clearCart } = useContext(CartContext);
   const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -790,15 +791,14 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 <div className="cart-item-top">
                   <div>
                     <h3 className="cart-item-title">{resolveItemName(item)}</h3>
-                    <p className="cart-item-sub">
-                      {item.isWeighted
-                        ? `${item.quantity} ${t("modal.grams", "גרם")}`
-                        : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
-                    </p>
+                    <div className="cart-item-sub">
+                      {item.isWeighted ? <span>{`${item.quantity} ${t("modal.grams", "גרם")}`}</span> : null}
+                    </div>
                   </div>
-                  <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
-                    {t("cartPage.remove", "הסר")}
-                  </button>
+                  <div className="cart-item-prices">
+                    {item.quantity > 1 && <span className="cart-item-unit">₪{item.price}</span>}
+                    <span className="cart-item-total">₪{itemTotalPrice}</span>
+                  </div>
                 </div>
                 <div className="cart-item-meta">
                   <span>
@@ -814,8 +814,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                   )}
                 </div>
                 <div className="cart-item-bottom">
-                  <span className="cart-item-unit">₪{item.price}</span>
-                  <span className="cart-item-total">₪{itemTotalPrice}</span>
+                  {!item.isWeighted && (
+                    <QuantitySelector
+                      quantity={item.quantity}
+                      initialQuantity={item.quantity}
+                      minQuantity={1}
+                      maxQuantity={99}
+                      size="sm"
+                      variant="cart"
+                      label={t("cartPage.quantityLabel", "כמות")}
+                      onChange={(nextQuantity) => updateItemQuantity(item.id, nextQuantity - item.quantity)}
+                    />
+                  )}
+                  <button
+                    className="cart-remove"
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label={t("cartPage.remove", "הסר")}
+                  >
+                    <img className="cart-remove-icon" src="/recycle-bin.png" alt="" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1084,10 +1101,18 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           color: #475569;
         }
 
+        .cart-item-prices {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+
         .cart-item-bottom {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-end;
           align-items: center;
+          gap: 30px;
           font-weight: 600;
         }
 
@@ -1102,13 +1127,21 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         }
 
         .cart-remove {
-          background: #fee2e2;
-          color: #b91c1c;
+          background: #ef4444;
           border: none;
-          padding: 6px 12px;
+          padding: 6px 10px;
           border-radius: 999px;
-          font-size: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
+        }
+
+        .cart-remove-icon {
+          width: 14px;
+          height: 14px;
+          display: block;
+          filter: brightness(0) invert(1);
         }
 
         .cart-summary {
@@ -1510,8 +1543,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           font-size: 16px;
         }
 
-        .cart-layout button,
-        .cart-drawer-panel button {
+        .cart-layout button:not(.quantity-selector-btn),
+        .cart-drawer-panel button:not(.quantity-selector-btn) {
           padding: 10px 20px;
           background-color: #007bff;
           color: #fff;
@@ -1552,12 +1585,32 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             align-items: flex-start;
           }
 
+          .cart-item-prices {
+            align-items: flex-start;
+          }
+
           .cart-remove {
             align-self: flex-start;
           }
 
           .cart-item-bottom {
             width: 100%;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 8px;
+          }
+
+          .cart-item-bottom .quantity-selector {
+            margin-left: auto;
+            max-width: 170px;
+            justify-content: space-between;
+            transform: scale(0.8);
+            transform-origin: right bottom;
+          }
+
+          .cart-item-bottom .cart-remove {
+            margin-right: auto;
+            align-self: flex-end;
           }
 
           .cart-summary,
@@ -1677,7 +1730,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             min-width: 0;
           }
 
-          .cart-drawer-panel .cart-item-unit {
+          .cart-drawer-panel .cart-item-prices .cart-item-unit {
             display: none;
           }
 
