@@ -248,6 +248,23 @@
   box-shadow: 0 2px 6px rgba(30, 64, 175, 0.12);
 }
 
+@media (max-width: 640px) {
+  .addition-buttons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .addition-buttons span {
+    text-align: right;
+  }
+
+  .gram-button {
+    justify-content: space-between;
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
 .gram-button:hover {
   background: linear-gradient(135deg, #e0e7ff, #dbeafe);
   border-color: #6366f1;
