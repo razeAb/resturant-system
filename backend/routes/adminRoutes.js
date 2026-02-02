@@ -21,7 +21,7 @@ router.get("/dashboard", protect, async (req, res) => {
 
     const users = await User.find().select("name email orderCount points");
     const products = await Product.find().select(
-      "name name_he name_en description description_he description_en stock price image category isActive fullSandwichPrice"
+      "name name_he name_en description description_he description_en stock price image category isActive fullSandwichPrice extraPattyPrice"
     );
     const orders = await Order.find().populate("items.product", "name name_he name_en price");
 

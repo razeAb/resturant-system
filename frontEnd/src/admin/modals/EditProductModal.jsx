@@ -14,6 +14,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
     category: product?.category ?? "",
     description: product?.description ?? "",
     fullSandwichPrice: product?.fullSandwichPrice ?? "",
+    extraPattyPrice: product?.extraPattyPrice ?? "",
     isActive: product?.isActive ?? true,
   };
 
@@ -99,9 +100,10 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
           category: form.category?.trim(),
           description: form.description?.trim(),
           fullSandwichPrice: form.category === "Sandwiches" ? toNumberOrUndefined(form.fullSandwichPrice) : undefined,
+          extraPattyPrice: form.category === "Sandwiches" ? toNumberOrUndefined(form.extraPattyPrice) : undefined,
           isActive: !!form.isActive,
         },
-        ["name", "title", "price", "stock", "image", "category", "description", "fullSandwichPrice", "isActive"]
+        ["name", "title", "price", "stock", "image", "category", "description", "fullSandwichPrice", "extraPattyPrice", "isActive"]
       );
 
       const response = await api.put(`/api/products/${product._id}`, payload, {
@@ -168,6 +170,16 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
                 value={form.fullSandwichPrice}
                 onChange={handleChange}
                 placeholder="מחיר סנדוויץ' מלא"
+                className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
+              />
+              <label className="block text-sm">מחיר תוספת קציצה</label>
+              <input
+                type="number"
+                name="extraPattyPrice"
+                inputMode="decimal"
+                value={form.extraPattyPrice}
+                onChange={handleChange}
+                placeholder="מחיר תוספת קציצה"
                 className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20"
               />
             </>

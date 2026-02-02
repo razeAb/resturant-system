@@ -426,6 +426,7 @@ export default function FloorOrders() {
           img={modalProduct.image || modalProduct.img}
           title={resolveProductName(modalProduct) || modalProduct.title || "פריט"}
           price={modalProduct.price}
+          extraPattyPrice={modalProduct.extraPattyPrice}
           description={resolveProductDescription(modalProduct) || ""}
           name_en={modalProduct?.name_en}
           name_he={modalProduct?.name_he}

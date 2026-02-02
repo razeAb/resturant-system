@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
 
@@ -12,6 +12,7 @@ const Modal = ({
   title,
   price,
   fullSandwichPrice,
+  extraPattyPrice,
   description,
   options,
   isOpen,
@@ -26,6 +27,8 @@ const Modal = ({
     additions: [],
   });
   const [comment, setComment] = useState(""); // ✅ missing state added
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
 
   const { addToCart } = useContext(CartContext); // Access addToCart function
   const { t, lang } = useLang();
@@ -43,9 +46,21 @@ const Modal = ({
   const fullPrice = Number(fullSandwichPrice);
   const hasFullSandwichOption = Number.isFinite(fullPrice) && fullPrice > 0;
   const fullSandwichExtra = hasFullSandwichOption ? fullPrice - basePrice : 0;
+  const extraPattyValue = Number(extraPattyPrice);
+  const hasExtraPattyOption = Number.isFinite(extraPattyValue) && extraPattyValue > 0;
 
   const formatAdditionLabel = (name, suffix, priceValue) => `${name}${suffix ? ` ${suffix}` : ""} (+₪${priceValue})`;
   const formatPrice = (value) => (Number.isInteger(value) ? value : Number(value).toFixed(2));
+  const getWeightedGrams = (label) => {
+    const match = String(label).match(/(\d+)\s*(?:גרם|g)/i);
+    return match ? Number(match[1]) : 0;
+  };
+
+  const showToast = (message) => {
+    setToast(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2000);
+  };
 
   const calculateTotalPrice = () => {
     const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
@@ -82,6 +97,12 @@ const Modal = ({
 
       // Remove same addition with other grams (so only one per meat)
       const updatedAdditions = prev.additions.filter((item) => !item.addition.includes(addition.name));
+      const totalGrams = updatedAdditions.reduce((sum, item) => sum + getWeightedGrams(item.addition), 0);
+
+      if (totalGrams + grams > 100) {
+        showToast(t("modal.meatAdditionsMax", "מקסימום 100 גרם לתוספות בשר"));
+        return prev;
+      }
 
       return {
         ...prev,
@@ -179,6 +200,24 @@ const Modal = ({
     });
   };
 
+  const handleExtraPattyToggle = () => {
+    const extraPattyLabel = t("modal.extraPatty", "תוספת קציצה");
+
+    setSelectedOptions((prev) => {
+      const withoutPatty = prev.additions.filter((item) => !item.extraPatty);
+      const isSelected = prev.additions.some((item) => item.extraPatty);
+
+      if (isSelected) {
+        return { ...prev, additions: withoutPatty };
+      }
+
+      return {
+        ...prev,
+        additions: [...withoutPatty, { addition: extraPattyLabel, price: extraPattyValue, extraPatty: true }],
+      };
+    });
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" dir="ltr" onClick={(e) => e.stopPropagation()}>
@@ -237,6 +276,29 @@ const Modal = ({
           </div>
         )}
 
+        {hasExtraPattyOption && (
+          <div className="modal-options">
+            <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.extraPatty", "תוספת קציצה")}</h3>
+            <div className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input
+                  type="checkbox"
+                  id="extra-patty-option"
+                  onChange={handleExtraPattyToggle}
+                  checked={selectedOptions.additions.some((item) => item.extraPatty)}
+                />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor="extra-patty-option" className="checkbox-label pl-2">
+                🍔 {t("modal.extraPatty", "תוספת קציצה")}
+                <span className="pl-2 text-sm text-gray-500">(+₪{formatPrice(extraPattyValue)})</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Vegetables */}
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.vegetablesOnDish", ":ירקות על המנה")}</h3>
@@ -264,6 +326,29 @@ const Modal = ({
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.additionsRegular", ":תוספת למנה רגילה")}</h3>
 
+          {/* Fixed-price additions */}
+          {availableFixedAdditions.map((addition, index) => (
+            <div key={index} className="checkbox-wrapper-30 checkbox-container">
+              <span className="checkbox">
+                <input
+                  type="checkbox"
+                  id={`addition-option-${index}`}
+                  onChange={() => handleFixedAdditionChange(addition)}
+                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
+                />
+                <svg>
+                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                </svg>
+              </span>
+              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
+                {translateOptionLabel(addition.name, lang)} (₪{addition.price})
+              </label>
+            </div>
+          ))}
+
+          <h4 className="text-lg font-semibold text-center pb-6">
+            {t("modal.meatAdditions", "תוספת בשר")}
+          </h4>
           {/* Gram-based additions */}
           {availableWeightedAdditions.map((addition, index) => (
             <div key={index} className="addition-buttons">
@@ -288,26 +373,6 @@ const Modal = ({
               </button>
             </div>
           ))}
-
-          {/* Fixed-price additions */}
-          {availableFixedAdditions.map((addition, index) => (
-            <div key={index} className="checkbox-wrapper-30 checkbox-container">
-              <span className="checkbox">
-                <input
-                  type="checkbox"
-                  id={`addition-option-${index}`}
-                  onChange={() => handleFixedAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
-                />
-                <svg>
-                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                </svg>
-              </span>
-              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {translateOptionLabel(addition.name, lang)} (₪{addition.price})
-              </label>
-            </div>
-          ))}
         </div>
 
         {/* Comment */}
@@ -326,6 +391,12 @@ const Modal = ({
             }}
           ></textarea>
         </div>
+
+        {toast && (
+          <div className="modal-toast" role="status" aria-live="polite">
+            {toast}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="modal-footer sticky bottom-0 bg-white py-4 px-6 shadow-inner flex items-center justify-between gap-4 z-10">

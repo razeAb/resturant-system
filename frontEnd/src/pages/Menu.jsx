@@ -57,6 +57,7 @@ const Menu = () => {
               name_he={item.name_he}
               price={item.price}
               fullSandwichPrice={item.fullSandwichPrice}
+              extraPattyPrice={item.extraPattyPrice}
               description={resolveDescription(item)}
               description_en={item.description_en}
               description_he={item.description_he}

@@ -154,6 +154,7 @@ const DishesCard = (props) => {
               name_he={props.name_he}
               price={props.price}
               fullSandwichPrice={props.fullSandwichPrice}
+              extraPattyPrice={props.extraPattyPrice}
               description={props.description}
               options={props.options}
               isOpen={isModalOpen}

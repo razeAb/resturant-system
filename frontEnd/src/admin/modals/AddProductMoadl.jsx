@@ -9,6 +9,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     stock: "",
     price: "",
     fullSandwichPrice: "",
+    extraPattyPrice: "",
     isActive: true,
   });
 
@@ -37,6 +38,8 @@ const AddProductModal = ({ onClose, onAdd }) => {
         price: Number(form.price),
         fullSandwichPrice:
           form.category === "Sandwiches" && form.fullSandwichPrice !== "" ? Number(form.fullSandwichPrice) : undefined,
+        extraPattyPrice:
+          form.category === "Sandwiches" && form.extraPattyPrice !== "" ? Number(form.extraPattyPrice) : undefined,
       };
 
       const response = await api.post(`/api/products`, payload, {
@@ -160,14 +163,24 @@ const AddProductModal = ({ onClose, onAdd }) => {
         />
 
         {form.category === "Sandwiches" && (
-          <input
-            name="fullSandwichPrice"
-            placeholder="מחיר סנדוויץ' מלא"
-            type="number"
-            onChange={handleChange}
-            value={form.fullSandwichPrice}
-            className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
-          />
+          <>
+            <input
+              name="fullSandwichPrice"
+              placeholder="מחיר סנדוויץ' מלא"
+              type="number"
+              onChange={handleChange}
+              value={form.fullSandwichPrice}
+              className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+            />
+            <input
+              name="extraPattyPrice"
+              placeholder="מחיר תוספת קציצה"
+              type="number"
+              onChange={handleChange}
+              value={form.extraPattyPrice}
+              className="w-full px-4 py-2 rounded bg-[#1f1f1f] border border-white/20 mb-3"
+            />
+          </>
         )}
 
         <label className="flex items-center gap-2 mt-2 mb-4">
