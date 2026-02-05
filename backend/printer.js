@@ -16,7 +16,7 @@ const RECEIPT_WIDTH = 576; // 80mm printers (SVG canvas)
 const PRINTER_DOTS = 512; // try 512 first; if clipped, try 576
 const USE_ENGLISH = false;
 const MARGIN = 30;
-const LEFT_TEXT_OFFSET = 120; // push LTR text further right
+const LEFT_TEXT_OFFSET = 80; // push LTR text further right
 const SIZE_SCALE = 1.8; // increase text sizes globally
 const FONT_PATH = "C:\\Windows\\Fonts\\DAVID.TTF";
 const FONT_FAMILY = "DavidEmbedded, David, Arial, sans-serif";
@@ -341,7 +341,8 @@ const buildReceiptSvg = (order, dailyNumber) => {
 
   const addItemRow = (nameText, qtyText, size = 24) => {
     const scaledSize = Math.round(size * SIZE_SCALE);
-    const nameLines = wrapText(nameText, 24);
+    const nameX = leftX;
+    const nameLines = wrapText(nameText, 18);
     nameLines.forEach((line, idx) => {
       if (idx === 0) {
         elements.push(
@@ -351,7 +352,7 @@ const buildReceiptSvg = (order, dailyNumber) => {
         );
       }
       elements.push(
-        `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
+        `<text x="${nameX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
           line,
         )}</text>`,
       );
@@ -425,7 +426,7 @@ const buildReceiptSvg = (order, dailyNumber) => {
   (order?.items ?? []).forEach((it) => {
     const qtyLabel = getQtyLabel(it);
     const lineTotal = getLineTotal(it);
-    addItemRow(getItemName(it), `${qtyLabel} x`, 24);
+    addItemRow(getItemName(it), `x ${qtyLabel}`, 24);
 
     if (shouldShowBasePrice(it)) {
       const basePrice = getItemBasePrice(it);
@@ -509,6 +510,14 @@ app.post("/print", (req, res) => {
       const dailyNumber = nextDailyOrderNumber();
       const { svg } = buildReceiptSvg(order, dailyNumber);
 
+      // Save SVG for debugging
+      try {
+        fs.writeFileSync(path.join(__dirname, "last-receipt.svg"), svg);
+        console.log("Saved SVG to last-receipt.svg for inspection");
+      } catch (e) {
+        console.log("Could not save SVG:", e.message);
+      }
+
       // Convert SVG to PNG with optimal settings
       const pngBuffer = await sharp(Buffer.from(svg))
         .resize({ width: PRINTER_DOTS, fit: "contain", background: "#ffffff" })
@@ -519,6 +528,14 @@ app.post("/print", (req, res) => {
           quality: 100,
         })
         .toBuffer();
+
+      // Save PNG for debugging
+      try {
+        fs.writeFileSync(path.join(__dirname, "last-receipt.png"), pngBuffer);
+        console.log("Saved PNG to last-receipt.png for inspection");
+      } catch (e) {
+        console.log("Could not save PNG:", e.message);
+      }
 
       const image = await Image.load(pngBuffer, "image/png");
 
