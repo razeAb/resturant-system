@@ -12,7 +12,7 @@
   <text x="288" y="60" font-size="86" font-weight="bold" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >HUNGRY</text>
   <text x="288" y="185" font-size="40" font-weight="normal" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >הזמנה חדשה</text>
   <rect x="61" y="257" width="454" height="130" rx="16" ry="16" fill="none" stroke="#000" stroke-width="2.5" />
-  <text x="288" y="355" font-size="72" font-weight="bold" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >7</text>
+  <text x="288" y="355" font-size="72" font-weight="bold" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >8</text>
   <rect x="7" y="430" width="562" height="140" rx="16" ry="16" fill="none" stroke="#000" stroke-width="2.5" />
   <text x="288" y="524" font-size="54" font-weight="bold" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >תשלום במזומן</text>
   <text x="288" y="613" font-size="65" font-weight="bold" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >₪162.00</text>
@@ -21,7 +21,7 @@
   <text x="150" y="826" font-size="40" font-weight="normal" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif" >raze test :שם לקוח</text>
   <text x="150" y="884" font-size="40" font-weight="normal" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif" >0509603191 :טלפון</text>
   <text x="150" y="942" font-size="40" font-weight="normal" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif" >סטטוס: ממתין</text>
-  <text x="150" y="1000" font-size="40" font-weight="normal" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif" >נוצר: 13 דקות</text>
+  <text x="150" y="1000" font-size="40" font-weight="normal" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif" >נוצר: 20 דקות</text>
   <line x1="30" x2="546" y1="1058" y2="1058" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
   <rect x="30" y="1086" width="516" height="189" fill="none" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
   <text x="510" y="1167" font-size="47" font-weight="bold" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >הערות לקוח</text>
@@ -55,5 +55,5 @@
   <text x="546" y="2555" font-size="50" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ</text>
   <text x="150" y="2555" font-size="50" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪162.00</text>
   <line x1="30" x2="546" y1="2645" y2="2645" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
-  <text x="288" y="2673" font-size="36" font-weight="normal" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >5.2.2026, 14:04:35</text>
+  <text x="288" y="2673" font-size="36" font-weight="normal" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >5.2.2026, 14:11:44</text>
 </svg>

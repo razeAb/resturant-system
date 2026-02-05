@@ -604,10 +604,10 @@ export default function ActiveOrdersPage() {
                                                 );
                                               })}
                                             </ul>
-                                          ) : (
-                                            <span> אין</span>
-                                          )}
-                                        </div>
+                                          </div>
+                                        ) : (
+                                          <div className="mt-1">תוספות: <span>אין</span></div>
+                                        )}
 
                                         {/* Vegetables & comment unchanged */}
                                         <div className="mt-1">
