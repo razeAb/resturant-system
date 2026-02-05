@@ -1169,12 +1169,16 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         .cart-remove {
           background: #ef4444;
           border: none;
-          padding: 6px 10px;
+          padding: 4px 8px;
           border-radius: 999px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
+          font-size: 12px;
+          line-height: 1;
+          min-height: 24px;
+          min-width: 24px;
         }
 
         .cart-summary {
@@ -1774,8 +1778,11 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
 
           .cart-drawer-panel .cart-remove {
             order: -1;
-            padding: 6px 10px;
-            font-size: 12px;
+            padding: 4px 8px;
+            font-size: 10px;
+            line-height: 1;
+            min-height: 22px;
+            min-width: 22px;
             align-self: flex-start;
             position: absolute;
             left: 0;
