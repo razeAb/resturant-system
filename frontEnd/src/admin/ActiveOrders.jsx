@@ -88,6 +88,11 @@ export default function ActiveOrdersPage() {
 
   // polling + new order sound
   const prevOrderCountRef = useRef(0);
+  // auto-print
+  const printedIdsRef = useRef(new Set());
+  const printQueueRef = useRef(Promise.resolve());
+  const PRINTED_STORAGE_KEY = "printedOrderIds_v1";
+  const PRINTER_URL = import.meta.env.VITE_PRINTER_URL || "http://localhost:9100";
 
   // initial fetch + 5s polling safety net
   useEffect(() => {
@@ -100,6 +105,70 @@ export default function ActiveOrdersPage() {
   const fmtILS = (n) => (typeof n === "number" ? `₪${n.toFixed(2)}` : `₪${Number(n || 0).toFixed(2)}`);
 
   const num = (v) => (typeof v === "number" ? v : Number(v || 0));
+
+  const loadPrintedIds = () => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(PRINTED_STORAGE_KEY) || "[]");
+      printedIdsRef.current = new Set(arr);
+    } catch {
+      printedIdsRef.current = new Set();
+    }
+  };
+
+  const savePrintedIds = () => {
+    try {
+      localStorage.setItem(PRINTED_STORAGE_KEY, JSON.stringify([...printedIdsRef.current]));
+    } catch {}
+  };
+
+  const sendToPrinter = async (order) => {
+    const res = await fetch(`${PRINTER_URL}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+
+    const data = await res.json();
+    if (!data?.success) {
+      throw new Error(data?.error || "Print failed");
+    }
+  };
+
+  const autoPrintIfNeeded = (order) => {
+    const id = normalizeId(order);
+    if (!id) return;
+
+    if (
+      order.status === ORDER_STATUS?.DONE ||
+      order.status === ORDER_STATUS?.PENDING_PAYMENT ||
+      order.status === ORDER_STATUS?.CANCELED
+    ) {
+      return;
+    }
+
+    if (printedIdsRef.current.has(id)) return;
+
+    printedIdsRef.current.add(id);
+    savePrintedIds();
+
+    printQueueRef.current = printQueueRef.current
+      .then(() => sendToPrinter(order))
+      .then(() => console.log("Printed:", id))
+      .catch((err) => {
+        console.error("Print failed:", id, err?.message || err);
+        printedIdsRef.current.delete(id);
+        savePrintedIds();
+      });
+  };
+
+  const manualPrint = (order) => {
+    sendToPrinter(order)
+      .then(() => console.log("Printed:", normalizeId(order)))
+      .catch((err) => {
+        console.error("Print failed:", err?.message || err);
+        alert("שגיאה בהדפסה");
+      });
+  };
 
   /** Base item price:
    * 1) prefer item.price
@@ -191,6 +260,10 @@ export default function ActiveOrdersPage() {
     };
   }, []);
 
+  useEffect(() => {
+    loadPrintedIds();
+  }, []);
+
   const fetchOrders = async () => {
     try {
       const res = await api.get("/api/orders/active");
@@ -199,6 +272,7 @@ export default function ActiveOrdersPage() {
         (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED
       );
       newOrderList = dedupeOrders(newOrderList);
+      newOrderList.forEach((o) => autoPrintIfNeeded(o));
       if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
         playNotificationSound();
       }
@@ -214,6 +288,7 @@ export default function ActiveOrdersPage() {
   useEffect(() => {
     const onPaid = (order) => {
       playNotificationSound();
+      autoPrintIfNeeded(order);
       setOrders((prev) => {
         const incomingId = normalizeId(order);
         const i = prev.findIndex((o) => normalizeId(o) === incomingId);
@@ -584,6 +659,10 @@ export default function ActiveOrdersPage() {
                               }}
                             >
                               הוסף פריט
+                            </button>
+
+                            <button className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg" onClick={() => manualPrint(order)}>
+                              הדפסה
                             </button>
 
                             <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg" onClick={() => deleteOrder(order._id)}>
