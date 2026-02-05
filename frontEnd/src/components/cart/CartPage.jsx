@@ -8,13 +8,14 @@ import { useLang } from "../../context/LangContext";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
+import { QuantitySelector } from "../QuantitySelector";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
 
 const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
-  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, updateItemQuantity, clearCart } = useContext(CartContext);
   const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -32,6 +33,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [storeComment, setStoreComment] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId, setOrderId] = useState(null);
@@ -113,6 +115,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     setShowCardPayment(false);
     setPhoneNumber("");
     setGuestName("");
+    setStoreComment("");
     setCouponCode("");
     setAppliedCoupon(null);
     setCouponDiscount(0);
@@ -192,6 +195,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
       return;
@@ -229,6 +233,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       ...(guestName && !loggedInUserId && { customerName: guestName }),
+      ...(storeComment.trim() && { comment: storeComment.trim() }),
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
@@ -283,6 +288,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }
 
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
     } catch (error) {
@@ -790,10 +796,10 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       <div className="cart-items-list">
         {groupCartItems().map((item, index) => {
           const itemTotalPrice = calculateItemTotal(item, index);
-          const vegetables = hasVegetableOptions(item) ? formatVegetables(item.selectedOptions?.vegetables) : "";
-          const additions = hasAdditionOptions(item)
-            ? item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין")
-            : "";
+          const hasVegetables = Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0;
+          const hasAdditions = Array.isArray(item.selectedOptions?.additions) && item.selectedOptions.additions.length > 0;
+          const vegetables = hasVegetables ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ") : "";
+          const additions = hasAdditions ? item.selectedOptions.additions.map((add) => add.addition).join(", ") : "";
 
           return (
             <div className="cart-item-card" key={index}>
@@ -808,25 +814,17 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                         : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
                     </p>
                   </div>
-                  <button
-                    className="cart-remove"
-                    onClick={() => removeFromCart(item.id)}
-                    aria-label={t("cartPage.remove", "הסר")}
-                  >
-                    <img src="/bin.png" alt={t("cartPage.remove", "הסר")} className="cart-remove-icon" />
+                  <button className="cart-remove" onClick={() => removeFromCart(item.id)}>
+                    {t("cartPage.remove", "הסר")}
                   </button>
                 </div>
                 <div className="cart-item-meta">
-                  {hasVegetableOptions(item) && (
-                    <span>
-                      {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
-                    </span>
-                  )}
-                  {hasAdditionOptions(item) && (
-                    <span>
-                      {t("cartPage.additionsLabel", "תוספות")}: {additions}
-                    </span>
-                  )}
+                  <span>
+                    {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
+                  </span>
+                  <span>
+                    {t("cartPage.additionsLabel", "תוספות")}: {additions}
+                  </span>
                   {item.comment && (
                     <span>
                       {t("cartPage.commentLabel", "הערות")}: {item.comment}
@@ -834,8 +832,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                   )}
                 </div>
                 <div className="cart-item-bottom">
-                  <span className="cart-item-unit">₪{item.price}</span>
-                  <span className="cart-item-total">₪{itemTotalPrice}</span>
+                  {!item.isWeighted && (
+                    <QuantitySelector
+                      quantity={item.quantity}
+                      initialQuantity={item.quantity}
+                      minQuantity={1}
+                      maxQuantity={99}
+                      size="sm"
+                      variant="cart"
+                      label={t("cartPage.quantityLabel", "כמות")}
+                      onChange={(nextQuantity) => updateItemQuantity(item.id, nextQuantity)}
+                    />
+                  )}
+                  <button
+                    className="cart-remove"
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label={t("cartPage.remove", "הסר")}
+                  >
+                    <img className="cart-remove-icon" src="/recycle-bin.png" alt="" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -867,6 +882,24 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         {isCouponChecking && <div className="cart-coupon-muted">{t("cartPage.couponChecking", "בודק קופון...")}</div>}
         {couponError && <div className="cart-coupon-error">{couponError}</div>}
         {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
+      </div>
+      <div className="cart-store-comment" style={{ marginTop: "16px" }}>
+        <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>
+          {t("cartPage.storeCommentLabel", "הערה למסעדה")}:
+        </h4>
+        <textarea
+          placeholder={t("cartPage.storeCommentPlaceholder", "הכנס הערה כללית למסעדה (לא חובה)")}
+          value={storeComment}
+          onChange={(e) => setStoreComment(e.target.value)}
+          rows={3}
+          style={{
+            width: "100%",
+            padding: "10px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            resize: "vertical",
+          }}
+        />
       </div>
       <div className="cart-actions">
         {eligibleReward && !couponApplied && (
@@ -1108,10 +1141,18 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           color: #475569;
         }
 
+        .cart-item-prices {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+
         .cart-item-bottom {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-end;
           align-items: center;
+          gap: 30px;
           font-weight: 600;
         }
 
@@ -1126,20 +1167,14 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         }
 
         .cart-remove {
-          background: #fee2e2;
-          color: #b91c1c;
+          background: #ef4444;
           border: none;
-          padding: 6px 12px;
+          padding: 6px 10px;
           border-radius: 999px;
-          font-size: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
-        }
-
-        .cart-remove-icon {
-          width: 16px;
-          height: 16px;
-          display: block;
-          filter: brightness(0) invert(1);
         }
 
         .cart-summary {
@@ -1541,8 +1576,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           font-size: 16px;
         }
 
-        .cart-layout button,
-        .cart-drawer-panel button {
+        .cart-layout button:not(.quantity-selector-btn),
+        .cart-drawer-panel button:not(.quantity-selector-btn) {
           padding: 10px 20px;
           background-color: #007bff;
           color: #fff;
@@ -1583,12 +1618,32 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             align-items: flex-start;
           }
 
+          .cart-item-prices {
+            align-items: flex-start;
+          }
+
           .cart-remove {
             align-self: flex-start;
           }
 
           .cart-item-bottom {
             width: 100%;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 8px;
+          }
+
+          .cart-item-bottom .quantity-selector {
+            margin-left: auto;
+            max-width: 170px;
+            justify-content: space-between;
+            transform: scale(0.8);
+            transform-origin: right bottom;
+          }
+
+          .cart-item-bottom .cart-remove {
+            margin-right: auto;
+            align-self: flex-end;
           }
 
           .cart-summary,
@@ -1708,7 +1763,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             min-width: 0;
           }
 
-          .cart-drawer-panel .cart-item-unit {
+          .cart-drawer-panel .cart-item-prices .cart-item-unit {
             display: none;
           }
 

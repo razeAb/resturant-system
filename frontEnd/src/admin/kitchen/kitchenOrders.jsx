@@ -194,22 +194,25 @@ export default function KitchenOrders() {
                                   <h4 className="font-semibold mb-2">פרטי הזמנה</h4>
                                   <ul className="space-y-2">
                                     {order.items.map((item, idx) => {
-                                      const vegs =
-                                        Array.isArray(item.vegetables) && item.vegetables.length
-                                          ? VEGETABLES_ORDER.filter((v) => item.vegetables.includes(v)).join(", ")
-                                          : "כל הירקות";
-                                      const adds =
-                                        Array.isArray(item.additions) && item.additions.length
-                                          ? item.additions.map((a) => a.addition).join(", ")
-                                          : "אין";
+                                      const hasVegetables = Array.isArray(item.vegetables) && item.vegetables.length;
+                                      const hasAdditions = Array.isArray(item.additions) && item.additions.length;
+                                      const vegs = hasVegetables
+                                        ? VEGETABLES_ORDER.filter((v) => item.vegetables.includes(v)).join(", ")
+                                        : "";
+                                      const adds = hasAdditions ? item.additions.map((a) => a.addition).join(", ") : "";
+                                      const hasMeta = hasVegetables || hasAdditions || item.comment;
                                       return (
                                         <li key={idx} className="leading-6">
                                           <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
                                           {item.isWeighted ? "גרם" : ""}
-                                          <div className="text-white/70">
-                                            ירקות: {vegs} · תוספות: {adds}
-                                            {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                          </div>
+                                          {hasMeta ? (
+                                            <div className="text-white/70">
+                                              {hasVegetables ? `ירקות: ${vegs}` : ""}
+                                              {hasVegetables && hasAdditions ? " · " : ""}
+                                              {hasAdditions ? `תוספות: ${adds}` : ""}
+                                              {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                            </div>
+                                          ) : null}
                                         </li>
                                       );
                                     })}
