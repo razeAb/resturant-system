@@ -42,17 +42,14 @@ const translatePaymentMethod = (method) =>
   method === "Card"
     ? "כרטיס אשראי"
     : method === "Cash"
-    ? "מזומן"
-    : method === "Bit"
-    ? "ביט"
-    : method === "GOOGLE_PAY"
-    ? "Google Pay"
-    : method === "APPLE_PAY"
-    ? "Apple Pay"
-    : method || " לא ידוע";
-
-const hasAdditionOptions = (item) => Array.isArray(item?.additions);
-const hasVegetableOptions = (item) => Array.isArray(item?.vegetables);
+      ? "מזומן"
+      : method === "Bit"
+        ? "ביט"
+        : method === "GOOGLE_PAY"
+          ? "Google Pay"
+          : method === "APPLE_PAY"
+            ? "Apple Pay"
+            : method || " לא ידוע";
 
 // Normalize an order ID that might arrive as _id or clientOrderId
 const normalizeId = (o) => o?._id || o?.clientOrderId;
@@ -76,8 +73,8 @@ export default function ActiveOrdersPage() {
   const resolveOrderItemName = (item) => {
     const product = item?.product || {};
     return lang === "en"
-      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item"
-      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט";
+      ? (product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item")
+      : (product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט");
   };
   const audioRef = useRef(null);
   const audioReadyRef = useRef(false);
@@ -141,11 +138,7 @@ export default function ActiveOrdersPage() {
     const id = normalizeId(order);
     if (!id) return;
 
-    if (
-      order.status === ORDER_STATUS?.DONE ||
-      order.status === ORDER_STATUS?.PENDING_PAYMENT ||
-      order.status === ORDER_STATUS?.CANCELED
-    ) {
+    if (order.status === ORDER_STATUS?.DONE || order.status === ORDER_STATUS?.PENDING_PAYMENT || order.status === ORDER_STATUS?.CANCELED) {
       return;
     }
 
@@ -185,10 +178,10 @@ export default function ActiveOrdersPage() {
         item.pricePer100g != null
           ? num(item.pricePer100g)
           : item.product?.pricePer100g != null
-          ? num(item.product.pricePer100g)
-          : item.price != null
-          ? num(item.price)
-          : 0;
+            ? num(item.product.pricePer100g)
+            : item.price != null
+              ? num(item.price)
+              : 0;
 
       if (grams && per100) return (grams / 100) * per100;
     }
@@ -272,7 +265,7 @@ export default function ActiveOrdersPage() {
       const res = await api.get("/api/orders/active");
       // Backend already filters out completed and unpaid orders; still dedupe to avoid double entries
       let newOrderList = res.data.filter(
-        (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED
+        (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED,
       );
       newOrderList = dedupeOrders(newOrderList);
       newOrderList.forEach((o) => autoPrintIfNeeded(o));
@@ -479,10 +472,10 @@ export default function ActiveOrdersPage() {
                             {order.status === ORDER_STATUS?.PREPARING
                               ? "בהכנה"
                               : order.status === ORDER_STATUS?.DELIVERING
-                              ? "במשלוח"
-                              : order.status === ORDER_STATUS?.DONE
-                              ? "הושלם"
-                              : "ממתין"}
+                                ? "במשלוח"
+                                : order.status === ORDER_STATUS?.DONE
+                                  ? "הושלם"
+                                  : "ממתין"}
                           </span>
 
                           <button
@@ -506,10 +499,10 @@ export default function ActiveOrdersPage() {
                             {order.status === ORDER_STATUS?.PREPARING
                               ? "בהכנה"
                               : order.status === ORDER_STATUS?.DELIVERING
-                              ? "במשלוח"
-                              : order.status === ORDER_STATUS?.DONE
-                              ? "הושלם"
-                              : "ממתין"}
+                                ? "במשלוח"
+                                : order.status === ORDER_STATUS?.DONE
+                                  ? "הושלם"
+                                  : "ממתין"}
                           </span>
                         </div>
 
@@ -592,8 +585,8 @@ export default function ActiveOrdersPage() {
                                                   a?.price != null
                                                     ? num(a.price)
                                                     : a?.grams && a?.pricePer100g
-                                                    ? (num(a.grams) / 100) * num(a.pricePer100g)
-                                                    : 0;
+                                                      ? (num(a.grams) / 100) * num(a.pricePer100g)
+                                                      : 0;
 
                                                 return (
                                                   <li key={i2}>
@@ -605,16 +598,13 @@ export default function ActiveOrdersPage() {
                                               })}
                                             </ul>
                                           </div>
-                                        ) : (
-                                          <div className="mt-1">תוספות: <span>אין</span></div>
-                                        )}
+                                        ) : null}
 
-                                        {/* Vegetables & comment unchanged */}
-                                        <div className="mt-1">
-                                          ירקות:{" "}
-                                          {Array.isArray(item.vegetables) && item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                          {item.comment ? ` · הערות: ${item.comment}` : ""}
-                                        </div>
+                                        {Array.isArray(item.vegetables) && item.vegetables.length ? (
+                                          <div className="mt-1">ירקות: {item.vegetables.join(", ")}</div>
+                                        ) : null}
+
+                                        {item.comment ? <div className="mt-1">הערות: {item.comment}</div> : null}
                                       </div>
                                     </li>
                                   );
