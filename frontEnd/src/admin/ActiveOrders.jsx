@@ -542,6 +542,11 @@ export default function ActiveOrdersPage() {
                               <div>
                                 <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone}
                               </div>
+                              {order.comment ? (
+                                <div>
+                                  <strong>הערה למסעדה:</strong> {order.comment}
+                                </div>
+                              ) : null}
                               <div>
                                 <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
                               </div>

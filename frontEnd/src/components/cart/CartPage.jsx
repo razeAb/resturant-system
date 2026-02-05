@@ -32,6 +32,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [storeComment, setStoreComment] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId, setOrderId] = useState(null);
@@ -92,6 +93,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     setShowCardPayment(false);
     setPhoneNumber("");
     setGuestName("");
+    setStoreComment("");
     setCouponCode("");
     setAppliedCoupon(null);
     setCouponDiscount(0);
@@ -171,6 +173,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
       return;
@@ -208,6 +211,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       ...(guestName && !loggedInUserId && { customerName: guestName }),
+      ...(storeComment.trim() && { comment: storeComment.trim() }),
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
@@ -266,6 +270,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }
 
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
     } catch (error) {
@@ -867,6 +872,24 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         {isCouponChecking && <div className="cart-coupon-muted">{t("cartPage.couponChecking", "בודק קופון...")}</div>}
         {couponError && <div className="cart-coupon-error">{couponError}</div>}
         {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
+      </div>
+      <div className="cart-store-comment" style={{ marginTop: "16px" }}>
+        <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>
+          {t("cartPage.storeCommentLabel", "הערה למסעדה")}:
+        </h4>
+        <textarea
+          placeholder={t("cartPage.storeCommentPlaceholder", "הכנס הערה כללית למסעדה (לא חובה)")}
+          value={storeComment}
+          onChange={(e) => setStoreComment(e.target.value)}
+          rows={3}
+          style={{
+            width: "100%",
+            padding: "10px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            resize: "vertical",
+          }}
+        />
       </div>
       <div className="cart-actions">
         {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}

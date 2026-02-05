@@ -167,6 +167,14 @@ const getItemBasePrice = (item) => {
   return 0;
 };
 
+const shouldShowBasePrice = (item) => {
+  if (item?.isWeighted) return true;
+  const name = String(getItemName(item) || "").toLowerCase();
+  return (
+    name.includes("sandwich") || name.includes("burger") || name.includes("סנדוויץ") || name.includes("בורגר") || name.includes("המבורגר")
+  );
+};
+
 const getAdditionsTotal = (item) => {
   if (!Array.isArray(item?.additions)) return 0;
   return item.additions.reduce((sum, a) => {
@@ -331,9 +339,29 @@ const buildReceiptSvg = (order, dailyNumber) => {
     }
   };
 
+  const addItemRow = (nameText, qtyText, size = 24) => {
+    const scaledSize = Math.round(size * SIZE_SCALE);
+    const nameLines = wrapText(nameText, 24);
+    nameLines.forEach((line, idx) => {
+      if (idx === 0) {
+        elements.push(
+          `<text x="${rightX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(
+            qtyText,
+          )}</text>`,
+        );
+      }
+      elements.push(
+        `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
+          line,
+        )}</text>`,
+      );
+      y += Math.round(scaledSize * 1.55);
+    });
+  };
+
   // Build receipt content
   addText("HUNGRY", { align: "center", size: 48, weight: "bold" });
-  addText("ACTIVE ORDER", { align: "center", size: 22 });
+  addText("הזמנה חדשה", { align: "center", size: 22 });
   y += 14;
 
   addBadge(String(dailyNumber), 40);
@@ -347,7 +375,7 @@ const buildReceiptSvg = (order, dailyNumber) => {
   addDivider();
 
   const deliveryType = translateDeliveryOption(order?.deliveryOption);
-  if (deliveryType) addText(deliveryType, { align: bodyAlign, size: 26, weight: "bold", rtl: bodyRtl });
+  if (deliveryType) addText(deliveryType, { align: bodyAlign, size: 35, weight: "bold", rtl: bodyRtl });
 
   const address = order?.address?.full || order?.address?.street || order?.deliveryAddress || order?.shippingAddress?.address || "";
   if (address) {
@@ -358,11 +386,8 @@ const buildReceiptSvg = (order, dailyNumber) => {
 
   const customerName = order?.user?.name || order?.customerName || "אורח";
   const customerPhone = order?.user?.phone || order?.phone || "";
-  addText(label(`שם לקוח: ${customerName}`, `Customer: ${customerName}`), { align: bodyAlign, size: 22, rtl: bodyRtl });
-  if (customerPhone) addText(label(`טלפון: ${customerPhone}`, `Phone: ${customerPhone}`), { align: bodyAlign, size: 22, rtl: bodyRtl });
-
-  const eta = order?.estimatedTime ? label(`${order.estimatedTime} דקות`, `${order.estimatedTime} min`) : "ASAP";
-  addText(label(`אספקה: ${eta}`, `ETA: ${eta}`), { align: bodyAlign, size: 22, rtl: bodyRtl });
+  addText(label(`${customerName} :שם לקוח`, `${customerName} :Customer`), { align: bodyAlign, size: 22, rtl: bodyRtl });
+  if (customerPhone) addText(label(`${customerPhone} :טלפון`, `${customerPhone} :Phone`), { align: bodyAlign, size: 22, rtl: bodyRtl });
 
   const statusLabel = USE_ENGLISH
     ? order?.status === "PREPARING"
@@ -392,9 +417,6 @@ const buildReceiptSvg = (order, dailyNumber) => {
 
   const customerNotes = [];
   if (order?.comment) customerNotes.push(String(order.comment));
-  (order?.items ?? []).forEach((it) => {
-    if (it?.comment) customerNotes.push(`${getItemName(it)}: ${it.comment}`);
-  });
   addBox(label("הערות לקוח", "Customer Notes"), customerNotes.length ? customerNotes : ["-"]);
 
   addText(label("פרטי הזמנה", "Order Items"), { align: bodyAlign, size: 28, weight: "bold", rtl: bodyRtl });
@@ -403,10 +425,12 @@ const buildReceiptSvg = (order, dailyNumber) => {
   (order?.items ?? []).forEach((it) => {
     const qtyLabel = getQtyLabel(it);
     const lineTotal = getLineTotal(it);
-    addRow(`${qtyLabel} x ${getItemName(it)}`, "", 24);
+    addItemRow(getItemName(it), `${qtyLabel} x`, 24);
 
-    const basePrice = getItemBasePrice(it);
-    addRow(label("מחיר בסיס", "Base Price"), formatPrice(basePrice), 20);
+    if (shouldShowBasePrice(it)) {
+      const basePrice = getItemBasePrice(it);
+      addRow(label("מחיר בסיס", "Base Price"), formatPrice(basePrice), 20);
+    }
 
     if (Array.isArray(it.vegetables) && it.vegetables.length) {
       wrapText(label(`ירקות: ${it.vegetables.join(", ")}`, `Vegetables: ${it.vegetables.join(", ")}`), 32).forEach((line) =>
@@ -424,8 +448,8 @@ const buildReceiptSvg = (order, dailyNumber) => {
     }
 
     if (it?.comment)
-      wrapText(label(`הערה: ${it.comment}`, `Note: ${it.comment}`), 32).forEach((line) =>
-        addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+      wrapText(label(`${it.comment} :הערה`, `${it.comment} :Note`), 32).forEach((line) =>
+        addText(line, { align: bodyAlign, size: 30, weight: "bold", rtl: bodyRtl }),
       );
 
     addRow(label("סה״כ פריט", "Item Total"), formatPrice(lineTotal), 22);
