@@ -509,14 +509,6 @@ app.post("/print", (req, res) => {
       const dailyNumber = nextDailyOrderNumber();
       const { svg } = buildReceiptSvg(order, dailyNumber);
 
-      // Save SVG for debugging
-      try {
-        fs.writeFileSync(path.join(__dirname, "last-receipt.svg"), svg);
-        console.log("Saved SVG to last-receipt.svg for inspection");
-      } catch (e) {
-        console.log("Could not save SVG:", e.message);
-      }
-
       // Convert SVG to PNG with optimal settings
       const pngBuffer = await sharp(Buffer.from(svg))
         .resize({ width: PRINTER_DOTS, fit: "contain", background: "#ffffff" })
@@ -527,14 +519,6 @@ app.post("/print", (req, res) => {
           quality: 100,
         })
         .toBuffer();
-
-      // Save PNG for debugging
-      try {
-        fs.writeFileSync(path.join(__dirname, "last-receipt.png"), pngBuffer);
-        console.log("Saved PNG to last-receipt.png for inspection");
-      } catch (e) {
-        console.log("Could not save PNG:", e.message);
-      }
 
       const image = await Image.load(pngBuffer, "image/png");
 
