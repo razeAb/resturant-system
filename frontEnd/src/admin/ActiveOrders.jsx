@@ -72,12 +72,25 @@ const dedupeOrders = (orders = []) => {
 export default function ActiveOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const resolveOrderItemName = (item) => {
     const product = item?.product || {};
     return lang === "en"
       ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item"
       : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט";
+  };
+  const resolveSandwichSizeLabel = (item) => {
+    const additions = Array.isArray(item?.additions) ? item.additions : [];
+    const fullLabel = t("modal.fullSandwich", "סנדוויץ' מלא");
+    const halfLabel = t("modal.halfSandwich", "חצי סנדוויץ'");
+    const additionText = additions
+      .map((a) => (a?.addition || a?.name || "").toString().toLowerCase())
+      .join(" ");
+    if (additions.some((a) => a?.fullSandwich)) return t("modal.fullSandwich", "סנדוויץ' מלא");
+    if (additions.some((a) => a?.halfSandwich)) return t("modal.halfSandwich", "חצי סנדוויץ'");
+    if (additionText.includes(fullLabel.toLowerCase())) return fullLabel;
+    if (additionText.includes(halfLabel.toLowerCase())) return halfLabel;
+    return "";
   };
   const audioRef = useRef(null);
   const audioReadyRef = useRef(false);
@@ -485,11 +498,22 @@ export default function ActiveOrdersPage() {
                                   const qtyLabel = item.isWeighted
                                     ? `${item.weightGrams || item.grams || item.quantity} גרם`
                                     : item.quantity;
+                                  const sandwichSizeLabel = resolveSandwichSizeLabel(item);
+                                  const filteredAdditions = (item.additions || []).filter((a) => {
+                                    const text = (a?.addition || a?.name || "").toString();
+                                    const isFlagged = a?.fullSandwich || a?.halfSandwich;
+                                    const isLabel =
+                                      text === t("modal.fullSandwich", "סנדוויץ' מלא") || text === t("modal.halfSandwich", "חצי סנדוויץ'");
+                                    return !isFlagged && !isLabel;
+                                  });
 
                                   return (
                                     <li key={idx} className="leading-6">
                                       <div className="flex items-center justify-between">
-                                        <strong>{resolveOrderItemName(item)}</strong>
+                                        <strong>
+                                          {resolveOrderItemName(item)}
+                                          {sandwichSizeLabel ? ` (${sandwichSizeLabel})` : ""}
+                                        </strong>
                                         {/* Line total on the right */}
                                         <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
                                       </div>
@@ -507,9 +531,9 @@ export default function ActiveOrdersPage() {
                                         {hasAdditionOptions(item) && (
                                           <div className="mt-1">
                                             תוספות:
-                                            {item.additions.length ? (
+                                            {filteredAdditions.length ? (
                                               <ul className="list-disc mr-4 mt-1 space-y-0.5">
-                                                {item.additions.map((a, i2) => {
+                                                {filteredAdditions.map((a, i2) => {
                                                   const aPrice =
                                                     a?.price != null
                                                       ? num(a.price)
