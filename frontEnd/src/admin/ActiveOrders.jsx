@@ -89,19 +89,6 @@ export default function ActiveOrdersPage() {
     if (additionText.includes(halfLabel.toLowerCase())) return halfLabel;
     return "";
   };
-  const resolveSandwichSizeLabel = (item) => {
-    const additions = Array.isArray(item?.additions) ? item.additions : [];
-    const fullLabel = t("modal.fullSandwich", "סנדוויץ' מלא");
-    const halfLabel = t("modal.halfSandwich", "חצי סנדוויץ'");
-    const additionText = additions
-      .map((a) => (a?.addition || a?.name || "").toString().toLowerCase())
-      .join(" ");
-    if (additions.some((a) => a?.fullSandwich)) return t("modal.fullSandwich", "סנדוויץ' מלא");
-    if (additions.some((a) => a?.halfSandwich)) return t("modal.halfSandwich", "חצי סנדוויץ'");
-    if (additionText.includes(fullLabel.toLowerCase())) return fullLabel;
-    if (additionText.includes(halfLabel.toLowerCase())) return halfLabel;
-    return "";
-  };
   const audioRef = useRef(null);
   const audioReadyRef = useRef(false);
 
@@ -626,15 +613,18 @@ export default function ActiveOrdersPage() {
                                                       ? (num(a.grams) / 100) * num(a.pricePer100g)
                                                       : 0;
 
-                                                return (
-                                                  <li key={i2}>
-                                                    {a.addition || a.name || "תוספת"}{" "}
-                                                    <span className="text-white/90">(+{fmtILS(aPrice)})</span>
-                                                    {a?.grams ? ` · ${a.grams} גרם` : ""}
-                                                  </li>
-                                                );
-                                              })}
-                                            </ul>
+                                                  return (
+                                                    <li key={i2}>
+                                                      {a.addition || a.name || "תוספת"}{" "}
+                                                      <span className="text-white/90">(+{fmtILS(aPrice)})</span>
+                                                      {a?.grams ? ` · ${a.grams} גרם` : ""}
+                                                    </li>
+                                                  );
+                                                })}
+                                              </ul>
+                                            ) : (
+                                              <span> אין</span>
+                                            )}
                                           </div>
                                         ) : null}
 
