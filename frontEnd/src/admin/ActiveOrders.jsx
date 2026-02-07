@@ -42,17 +42,14 @@ const translatePaymentMethod = (method) =>
   method === "Card"
     ? "כרטיס אשראי"
     : method === "Cash"
-    ? "מזומן"
-    : method === "Bit"
-    ? "ביט"
-    : method === "GOOGLE_PAY"
-    ? "Google Pay"
-    : method === "APPLE_PAY"
-    ? "Apple Pay"
-    : method || " לא ידוע";
-
-const hasAdditionOptions = (item) => Array.isArray(item?.additions);
-const hasVegetableOptions = (item) => Array.isArray(item?.vegetables);
+      ? "מזומן"
+      : method === "Bit"
+        ? "ביט"
+        : method === "GOOGLE_PAY"
+          ? "Google Pay"
+          : method === "APPLE_PAY"
+            ? "Apple Pay"
+            : method || " לא ידוע";
 
 // Normalize an order ID that might arrive as _id or clientOrderId
 const normalizeId = (o) => o?._id || o?.clientOrderId;
@@ -76,8 +73,21 @@ export default function ActiveOrdersPage() {
   const resolveOrderItemName = (item) => {
     const product = item?.product || {};
     return lang === "en"
-      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item"
-      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט";
+      ? (product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item")
+      : (product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט");
+  };
+  const resolveSandwichSizeLabel = (item) => {
+    const additions = Array.isArray(item?.additions) ? item.additions : [];
+    const fullLabel = t("modal.fullSandwich", "סנדוויץ' מלא");
+    const halfLabel = t("modal.halfSandwich", "חצי סנדוויץ'");
+    const additionText = additions
+      .map((a) => (a?.addition || a?.name || "").toString().toLowerCase())
+      .join(" ");
+    if (additions.some((a) => a?.fullSandwich)) return t("modal.fullSandwich", "סנדוויץ' מלא");
+    if (additions.some((a) => a?.halfSandwich)) return t("modal.halfSandwich", "חצי סנדוויץ'");
+    if (additionText.includes(fullLabel.toLowerCase())) return fullLabel;
+    if (additionText.includes(halfLabel.toLowerCase())) return halfLabel;
+    return "";
   };
   const resolveSandwichSizeLabel = (item) => {
     const additions = Array.isArray(item?.additions) ? item.additions : [];
@@ -104,6 +114,11 @@ export default function ActiveOrdersPage() {
 
   // polling + new order sound
   const prevOrderCountRef = useRef(0);
+  // auto-print
+  const printedIdsRef = useRef(new Set());
+  const printQueueRef = useRef(Promise.resolve());
+  const PRINTED_STORAGE_KEY = "printedOrderIds_v1";
+  const PRINTER_URL = import.meta.env.VITE_PRINTER_URL || "http://localhost:9100";
 
   // initial fetch + 5s polling safety net
   useEffect(() => {
@@ -117,6 +132,66 @@ export default function ActiveOrdersPage() {
 
   const num = (v) => (typeof v === "number" ? v : Number(v || 0));
 
+  const loadPrintedIds = () => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(PRINTED_STORAGE_KEY) || "[]");
+      printedIdsRef.current = new Set(arr);
+    } catch {
+      printedIdsRef.current = new Set();
+    }
+  };
+
+  const savePrintedIds = () => {
+    try {
+      localStorage.setItem(PRINTED_STORAGE_KEY, JSON.stringify([...printedIdsRef.current]));
+    } catch {}
+  };
+
+  const sendToPrinter = async (order) => {
+    const res = await fetch(`${PRINTER_URL}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+
+    const data = await res.json();
+    if (!data?.success) {
+      throw new Error(data?.error || "Print failed");
+    }
+  };
+
+  const autoPrintIfNeeded = (order) => {
+    const id = normalizeId(order);
+    if (!id) return;
+
+    if (order.status === ORDER_STATUS?.DONE || order.status === ORDER_STATUS?.PENDING_PAYMENT || order.status === ORDER_STATUS?.CANCELED) {
+      return;
+    }
+
+    if (printedIdsRef.current.has(id)) return;
+
+    printedIdsRef.current.add(id);
+    savePrintedIds();
+
+    printQueueRef.current = printQueueRef.current
+      .then(() => sendToPrinter(order))
+      .then(() => console.log("Printed:", id))
+      .catch((err) => {
+        console.error("Print failed:", id, err?.message || err);
+        printedIdsRef.current.delete(id);
+        savePrintedIds();
+      });
+  };
+
+  const manualPrint = (order) => {
+    sendToPrinter(order)
+      .then(() => console.log("Printed:", normalizeId(order)))
+      .catch((err) => {
+        console.error("Print failed:", err?.message || err);
+        alert("שגיאה בהדפסה");
+      });
+  };
+
   /** Base item price:
    * 1) prefer item.price
    * 2) else product.price
@@ -129,10 +204,10 @@ export default function ActiveOrdersPage() {
         item.pricePer100g != null
           ? num(item.pricePer100g)
           : item.product?.pricePer100g != null
-          ? num(item.product.pricePer100g)
-          : item.price != null
-          ? num(item.price)
-          : 0;
+            ? num(item.product.pricePer100g)
+            : item.price != null
+              ? num(item.price)
+              : 0;
 
       if (grams && per100) return (grams / 100) * per100;
     }
@@ -207,14 +282,19 @@ export default function ActiveOrdersPage() {
     };
   }, []);
 
+  useEffect(() => {
+    loadPrintedIds();
+  }, []);
+
   const fetchOrders = async () => {
     try {
       const res = await api.get("/api/orders/active");
       // Backend already filters out completed and unpaid orders; still dedupe to avoid double entries
       let newOrderList = res.data.filter(
-        (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED
+        (o) => o.status !== ORDER_STATUS?.DONE && o.status !== ORDER_STATUS?.PENDING_PAYMENT && o.status !== ORDER_STATUS?.CANCELED,
       );
       newOrderList = dedupeOrders(newOrderList);
+      newOrderList.forEach((o) => autoPrintIfNeeded(o));
       if (prevOrderCountRef.current !== 0 && newOrderList.length > prevOrderCountRef.current) {
         playNotificationSound();
       }
@@ -230,6 +310,7 @@ export default function ActiveOrdersPage() {
   useEffect(() => {
     const onPaid = (order) => {
       playNotificationSound();
+      autoPrintIfNeeded(order);
       setOrders((prev) => {
         const incomingId = normalizeId(order);
         const i = prev.findIndex((o) => normalizeId(o) === incomingId);
@@ -417,10 +498,10 @@ export default function ActiveOrdersPage() {
                             {order.status === ORDER_STATUS?.PREPARING
                               ? "בהכנה"
                               : order.status === ORDER_STATUS?.DELIVERING
-                              ? "במשלוח"
-                              : order.status === ORDER_STATUS?.DONE
-                              ? "הושלם"
-                              : "ממתין"}
+                                ? "במשלוח"
+                                : order.status === ORDER_STATUS?.DONE
+                                  ? "הושלם"
+                                  : "ממתין"}
                           </span>
 
                           <button
@@ -444,10 +525,10 @@ export default function ActiveOrdersPage() {
                             {order.status === ORDER_STATUS?.PREPARING
                               ? "בהכנה"
                               : order.status === ORDER_STATUS?.DELIVERING
-                              ? "במשלוח"
-                              : order.status === ORDER_STATUS?.DONE
-                              ? "הושלם"
-                              : "ממתין"}
+                                ? "במשלוח"
+                                : order.status === ORDER_STATUS?.DONE
+                                  ? "הושלם"
+                                  : "ממתין"}
                           </span>
                         </div>
 
@@ -483,6 +564,11 @@ export default function ActiveOrdersPage() {
                               <div>
                                 <strong>טלפון:</strong> {order.user ? order.user.phone : order.phone}
                               </div>
+                              {order.comment ? (
+                                <div>
+                                  <strong>הערה למסעדה:</strong> {order.comment}
+                                </div>
+                              ) : null}
                               <div>
                                 <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
                               </div>
@@ -527,8 +613,7 @@ export default function ActiveOrdersPage() {
                                           {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
                                         </div>
 
-                                        {/* Additions list with individual costs */}
-                                        {hasAdditionOptions(item) && (
+                                        {Array.isArray(item.additions) && item.additions.length ? (
                                           <div className="mt-1">
                                             תוספות:
                                             {filteredAdditions.length ? (
@@ -541,33 +626,23 @@ export default function ActiveOrdersPage() {
                                                       ? (num(a.grams) / 100) * num(a.pricePer100g)
                                                       : 0;
 
-                                                  return (
-                                                    <li key={i2}>
-                                                      {a.addition || a.name || "תוספת"}{" "}
-                                                      <span className="text-white/90">(+{fmtILS(aPrice)})</span>
-                                                      {a?.grams ? ` · ${a.grams} גרם` : ""}
-                                                    </li>
-                                                  );
-                                                })}
-                                              </ul>
-                                            ) : (
-                                              <span> אין</span>
-                                            )}
+                                                return (
+                                                  <li key={i2}>
+                                                    {a.addition || a.name || "תוספת"}{" "}
+                                                    <span className="text-white/90">(+{fmtILS(aPrice)})</span>
+                                                    {a?.grams ? ` · ${a.grams} גרם` : ""}
+                                                  </li>
+                                                );
+                                              })}
+                                            </ul>
                                           </div>
-                                        )}
+                                        ) : null}
 
-                                        {/* Vegetables & comment unchanged */}
-                                        {(hasVegetableOptions(item) || item.comment) && (
-                                          <div className="mt-1">
-                                            {hasVegetableOptions(item) && (
-                                              <>
-                                                ירקות: {item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                                {item.comment ? " · " : ""}
-                                              </>
-                                            )}
-                                            {item.comment ? `הערות: ${item.comment}` : ""}
-                                          </div>
-                                        )}
+                                        {Array.isArray(item.vegetables) && item.vegetables.length ? (
+                                          <div className="mt-1">ירקות: {item.vegetables.join(", ")}</div>
+                                        ) : null}
+
+                                        {item.comment ? <div className="mt-1">הערות: {item.comment}</div> : null}
                                       </div>
                                     </li>
                                   );
@@ -623,6 +698,10 @@ export default function ActiveOrdersPage() {
                               }}
                             >
                               הוסף פריט
+                            </button>
+
+                            <button className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg" onClick={() => manualPrint(order)}>
+                              הדפסה
                             </button>
 
                             <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg" onClick={() => deleteOrder(order._id)}>

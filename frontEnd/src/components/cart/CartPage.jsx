@@ -8,17 +8,17 @@ import { useLang } from "../../context/LangContext";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
+import { QuantitySelector } from "../QuantitySelector";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
 
 const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
-  const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, updateItemQuantity, clearCart } = useContext(CartContext);
   const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [toast, setToast] = useState(null);
   const [drawerStep, setDrawerStep] = useState("items");
 
   const [couponCode, setCouponCode] = useState("");
@@ -32,6 +32,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [storeComment, setStoreComment] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId, setOrderId] = useState(null);
@@ -42,11 +43,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
-
-  const showToast = (message, type = "error") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   useEffect(() => {
     if (isDrawer && isOpen) {
@@ -61,6 +57,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         try {
           const res = await api.get(`/api/orders/${orderId}`);
           if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
+            console.log("✅ Payment confirmed via webhook");
             setIsPaymentConfirmed(true);
             clearInterval(interval);
           }
@@ -82,23 +79,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
 
   //vegetables Order
   const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
-  const hasVegetableOptions = (item) => Array.isArray(item.selectedOptions?.vegetables);
-  const hasAdditionOptions = (item) => Array.isArray(item.selectedOptions?.additions);
-  const normalizeVegetable = (vegetable) => {
-    const normalized = String(vegetable || "").replace(/^[^A-Za-z\u0590-\u05FF]+/g, "").trim();
-    return normalized || String(vegetable || "").trim();
-  };
-  const formatVegetables = (vegetables) => {
-    const normalized = (vegetables || []).map(normalizeVegetable).filter(Boolean);
-    if (normalized.length === 0) return t("cartPage.allVegetables", "כל הירקות");
-
-    const ordered = [
-      ...VEGETABLES_ORDER.filter((v) => normalized.includes(v)),
-      ...normalized.filter((v) => !VEGETABLES_ORDER.includes(v)),
-    ];
-
-    return ordered.join(", ");
-  };
 
   //isguest component
   const isGuest = () => !user;
@@ -113,6 +93,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     setShowCardPayment(false);
     setPhoneNumber("");
     setGuestName("");
+    setStoreComment("");
     setCouponCode("");
     setAppliedCoupon(null);
     setCouponDiscount(0);
@@ -150,7 +131,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             },
             { headers: { Authorization: `Bearer ${token}` } }
           )
-          .then(() => {})
+          .then(() => console.log("✅ Order count and drink coupon reset"))
           .catch((err) => console.error("❌ Reset error:", err.response?.data || err.message));
       }
     }
@@ -166,25 +147,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     if (orderSubmitted) return;
 
     if (!checkOrderReadiness()) {
-      showToast(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
+      alert(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
       return;
     }
 
     if (isGuest()) {
       if (!guestName.trim()) {
-        showToast(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
+        alert(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
         return;
       }
 
       if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
-        showToast(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
+        alert(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
         return;
       }
     }
 
     if (paymentMethod === "Card") {
       if (!orderId) {
-        showToast(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
+        alert(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
         return;
       }
       setOrderSubmitted(true);
@@ -192,6 +173,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
       return;
@@ -229,6 +211,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       ...(guestName && !loggedInUserId && { customerName: guestName }),
+      ...(storeComment.trim() && { comment: storeComment.trim() }),
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
@@ -248,6 +231,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       ...(payload.paymentDetails || {}),
       method: forcedMethod || payload.paymentDetails?.method || "Card",
     };
+    console.log("📦 Creating pre-payment order:", payload);
     const res = await api.post(`/api/orders/create-pre-payment`, payload);
     setOrderId(res.data.orderId);
   };
@@ -256,12 +240,15 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const submitOrderToBackend = async () => {
     const payload = buildOrderPayload();
 
+    console.log("📦 Submitting order payload:", payload); // ✅ Important log
 
     try {
       const response = await api.post(`/api/orders`, payload);
+      console.log("✅ Order submitted:", response.data);
 
       const createdOrder = response.data.order; // ✅ Get full order object
       const orderId = createdOrder._id; // ✅ This is the MongoDB _id
+      console.log("📦 Order ID (MongoDB _id):", orderId);
 
       setOrderId(orderId);
 
@@ -283,16 +270,17 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }
 
       setGuestName("");
+      setStoreComment("");
       setPolicyChecked(false);
       setShowPolicyModal(false);
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("userId");
-        showToast(t("cartPage.sessionExpired", "החיבור שלך פג תוקף. אנא התחבר מחדש"));
+        alert(t("cartPage.sessionExpired", "החיבור שלך פג תוקף. אנא התחבר מחדש"));
         window.location.reload();
       } else {
         console.error("❌ Failed to submit order:", error.response?.data || error.message);
-        showToast(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
+        alert(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
       }
     }
   };
@@ -377,6 +365,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }, 0)
       .toFixed(2);
   };
+  console.log("Final total price sent:", calculateCartTotal());
 
   useEffect(() => {
     if (!appliedCoupon) {
@@ -455,34 +444,38 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     const orderDetails = groupCartItems()
       .map((item) => {
         const itemTotalPrice = calculateItemTotal(item);
-        const vegetables = hasVegetableOptions(item)
-          ? formatVegetables(item.selectedOptions?.vegetables)
-          : "";
-        const additions = hasAdditionOptions(item)
-          ? item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || t("cartPage.noAdditions", "אין")
-          : "";
+        const vegetables =
+          item.id >= 10 && item.id <= 17 ? "" : item.selectedOptions?.vegetables?.join(", ") || t("cartPage.allVegetables", "כל הירקות");
+        const additions =
+          item.id >= 10 && item.id <= 16
+            ? ""
+            : item.selectedOptions?.additions?.map((add) => `${add.addition} (${add.price} ILS)`).join(", ") || t("cartPage.noAdditions", "אין");
 
         const comment = item.comment
           ? `${t("cartPage.commentLabel", "הערות")}: ${item.comment}`
           : `${t("cartPage.commentLabel", "הערות")}: ${t("cartPage.noComment", "אין")}`;
 
-        const detailLines = [
-          `${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}`,
-          `${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}`,
-        ];
+        if (item.id >= 10 && item.id <= 17) {
+          return `
+            ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
+            ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
 
-        if (hasVegetableOptions(item)) {
-          detailLines.push(`${t("cartPage.vegetablesLabel", "ירקות")}: ${vegetables}`);
+            ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
+                        ${comment}
+            ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
+          `.trim();
         }
 
-        if (hasAdditionOptions(item)) {
-          detailLines.push(`${t("cartPage.additionsLabel", "תוספות")}: ${additions}`);
-        }
+        return `
+          ${t("cartPage.productLabel", "מוצר")}: ${resolveItemName(item)}
+          ${t("cartPage.quantityLabel", "כמות")}: ${item.isWeighted ? `${item.quantity} ${t("modal.grams", "גרם")}` : item.quantity}
 
-        detailLines.push(`${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS`, comment);
-        detailLines.push(`${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS`);
-
-        return detailLines.join("\n");
+          ${t("cartPage.vegetablesLabel", "ירקות")}: ${vegetables}
+          ${t("cartPage.additionsLabel", "תוספות")}: ${additions}
+          ${t("cartPage.unitPriceLabel", "מחיר ליחידה")}: ${item.price} ILS
+                    ${comment}
+          ${t("cartPage.finalPriceLabel", "מחיר סופי")}: ${itemTotalPrice} ILS
+        `.trim();
       })
       .join("\n\n");
 
@@ -594,7 +587,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             className="payment-button"
             onClick={async () => {
               if (!deliveryOption) {
-                showToast(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
+                alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
                 return;
               }
               setPaymentMethod("Card");
@@ -606,7 +599,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 setShowCardPayment(true);
               } catch (err) {
                 console.error("❌ Failed to create pre-payment order:", err);
-                showToast(t("cartPage.createOrderError", "שגיאה ביצירת ההזמנה"));
+                          alert(t("cartPage.createOrderError", "שגיאה ביצירת ההזמנה"));
               }
             }}
             style={{
@@ -790,10 +783,10 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       <div className="cart-items-list">
         {groupCartItems().map((item, index) => {
           const itemTotalPrice = calculateItemTotal(item, index);
-          const vegetables = hasVegetableOptions(item) ? formatVegetables(item.selectedOptions?.vegetables) : "";
-          const additions = hasAdditionOptions(item)
-            ? item.selectedOptions?.additions?.map((add) => add.addition).join(", ") || t("cartPage.noAdditions", "אין")
-            : "";
+          const hasVegetables = Array.isArray(item.selectedOptions?.vegetables) && item.selectedOptions.vegetables.length > 0;
+          const hasAdditions = Array.isArray(item.selectedOptions?.additions) && item.selectedOptions.additions.length > 0;
+          const vegetables = hasVegetables ? VEGETABLES_ORDER.filter((v) => item.selectedOptions.vegetables.includes(v)).join(", ") : "";
+          const additions = hasAdditions ? item.selectedOptions.additions.map((add) => add.addition).join(", ") : "";
 
           return (
             <div className="cart-item-card" key={index}>
@@ -802,27 +795,22 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 <div className="cart-item-top">
                   <div>
                     <h3 className="cart-item-title">{resolveItemName(item)}</h3>
-                    <p className="cart-item-sub">
-                      {item.isWeighted
-                        ? `${item.quantity} ${t("modal.grams", "גרם")}`
-                        : `${t("cartPage.quantityLabel", "כמות")}: ${item.quantity}`}
-                    </p>
+                    <div className="cart-item-sub">
+                      {item.isWeighted ? <span>{`${item.quantity} ${t("modal.grams", "גרם")}`}</span> : null}
+                    </div>
                   </div>
-                  <button
-                    className="cart-remove"
-                    onClick={() => removeFromCart(item.id)}
-                    aria-label={t("cartPage.remove", "הסר")}
-                  >
-                    <img src="/bin.png" alt={t("cartPage.remove", "הסר")} className="cart-remove-icon" />
-                  </button>
+                  <div className="cart-item-prices">
+                    {item.quantity > 1 && <span className="cart-item-unit">₪{item.price}</span>}
+                    <span className="cart-item-total">₪{itemTotalPrice}</span>
+                  </div>
                 </div>
                 <div className="cart-item-meta">
-                  {hasVegetableOptions(item) && (
+                  {hasVegetables && (
                     <span>
                       {t("cartPage.vegetablesLabel", "ירקות")}: {vegetables}
                     </span>
                   )}
-                  {hasAdditionOptions(item) && (
+                  {hasAdditions && (
                     <span>
                       {t("cartPage.additionsLabel", "תוספות")}: {additions}
                     </span>
@@ -834,8 +822,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                   )}
                 </div>
                 <div className="cart-item-bottom">
-                  <span className="cart-item-unit">₪{item.price}</span>
-                  <span className="cart-item-total">₪{itemTotalPrice}</span>
+                  {!item.isWeighted && (
+                    <QuantitySelector
+                      quantity={item.quantity}
+                      initialQuantity={item.quantity}
+                      minQuantity={1}
+                      maxQuantity={99}
+                      size="sm"
+                      variant="cart"
+                      label={t("cartPage.quantityLabel", "כמות")}
+                      onChange={(nextQuantity) => updateItemQuantity(item.id, nextQuantity)}
+                    />
+                  )}
+                  <button
+                    className="cart-remove"
+                    onClick={() => removeFromCart(item.id)}
+                    aria-label={t("cartPage.remove", "הסר")}
+                  >
+                    <img className="cart-remove-icon" src="/recycle-bin.png" alt="" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -868,7 +873,26 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         {couponError && <div className="cart-coupon-error">{couponError}</div>}
         {!appliedCoupon && <div className="cart-coupon-muted">{t("cartPage.couponHint", "הזן קוד קופון תקף")}</div>}
       </div>
+      <div className="cart-store-comment" style={{ marginTop: "16px" }}>
+        <h4 style={{ direction: "rtl", textAlign: "right", marginBottom: "5px" }}>
+          {t("cartPage.storeCommentLabel", "הערה למסעדה")}:
+        </h4>
+        <textarea
+          placeholder={t("cartPage.storeCommentPlaceholder", "הכנס הערה כללית למסעדה (לא חובה)")}
+          value={storeComment}
+          onChange={(e) => setStoreComment(e.target.value)}
+          rows={3}
+          style={{
+            width: "100%",
+            padding: "10px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            resize: "vertical",
+          }}
+        />
+      </div>
       <div className="cart-actions">
+        {console.log("🎯 eligibleReward:", eligibleReward, "couponApplied:", couponApplied)}
         {eligibleReward && !couponApplied && (
           <button
             className="cart-reward-button"
@@ -921,11 +945,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           <p style={{ fontSize: "18px", fontWeight: "bold", color: "#16a34a" }}>
             {t("cartPage.orderSuccessToast", "ההזמנה נשלחה בהצלחה!")}
           </p>
-        </div>
-      )}
-      {toast && (
-        <div className={`cart-toast ${toast.type}`} role="status" aria-live="polite">
-          {toast.message}
         </div>
       )}
 
@@ -1108,10 +1127,18 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           color: #475569;
         }
 
+        .cart-item-prices {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+
         .cart-item-bottom {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-end;
           align-items: center;
+          gap: 30px;
           font-weight: 600;
         }
 
@@ -1126,18 +1153,19 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         }
 
         .cart-remove {
-          background: #fee2e2;
-          color: #b91c1c;
+          background: #ef4444;
           border: none;
-          padding: 6px 12px;
+          padding: 6px 10px;
           border-radius: 999px;
-          font-size: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
         }
 
         .cart-remove-icon {
-          width: 16px;
-          height: 16px;
+          width: 14px;
+          height: 14px;
           display: block;
           filter: brightness(0) invert(1);
         }
@@ -1541,8 +1569,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           font-size: 16px;
         }
 
-        .cart-layout button,
-        .cart-drawer-panel button {
+        .cart-layout button:not(.quantity-selector-btn),
+        .cart-drawer-panel button:not(.quantity-selector-btn) {
           padding: 10px 20px;
           background-color: #007bff;
           color: #fff;
@@ -1583,12 +1611,32 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             align-items: flex-start;
           }
 
+          .cart-item-prices {
+            align-items: flex-start;
+          }
+
           .cart-remove {
             align-self: flex-start;
           }
 
           .cart-item-bottom {
             width: 100%;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 8px;
+          }
+
+          .cart-item-bottom .quantity-selector {
+            margin-left: auto;
+            max-width: 170px;
+            justify-content: space-between;
+            transform: scale(0.8);
+            transform-origin: right bottom;
+          }
+
+          .cart-item-bottom .cart-remove {
+            margin-right: auto;
+            align-self: flex-end;
           }
 
           .cart-summary,
@@ -1708,7 +1756,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             min-width: 0;
           }
 
-          .cart-drawer-panel .cart-item-unit {
+          .cart-drawer-panel .cart-item-prices .cart-item-unit {
             display: none;
           }
 
@@ -1856,30 +1904,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           border-radius: 8px;
           z-index: 1100;
           animation: fadeOut 3s forwards;
-        }
-
-        .cart-toast {
-          position: fixed;
-          bottom: 90px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #111827;
-          color: #ffffff;
-          padding: 10px 16px;
-          border-radius: 999px;
-          font-size: 13px;
-          max-width: 90vw;
-          text-align: center;
-          z-index: 2000;
-          box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
-        }
-
-        .cart-toast.error {
-          background: #ef4444;
-        }
-
-        .cart-toast.success {
-          background: #16a34a;
         }
 
         @keyframes fadeOut {

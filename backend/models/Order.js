@@ -34,6 +34,9 @@ const OrderSchema = new mongoose.Schema({
   customerName: {
     type: String,
   },
+  comment: {
+    type: String,
+  },
   totalPrice: {
     type: Number,
     required: true,

@@ -191,30 +191,25 @@ export default function OrderHistory() {
                                     <ul className="space-y-2">
                                       {Array.isArray(order.items) &&
                                         order.items.map((item, idx) => {
-                                          const hasVegetables = Array.isArray(item.vegetables);
-                                          const hasAdditions = Array.isArray(item.additions);
+                                          const hasVegetables = Array.isArray(item.vegetables) && item.vegetables.length;
+                                          const hasAdditions = Array.isArray(item.additions) && item.additions.length;
+                                          const hasMeta = hasVegetables || hasAdditions || item.comment;
 
                                           return (
-                                          <li key={idx} className="leading-6">
-                                            <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
-                                            {item.isWeighted ? "גרם" : ""}
-                                            <div className="text-white/70">
-                                              {hasVegetables && (
-                                                <>
-                                                  ירקות: {item.vegetables.length ? item.vegetables.join(", ") : "אין"}
-                                                  {hasAdditions || item.comment ? " · " : ""}
-                                                </>
-                                              )}
-                                              {hasAdditions && (
-                                                <>
-                                                  תוספות: {item.additions.length ? item.additions.map((a) => a.addition).join(", ") : "אין"}
-                                                  {item.comment ? " · " : ""}
-                                                </>
-                                              )}
-                                              {item.comment ? `הערות: ${item.comment}` : ""}
-                                            </div>
-                                          </li>
-                                        )})}
+                                            <li key={idx} className="leading-6">
+                                              <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
+                                              {item.isWeighted ? "גרם" : ""}
+                                              {hasMeta ? (
+                                                <div className="text-white/70">
+                                                  {hasVegetables ? `ירקות: ${item.vegetables.join(", ")}` : ""}
+                                                  {hasVegetables && hasAdditions ? " · " : ""}
+                                                  {hasAdditions ? `תוספות: ${item.additions.map((a) => a.addition).join(", ")}` : ""}
+                                                  {item.comment ? ` · הערות: ${item.comment}` : ""}
+                                                </div>
+                                              ) : null}
+                                            </li>
+                                          );
+                                        })}
                                     </ul>
                                   </div>
                                 </div>
