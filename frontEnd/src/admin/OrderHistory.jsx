@@ -13,6 +13,19 @@ const formatDateParts = (timestamp) => {
   return { date, time };
 };
 
+const translatePaymentMethod = (method) =>
+  method === "Card"
+    ? "כרטיס אשראי"
+    : method === "Cash"
+      ? "מזומן"
+      : method === "Bit"
+        ? "ביט"
+        : method === "GOOGLE_PAY"
+          ? "Google Pay"
+          : method === "APPLE_PAY"
+            ? "Apple Pay"
+            : method || " לא ידוע";
+
 const getOrderHistory = async () => {
   const token = localStorage.getItem("token");
   const response = await api.get(`/api/orders/history`, {
@@ -183,6 +196,10 @@ export default function OrderHistory() {
                                     </div>
                                     <div>
                                       <strong>סכום לתשלום:</strong> {order.totalPrice ? `₪${order.totalPrice}` : "לא זמין"}
+                                    </div>
+                                    <div>
+                                      <strong>אמצעי תשלום:</strong>{" "}
+                                      {translatePaymentMethod(order.paymentDetails?.method || order.paymentMethod || order.payment?.method)}
                                     </div>
                                   </div>
 
