@@ -542,7 +542,7 @@ export default function ActiveOrdersPage() {
 
                       {/* expanded details (both views) */}
                       {expandedOrderId === order._id && (
-                        <div className="mx-0 md:mx-4 mb-4 rounded-xl bg-white/5 border border-white/10 p-4 text-sm">
+                        <div className="mx-0 md:mx-4 mb-4 rounded-xl bg-white/5 border border-white/10 p-4 text-base">
                           <div className="grid md:grid-cols-3 gap-4">
                             <div>
                               <div>
@@ -591,10 +591,10 @@ export default function ActiveOrdersPage() {
                                         <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>
                                       </div>
 
-                                      <div className="text-white/70 text-sm">כמות: {qtyLabel}</div>
+                                      <div className="text-white/70 text-base">כמות: {qtyLabel}</div>
 
                                       {/* Price breakdown */}
-                                      <div className="mt-1 text-white/75 text-xs">
+                                      <div className="mt-1 text-white/75 text-sm">
                                         <div>
                                           מחיר בסיס: <span className="text-white/90">{fmtILS(getItemBasePrice(item))}</span>
                                           {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
