@@ -595,11 +595,6 @@ export default function ActiveOrdersPage() {
 
                                       {/* Price breakdown */}
                                       <div className="mt-1 text-white/75 text-sm">
-                                        <div>
-                                          מחיר בסיס: <span className="text-white/90">{fmtILS(getItemBasePrice(item))}</span>
-                                          {item.quantity > 1 && <span className="text-white/50"> × {item.quantity}</span>}
-                                        </div>
-
                                         {Array.isArray(item.additions) && item.additions.length ? (
                                           <div className="mt-1">
                                             תוספות:
