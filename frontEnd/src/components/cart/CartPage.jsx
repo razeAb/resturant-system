@@ -589,6 +589,16 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
                 return;
               }
+              if (isGuest()) {
+                if (!guestName.trim()) {
+                  alert(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
+                  return;
+                }
+                if (deliveryOption !== "EatIn" && !isValidPhoneNumber(phoneNumber)) {
+                  alert(t("cartPage.phoneAlert", "אנא הזן מספר טלפון תקין שמתחיל ב-05 וכולל 10 ספרות"));
+                  return;
+                }
+              }
               setPaymentMethod("Card");
               setPaymentResult(null);
               try {

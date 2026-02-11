@@ -45,7 +45,7 @@ const TranzilaIframe = ({ amount, orderId }) => {
         {/* Terminal & options */}
         <input type="hidden" name="terminal" value={terminal} />
         <input type="hidden" name="cred_type" value="1" />
-        <input type="hidden" name="apple_pay" value="1" />
+        {/* <input type="hidden" name="apple_pay" value="1" /> */}
         <input type="hidden" name="google_pay" value="1" />
         <input type="hidden" name="tranmode" value="A" />
 
