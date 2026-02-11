@@ -365,7 +365,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }, 0)
       .toFixed(2);
   };
-  console.log("Final total price sent:", calculateCartTotal());
 
   useEffect(() => {
     if (!appliedCoupon) {
