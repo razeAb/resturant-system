@@ -23,8 +23,17 @@ const translatePaymentMethod = (method) =>
         : method === "GOOGLE_PAY"
           ? "Google Pay"
           : method === "APPLE_PAY"
-            ? "Apple Pay"
-            : method || " לא ידוע";
+          ? "Apple Pay"
+          : method || " לא ידוע";
+
+const formatDonenessLabel = (value) => {
+  if (!value) return "";
+  const normalized = String(value).toLowerCase();
+  if (normalized === "medium") return "Medium";
+  if (normalized === "medium-well") return "Medium well";
+  if (normalized === "well-done") return "Well done";
+  return value;
+};
 
 const getOrderHistory = async () => {
   const token = localStorage.getItem("token");
@@ -211,10 +220,15 @@ export default function OrderHistory() {
                                           const hasVegetables = Array.isArray(item.vegetables) && item.vegetables.length;
                                           const hasAdditions = Array.isArray(item.additions) && item.additions.length;
                                           const hasMeta = hasVegetables || hasAdditions || item.comment;
+                                          const donenessLabel = formatDonenessLabel(item?.doneness || item?.selectedOptions?.doneness);
 
                                           return (
                                             <li key={idx} className="leading-6">
-                                              <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
+                                              <strong>
+                                                {resolveOrderItemName(item)}
+                                                {donenessLabel ? ` (${donenessLabel})` : ""}
+                                              </strong>{" "}
+                                              — כמות: {item.quantity}{" "}
                                               {item.isWeighted ? "גרם" : ""}
                                               {hasMeta ? (
                                                 <div className="text-white/70">

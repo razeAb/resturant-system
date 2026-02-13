@@ -25,6 +25,7 @@ const Modal = ({
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
     additions: [],
+    doneness: "",
   });
   const [comment, setComment] = useState(""); // ✅ missing state added
   const [toast, setToast] = useState(null);
@@ -158,6 +159,7 @@ const Modal = ({
     setSelectedOptions({
       vegetables: [],
       additions: [],
+      doneness: "",
     });
     setComment(""); // Clear the comment
     onClose(); // Close the modal
@@ -198,6 +200,20 @@ const Modal = ({
         additions: [...withoutHalf, { addition: halfSandwichLabel, price: 0, halfSandwich: true }],
       };
     });
+  };
+
+  // add burger detections
+  const burgerRegex = /burger|hamburger|בורגר|המבורגר/i;
+  const isBurgerItem = [title, name_en, name_he].some((value) => burgerRegex.test(String(value || "")));
+
+  const donenessOptions = [
+    { value: "medium", label: t("modal.donenessMedium", "Medium") },
+    { value: "medium-well", label: t("modal.donenessMediumWell", "Medium well") },
+    { value: "well-done", label: t("modal.donenessWellDone", "Well done") },
+  ];
+
+  const handleDonenessChange = (value) => {
+    setSelectedOptions((prev) => ({ ...prev, doneness: value }));
   };
 
   const handleExtraPattyToggle = () => {
@@ -268,8 +284,7 @@ const Modal = ({
               <label htmlFor="full-sandwich-option" className="checkbox-label pl-2">
                 🥪 {t("modal.fullSandwich", "סנדוויץ' מלא")}
                 <span className="pl-2 text-sm text-gray-500">
-                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", "סה\"כ")} ₪
-                  {formatPrice(fullPrice)})
+                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", 'סה"כ')} ₪{formatPrice(fullPrice)})
                 </span>
               </label>
             </div>
@@ -296,6 +311,32 @@ const Modal = ({
                 <span className="pl-2 text-sm text-gray-500">(+₪{formatPrice(extraPattyValue)})</span>
               </label>
             </div>
+          </div>
+        )}
+
+        {isBurgerItem && (
+          <div className="modal-options">
+            <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.burgerDoneness", "Burger doneness")}</h3>
+            {donenessOptions.map((option) => (
+              <div key={option.value} className="checkbox-wrapper-30 checkbox-container">
+                <span className="checkbox">
+                  <input
+                    type="radio"
+                    name={`doneness-${_id || title}`}
+                    id={`doneness-${option.value}-${_id || title}`}
+                    value={option.value}
+                    checked={selectedOptions.doneness === option.value}
+                    onChange={() => handleDonenessChange(option.value)}
+                  />
+                  <svg>
+                    <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                  </svg>
+                </span>
+                <label htmlFor={`doneness-${option.value}-${_id || title}`} className="checkbox-label pl-2">
+                  {option.label}
+                </label>
+              </div>
+            ))}
           </div>
         )}
 
@@ -346,9 +387,7 @@ const Modal = ({
             </div>
           ))}
 
-          <h4 className="text-lg font-semibold text-center pb-6">
-            {t("modal.meatAdditions", "תוספת בשר")}
-          </h4>
+          <h4 className="text-lg font-semibold text-center pb-6">{t("modal.meatAdditions", "תוספת בשר")}</h4>
           {/* Gram-based additions */}
           {availableWeightedAdditions.map((addition, index) => (
             <div key={index} className="addition-buttons">

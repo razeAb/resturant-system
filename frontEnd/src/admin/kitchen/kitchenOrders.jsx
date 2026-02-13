@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLang } from "../../context/LangContext";
 import api from "../../api";
 import SideMenu from "../../layouts/SideMenu";
 import { ORDER_STATUS } from "../../../constants/orderStatus";
@@ -28,6 +29,14 @@ const badgeClasses = (status) => {
 };
 
 const VEGETABLES_ORDER = ["חסה", "מלפפון חמוץ", "עגבניה", "בצל", "סלט כרוב", "צימצורי"];
+const formatDonenessLabel = (value) => {
+  if (!value) return "";
+  const normalized = String(value).toLowerCase();
+  if (normalized === "medium") return "Medium";
+  if (normalized === "medium-well") return "Medium well";
+  if (normalized === "well-done") return "Well done";
+  return value;
+};
 
 /* ---------- page ---------- */
 export default function KitchenOrders() {
@@ -200,10 +209,15 @@ export default function KitchenOrders() {
                                         ? VEGETABLES_ORDER.filter((v) => item.vegetables.includes(v)).join(", ")
                                         : "";
                                       const adds = hasAdditions ? item.additions.map((a) => a.addition).join(", ") : "";
+                                      const donenessLabel = formatDonenessLabel(item?.doneness || item?.selectedOptions?.doneness);
                                       const hasMeta = hasVegetables || hasAdditions || item.comment;
                                       return (
                                         <li key={idx} className="leading-6">
-                                          <strong>{resolveOrderItemName(item)}</strong> — כמות: {item.quantity}{" "}
+                                          <strong>
+                                            {resolveOrderItemName(item)}
+                                            {donenessLabel ? ` (${donenessLabel})` : ""}
+                                          </strong>{" "}
+                                          — כמות: {item.quantity}{" "}
                                           {item.isWeighted ? "גרם" : ""}
                                           {hasMeta ? (
                                             <div className="text-white/70">

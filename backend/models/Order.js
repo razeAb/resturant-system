@@ -25,6 +25,7 @@ const OrderSchema = new mongoose.Schema({
           price: Number,
         },
       ],
+      doneness: String,
       comment: String,
     },
   ],

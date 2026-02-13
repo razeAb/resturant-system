@@ -439,6 +439,12 @@ const buildReceiptSvg = (order, dailyNumber) => {
       );
     }
 
+    if (it?.doneness) {
+      wrapText(label(`מידת עשייה: ${it.doneness}`, `Doneness: ${it.doneness}`), 32).forEach((line) =>
+        addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+      );
+    }
+
     if (Array.isArray(it.additions) && it.additions.length) {
       it.additions.forEach((a) => {
         const addName = a?.addition || a?.name || "תוספת";

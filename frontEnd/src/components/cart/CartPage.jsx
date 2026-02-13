@@ -196,6 +196,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         isWeighted: item.isWeighted,
         vegetables: item.selectedOptions?.vegetables || [],
         additions: item.selectedOptions?.additions || [],
+        doneness: item.selectedOptions?.doneness || "",
         comment: item.comment || "",
       }))
       .filter(

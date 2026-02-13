@@ -27,7 +27,6 @@ const formatTime = (timestamp) => {
   if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} שעות`;
   return date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
 };
-
 const badgeClasses = (status) => {
   if (status === ORDER_STATUS?.DELIVERING) return "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20";
   if (status === ORDER_STATUS?.PREPARING) return "bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/20";
@@ -75,6 +74,15 @@ export default function ActiveOrdersPage() {
     return lang === "en"
       ? (product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item")
       : (product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט");
+  };
+  const resolveDonenessLabel = (item) => {
+    const value = item?.doneness || item?.selectedOptions?.doneness || "";
+    if (!value) return "";
+    const normalized = String(value).toLowerCase();
+    if (normalized === "medium") return t("modal.donenessMedium", "Medium");
+    if (normalized === "medium-well") return t("modal.donenessMediumWell", "Medium well");
+    if (normalized === "well-done") return t("modal.donenessWellDone", "Well done");
+    return value;
   };
   const resolveSandwichSizeLabel = (item) => {
     const additions = Array.isArray(item?.additions) ? item.additions : [];
@@ -579,13 +587,15 @@ export default function ActiveOrdersPage() {
                                       text === t("modal.fullSandwich", "סנדוויץ' מלא") || text === t("modal.halfSandwich", "חצי סנדוויץ'");
                                     return !isFlagged && !isLabel;
                                   });
+                                  const donenessLabel = resolveDonenessLabel(item);
+                                  const meta = [donenessLabel, sandwichSizeLabel].filter(Boolean);
 
                                   return (
                                     <li key={idx} className="leading-6">
                                       <div className="flex items-center justify-between">
                                         <strong>
                                           {resolveOrderItemName(item)}
-                                          {sandwichSizeLabel ? ` (${sandwichSizeLabel})` : ""}
+                                          {meta.length ? ` (${meta.join(" · ")})` : ""}
                                         </strong>
                                         {/* Line total on the right */}
                                         <span className="text-white/90">{fmtILS(getLineTotal(item))}</span>

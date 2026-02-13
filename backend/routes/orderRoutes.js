@@ -33,6 +33,7 @@ function cleanItems(items) {
         isWeighted: !!it.isWeighted,
         vegetables: Array.isArray(it.vegetables) ? it.vegetables : it.selectedOptions?.vegetables || [],
         additions: Array.isArray(it.additions) ? it.additions : it.selectedOptions?.additions || [],
+        doneness: it.doneness || it.selectedOptions?.doneness || "",
         comment: it.comment || "",
       };
     })
