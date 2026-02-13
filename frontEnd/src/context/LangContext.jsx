@@ -62,6 +62,11 @@ const translations = {
       sauceSweet: "מתוק",
       sauceHot: "חריף",
       sauceMix: "מיקס מתוק/חריף",
+      burgerDoneness: "מידת עשייה",
+      donenessMedium: "מדיום",
+      donenessMediumWell: "מדיום וול",
+      donenessWellDone: "וול דאן",
+      donenessRequired: "בחר מידת עשייה לפני ההוספה לעגלה",
       grams: "גרם",
     },
     cartNav: {
@@ -253,6 +258,11 @@ const translations = {
       sauceSweet: "Sweet",
       sauceHot: "Hot",
       sauceMix: "Sweet/Hot mix",
+      burgerDoneness: "Burger doneness",
+      donenessMedium: "Medium",
+      donenessMediumWell: "Medium well",
+      donenessWellDone: "Well done",
+      donenessRequired: "Please choose a doneness option before adding to cart",
       grams: "g",
     },
     cartNav: {

@@ -134,6 +134,10 @@ const Modal = ({
   };
 
   const handleAddToCart = () => {
+    if (isBurgerItem && !selectedOptions.doneness) {
+      showToast(t("modal.donenessRequired", "Please choose a doneness option"));
+      return;
+    }
     const totalPrice = calculateTotalPrice();
 
     const itemToAdd = {
