@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Worker = require("../models/Worker");
+const Shift = require("../models/Shift");
 const { protect } = require("../middleware/authMiddleware");
 const jwt = require("jsonwebtoken");
 
@@ -29,6 +30,21 @@ router.get("/", protect, async (req, res) => {
     const workers = await Worker.find().select("-password");
     res.json({ workers });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Admin: delete worker + shifts
+router.delete("/:id", protect, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json({ message: "❌ Unauthorized" });
+  try {
+    const worker = await Worker.findById(req.params.id);
+    if (!worker) return res.status(404).json({ message: "❌ Worker not found" });
+    await Shift.deleteMany({ user: worker._id });
+    await worker.deleteOne();
+    res.json({ message: "✅ Worker removed" });
+  } catch (err) {
+    console.error("Error deleting worker:", err);
     res.status(500).json({ message: err.message });
   }
 });

@@ -39,6 +39,20 @@ const calcHours = (s) => {
   return 0;
 };
 
+const pad2 = (v) => String(v).padStart(2, "0");
+
+const getMonthRange = (monthStr) => {
+  if (!monthStr) return null;
+  const [yearStr, monthStrNum] = monthStr.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStrNum);
+  if (!year || !month) return null;
+  const start = `${yearStr}-${pad2(month)}-01`;
+  const lastDay = new Date(year, month, 0);
+  const end = `${yearStr}-${pad2(month)}-${pad2(lastDay.getDate())}`;
+  return { start, end };
+};
+
 /* ===================== Shift Edit Modal ===================== */
 function ShiftEditModal({ open, onClose, shift, onSave }) {
   const [mode, setMode] = useState("hours"); // 'hours' | 'detailed'
@@ -217,7 +231,9 @@ export default function ManageWorkers() {
   const [shiftsMap, setShiftsMap] = useState({});
   const [shiftsLoading, setShiftsLoading] = useState({});
   const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
+  const [monthFilter, setMonthFilter] = useState("");
   const [shiftOps, setShiftOps] = useState({});
+  const [removeOps, setRemoveOps] = useState({});
   // Edit modal state
   const [editOpen, setEditOpen] = useState(false);
   const [editShift, setEditShift] = useState(null);
@@ -377,6 +393,49 @@ export default function ManageWorkers() {
     }
   };
 
+  const removeWorker = async (workerId, username) => {
+    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את העובד ${username}? פעולה זו תמחק גם משמרות קיימות.`)) return;
+    setRemoveOps((m) => ({ ...m, [workerId]: true }));
+    setMsg({ text: "", tone: "neutral" });
+    try {
+      const token = localStorage.getItem("token");
+      await api.delete(`/api/workers/${workerId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setWorkers((list) => list.filter((w) => w._id !== workerId));
+      setShiftsMap((m) => {
+        const next = { ...m };
+        delete next[workerId];
+        return next;
+      });
+      if (expanded === workerId) setExpanded(null);
+      setMsg({ text: "העובד נמחק בהצלחה", tone: "success" });
+    } catch (err) {
+      console.error("Delete worker failed", err);
+      setMsg({ text: err.response?.data?.message || "שגיאה במחיקת עובד", tone: "error" });
+    } finally {
+      setRemoveOps((m) => {
+        const next = { ...m };
+        delete next[workerId];
+        return next;
+      });
+    }
+  };
+
+  const monthRange = getMonthRange(monthFilter);
+  const showMonthTotal = monthRange && dateFilter.start === monthRange.start && dateFilter.end === monthRange.end;
+
+  const applyMonthFilter = () => {
+    if (!monthRange) {
+      setMsg({ text: "בחר חודש תקין", tone: "error" });
+      return;
+    }
+    setDateFilter(monthRange);
+    if (expanded) {
+      fetchShiftsForWorker(expanded);
+      return;
+    }
+    setMsg({ text: "בחר עובד לצפייה בשעות החודש", tone: "error" });
+  };
+
   return (
     <div className="min-h-screen bg-[#0f1415] text-white flex" dir="rtl">
       <Anim />
@@ -526,6 +585,26 @@ export default function ManageWorkers() {
                 </button>
               </div>
             </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">חודש לחישוב שעות</label>
+                <input
+                  type="month"
+                  value={monthFilter}
+                  onChange={(e) => setMonthFilter(e.target.value)}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+              <div className="flex sm:justify-end sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={applyMonthFilter}
+                  className="w-full sm:w-auto rounded-xl px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm"
+                >
+                  הצג שעות לחודש
+                </button>
+              </div>
+            </div>
           </section>
 
           {/* Workers List */}
@@ -581,6 +660,16 @@ export default function ManageWorkers() {
                             {isExp ? "סגור" : "שעות"}
                           </button>
 
+                          <button
+                            onClick={() => removeWorker(w._id, w.username)}
+                            disabled={!!removeOps[w._id]}
+                            className={`text-xs rounded px-2 py-1 transition bg-rose-700 hover:bg-rose-800 ${
+                              removeOps[w._id] ? "opacity-70 cursor-wait" : ""
+                            }`}
+                          >
+                            {removeOps[w._id] ? "מוחק…" : "מחק"}
+                          </button>
+
                           {isOnShift && <ShiftBadge />}
                         </div>
                       </div>
@@ -591,6 +680,14 @@ export default function ManageWorkers() {
                             <div className="text-xs text-white/60">טוען משמרות…</div>
                           ) : Array.isArray(shiftsMap[w._id]) && shiftsMap[w._id].length > 0 ? (
                             <div className="overflow-x-auto">
+                              {showMonthTotal && (
+                                <div className="text-sm md:text-base font-semibold text-white/90 mb-2">
+                                  סה״כ שעות בחודש:{" "}
+                                  {shiftsMap[w._id]
+                                    .reduce((sum, s) => sum + calcHours(s), 0)
+                                    .toFixed(2)}
+                                </div>
+                              )}
                               <table className="w-full text-xs md:text-sm border-separate border-spacing-y-1">
                                 <thead>
                                   <tr className="text-white/70">
