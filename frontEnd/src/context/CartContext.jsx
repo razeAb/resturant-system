@@ -1,17 +1,17 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useCallback, useMemo, useState } from "react";
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([]);
     localStorage.removeItem("cartItems"); // optional: if you're storing in localStorage
-  };
+  }, []);
 
   // Add item to cart
-  const addToCart = (item) => {
+  const addToCart = useCallback((item) => {
     setCartItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex((i) => i.id === item.id);
       if (existingItemIndex !== -1) {
@@ -25,15 +25,15 @@ export const CartProvider = ({ children }) => {
       }
       return [...prevItems, item];
     });
-  };
+  }, []);
 
   // Remove item from cart
-  const removeFromCart = (itemId) => {
+  const removeFromCart = useCallback((itemId) => {
     setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
-  };
+  }, []);
 
   // Update item quantity (non-weighted items only)
-  const updateItemQuantity = (itemId, nextQuantity) => {
+  const updateItemQuantity = useCallback((itemId, nextQuantity) => {
     setCartItems((prevItems) =>
       prevItems.flatMap((item) => {
         if (item.id !== itemId || item.isWeighted) return [item];
@@ -50,18 +50,19 @@ export const CartProvider = ({ children }) => {
         ];
       })
     );
-  };
+  }, []);
 
   // Calculate total number of items
   const totalItems = cartItems.reduce((acc, item) => {
     const qty = item.isWeighted ? 1 : item.quantity || 0;
     return acc + qty;
   }, 0);
-  return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems }}>
-      {children}
-    </CartContext.Provider>
+  const value = useMemo(
+    () => ({ cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems }),
+    [cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems]
   );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export default CartContext;
