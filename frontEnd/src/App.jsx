@@ -62,10 +62,11 @@ const AppContent = () => {
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/worker") ||
     location.pathname.startsWith("/kitchen");
+  const isLoginRoute = location.pathname === "/login";
 
   return (
     <div>
-      {isClosed && (
+      {isClosed && !isLoginRoute && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 text-center ${
             isAdminRoute ? "pointer-events-none" : ""
