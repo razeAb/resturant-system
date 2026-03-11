@@ -19,6 +19,7 @@ const OrderSchema = new mongoose.Schema({
       quantity: Number,
       isWeighted: Boolean,
       vegetables: [String],
+      sauces: [String],
       additions: [
         {
           addition: String,

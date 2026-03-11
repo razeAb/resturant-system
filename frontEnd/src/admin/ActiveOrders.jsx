@@ -637,6 +637,10 @@ export default function ActiveOrdersPage() {
                                           <div className="mt-1">ירקות: {item.vegetables.join(", ")}</div>
                                         ) : null}
 
+                                        {Array.isArray(item.sauces) && item.sauces.length ? (
+                                          <div className="mt-1">רטבים: {item.sauces.join(", ")}</div>
+                                        ) : null}
+
                                         {item.comment ? <div className="mt-1">הערות: {item.comment}</div> : null}
                                       </div>
                                     </li>

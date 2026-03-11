@@ -20,6 +20,7 @@ const Modal = ({
   onAddToCart,
   name_en,
   name_he,
+  category,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({
@@ -49,7 +50,7 @@ const Modal = ({
   const fullPrice = Number(fullSandwichPrice);
   const hasFullSandwichOption = Number.isFinite(fullPrice) && fullPrice > 0;
   const fullSandwichExtra = hasFullSandwichOption ? fullPrice - basePrice : 0;
-  const isSandwichItem = hasFullSandwichOption;
+  const isSandwichItem = category === "Sandwiches" || hasFullSandwichOption;
   const extraPattyValue = Number(extraPattyPrice);
   const hasExtraPattyOption = Number.isFinite(extraPattyValue) && extraPattyValue > 0;
 
@@ -68,7 +69,8 @@ const Modal = ({
 
   const saucePrice = 2;
   const isFullSandwich = selectedOptions.additions.some((item) => item.fullSandwich);
-  const freeSauceLimit = isSandwichItem ? (isFullSandwich ? 6 : 3) : 0;
+  const isHalfSandwich = selectedOptions.additions.some((item) => item.halfSandwich);
+  const freeSauceLimit = isSandwichItem ? (hasFullSandwichOption ? (isHalfSandwich ? 3 : 6) : 6) : 0;
   const extraSauceCount = Math.max(0, selectedSauces.length - freeSauceLimit);
   const extraSauceTotal = extraSauceCount * saucePrice;
 
@@ -450,9 +452,10 @@ const Modal = ({
         {isSandwichItem && availableSauces.length > 0 && (
           <div className="modal-options">
             <h3 className="text-2xl font-semibold text-center pb-4">{t("modal.sauces", "תוספות רטבים")}</h3>
-            <p className="text-sm text-center text-gray-500 pb-6">
-              {t("modal.freeSauces", "חינם")}: {freeSauceLimit} · {t("modal.extraSaucePrice", "כל רוטב נוסף ₪2")}
-            </p>
+            <div className="text-sm text-center text-gray-500 pb-4 space-y-1">
+              <div>{t("modal.sandwichSauceHalfNote", "")}</div>
+              <div>{t("modal.sandwichSauceFullNote", "")}</div>
+            </div>
             {availableSauces.map((sauce, index) => (
               <div key={index} className="checkbox-wrapper-30 checkbox-container">
                 <span className="checkbox">

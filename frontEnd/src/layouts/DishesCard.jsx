@@ -157,6 +157,7 @@ const DishesCard = (props) => {
               extraPattyPrice={props.extraPattyPrice}
               description={props.description}
               options={props.options}
+              category={props.category}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}

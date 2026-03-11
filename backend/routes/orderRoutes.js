@@ -32,6 +32,7 @@ function cleanItems(items) {
         quantity: qty,
         isWeighted: !!it.isWeighted,
         vegetables: Array.isArray(it.vegetables) ? it.vegetables : it.selectedOptions?.vegetables || [],
+        sauces: Array.isArray(it.sauces) ? it.sauces : it.selectedOptions?.sauces || [],
         additions: Array.isArray(it.additions) ? it.additions : it.selectedOptions?.additions || [],
         doneness: it.doneness || it.selectedOptions?.doneness || "",
         comment: it.comment || "",

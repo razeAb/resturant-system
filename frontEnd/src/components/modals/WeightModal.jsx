@@ -163,9 +163,10 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
           {availableSauces.length > 0 && (
             <>
               <h4 className="text-lg font-semibold text-center pb-4">{t("modal.sauces", "תוספות רטבים")}</h4>
-              <p className="text-sm text-center text-gray-500 pb-6">
-                {t("modal.freeSauces", "חינם")}: {freeSauceLimit} · {t("modal.extraSaucePrice", "כל רוטב נוסף ₪2")}
-              </p>
+              <div className="text-sm text-center text-gray-500 pb-4 space-y-1">
+                <div>{t("modal.weightSauceBaseNote", "")}</div>
+                <div>{t("modal.weightSauceExtraNote", "")}</div>
+              </div>
               {availableSauces.map((sauce, index) => (
                 <div key={index} className="checkbox-wrapper-30 checkbox-container">
                   <span className="checkbox">
