@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import DishesCard from "../layouts/DishesCard";
 import api from "../api";
 import { useLang } from "../context/LangContext";
+import { Beef, CupSoda, LayoutGrid, Salad, Sandwich, Soup } from "lucide-react";
 
 const Menu = () => {
   const [products, setProducts] = useState([]);
@@ -13,12 +14,12 @@ const Menu = () => {
   const resolveDescription = (item) => (lang === "en" ? item.description_en ?? item.description : item.description_he ?? item.description);
 
   const categoriesList = [
-    { id: "all", label: t("menu.categories.all", "הכל") },
-    { id: "starters", label: t("menu.categories.starters", "מנות פתיחה"), filter: ["Starters"] },
-    { id: "sandwiches", label: t("menu.categories.sandwiches", "כריכים"), filter: ["Sandwiches"] },
-    { id: "meats", label: t("menu.categories.meats", "בשרים במשקל"), filter: ["Meats", "premium Meat"] },
-    { id: "sides", label: t("menu.categories.sides", "תוספות בצד"), filter: ["Side Dishes"] },
-    { id: "drinks", label: t("menu.categories.drinks", "שתיה"), filter: ["Drinks"] },
+    { id: "all", label: t("menu.categories.all", "הכל"), icon: LayoutGrid, accent: "bg-[#f59e0b]/15 text-[#f59e0b]" },
+    { id: "starters", label: t("menu.categories.starters", "מנות פתיחה"), filter: ["Starters"], icon: Soup, accent: "bg-[#38bdf8]/15 text-[#38bdf8]" },
+    { id: "sandwiches", label: t("menu.categories.sandwiches", "כריכים"), filter: ["Sandwiches"], icon: Sandwich, accent: "bg-[#f97316]/15 text-[#f97316]" },
+    { id: "meats", label: t("menu.categories.meats", "בשרים במשקל"), filter: ["Meats", "premium Meat"], icon: Beef, accent: "bg-[#ef4444]/15 text-[#ef4444]" },
+    { id: "sides", label: t("menu.categories.sides", "תוספות בצד"), filter: ["Side Dishes"], icon: Salad, accent: "bg-[#22c55e]/15 text-[#22c55e]" },
+    { id: "drinks", label: t("menu.categories.drinks", "שתיה"), filter: ["Drinks"], icon: CupSoda, accent: "bg-[#a78bfa]/15 text-[#a78bfa]" },
   ];
 
   useEffect(() => {
@@ -100,19 +101,26 @@ const Menu = () => {
       </div>
 
       {/* ✅ CATEGORY FILTER BUTTONS */}
-      <div className="w-full overflow-x-auto mb-10">
+      <div className="w-full overflow-x-auto mb-10 category-scroll">
         <div className="flex gap-3 justify-start px-2 md:justify-center min-w-max">
           {categoriesList.map((cat) => (
             <button
               key={cat.id}
+              type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`whitespace-nowrap font-bold py-2 px-5 rounded-xl shadow-md transition transform duration-200 ${
+              aria-pressed={selectedCategory === cat.id}
+              className={`group whitespace-nowrap font-bold py-2 px-4 rounded-2xl border transition duration-200 ${
                 selectedCategory === cat.id
-                  ? "bg-gradient-to-br from-[#666] to-[#2b2b2b] text-white scale-105"
-                  : "bg-gradient-to-br from-[#444] to-[#1f1f1f] text-white hover:scale-105 hover:from-[#666] hover:to-[#2b2b2b]"
+                  ? "bg-gradient-to-br from-[#2b2b2b] via-[#1b1b1b] to-[#0f0f0f] text-white scale-[1.02] border-white/30 shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+                  : "bg-[#121212]/90 text-white/90 border-white/10 hover:border-white/30 hover:bg-[#1a1a1a] hover:scale-[1.02] shadow-[0_8px_20px_rgba(0,0,0,0.3)]"
               }`}
             >
-              {cat.label}
+              <span className="flex items-center gap-3">
+                <span className={`grid place-items-center w-9 h-9 rounded-xl ${cat.accent}`}>
+                  <cat.icon className="w-5 h-5" aria-hidden="true" />
+                </span>
+                <span className="text-sm sm:text-base">{cat.label}</span>
+              </span>
             </button>
           ))}
         </div>

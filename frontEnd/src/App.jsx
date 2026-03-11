@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./layouts/Navbar"; // For main pages with scroll
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
@@ -33,75 +33,120 @@ import FloorLayout from "./admin/FloorLayout";
 import FloorOrders from "./admin/FloorOrders";
 import Coupons from "./admin/Coupons";
 import WaiterTables from "./pages/WaiterTables";
-import { LangProvider } from "./context/LangContext";
+import { LangProvider, useLang } from "./context/LangContext";
 import LanguageToggle from "./components/common/LanguageToggle";
-const App = () => {
+import api from "./api";
+
+const AppContent = () => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
+  const { t } = useLang();
+  const location = useLocation();
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const response = await api.get("/api/products");
+        const products = response.data?.products || [];
+        const allInactive = products.length > 0 && products.every((p) => p.isActive === false);
+        setIsClosed(allInactive);
+      } catch (error) {
+        console.error("Failed to load restaurant status", error);
+      }
+    };
+
+    fetchStatus();
+  }, []);
+
+  const isAdminRoute =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/worker") ||
+    location.pathname.startsWith("/kitchen");
+  const isLoginRoute = location.pathname === "/login";
 
   return (
-    <LangProvider>
-      <AuthProvider>
-        <MenuOptionsProvider>
-          <CartProvider>
-            <Router>
-              <div>
-                {/* Main pages with Scroll Navbar */}
-                <Routes>
-                  <Route
-                    path="/"
-                    element={
-                      <>
-                        <Navbar />
-                        <div id="home">
-                          <Home />
-                        </div>
-                        <div id="menu">
-                          <Menu />
-                        </div>
-                        <Footer />
-                      </>
-                    }
-                  />
-                  {/* Cart page with regular CartNavbar */}
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/resetPassword" element={<ResetPassword />} />
-                  <Route path="/order-status" element={<OrderStatus />} />
+    <div>
+      {isClosed && !isLoginRoute && !isAdminRoute && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 text-center ${
+            isAdminRoute ? "pointer-events-none" : ""
+          }`}
+        >
+          <div className="max-w-xl rounded-2xl border border-white/15 bg-black/60 p-6 backdrop-blur-sm">
+            <h2 className="text-3xl font-semibold text-white">{t("home.closedTitle", "We’re sorry, we are closed today.")}</h2>
+            <p className="mt-3 text-base text-white/80">
+              {t("home.closedSubtitle", "Our closing days are Sundays and Wednesdays.")}
+            </p>
+          </div>
+        </div>
+      )}
 
-                  <Route path="/admin/products" element={<AdminProducts />} />
-                  <Route path="/admin/activeOrders" element={<ActiveOrders />} />
-                  <Route path="/admin/orderHistory" element={<OrderHistory />} />
-                  <Route path="/admin/collections" element={<CollectionsReport />} />
-                  <Route path="/admin/revenue" element={<RevenuePage />} />
-                  <Route path="/admin/cash-register" element={<CashRegister />} />
-                  <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
-                  <Route path="/admin/floor" element={<FloorLayout />} />
-                  <Route path="/admin/floor-orders" element={<FloorOrders />} />
-                  <Route path="/admin/coupons" element={<Coupons />} />
-                  <Route path="/kitchen" element={<KitchenOrders />} />
-                  <Route path="/worker/dashboard" element={<WorkerDashboard />} />
-                  <Route path="/worker/tables" element={<WaiterTables />} />
-                  <Route path="/admin/manage-shifts" element={<ManageShifts />} />
-                  <Route path="/payment-success" element={<PaymentSuccess />} />
-                  <Route path="/payment-failure" element={<PaymentFailure />} />
-                  <Route path="/admin/workers" element={<ManageWorkers />} />
-                  <Route path="/worker/login" element={<WorkerLogin />} />
-                </Routes>
-
-                {/* CartIcon should be placed here to appear on all pages */}
-                <CartIcon onOpen={() => setIsCartDrawerOpen(true)} />
-                <CartPage variant="drawer" isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
-                <LanguageToggle />
+      {/* Main pages with Scroll Navbar */}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <Navbar />
+              <div id="home">
+                <Home />
               </div>
-            </Router>
-          </CartProvider>
-        </MenuOptionsProvider>
-      </AuthProvider>
-    </LangProvider>
+              <div id="menu">
+                <Menu />
+              </div>
+              <Footer />
+            </>
+          }
+        />
+        {/* Cart page with regular CartNavbar */}
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/resetPassword" element={<ResetPassword />} />
+        <Route path="/order-status" element={<OrderStatus />} />
+
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/activeOrders" element={<ActiveOrders />} />
+        <Route path="/admin/orderHistory" element={<OrderHistory />} />
+        <Route path="/admin/collections" element={<CollectionsReport />} />
+        <Route path="/admin/revenue" element={<RevenuePage />} />
+        <Route path="/admin/cash-register" element={<CashRegister />} />
+        <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
+        <Route path="/admin/floor" element={<FloorLayout />} />
+        <Route path="/admin/floor-orders" element={<FloorOrders />} />
+        <Route path="/admin/coupons" element={<Coupons />} />
+        <Route path="/kitchen" element={<KitchenOrders />} />
+        <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+        <Route path="/worker/tables" element={<WaiterTables />} />
+        <Route path="/admin/manage-shifts" element={<ManageShifts />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-failure" element={<PaymentFailure />} />
+        <Route path="/admin/workers" element={<ManageWorkers />} />
+        <Route path="/worker/login" element={<WorkerLogin />} />
+      </Routes>
+
+      {/* CartIcon should be placed here to appear on all pages */}
+      <CartIcon onOpen={() => setIsCartDrawerOpen(true)} />
+      <CartPage variant="drawer" isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
+      <LanguageToggle />
+    </div>
   );
 };
+
+const App = () => (
+  <LangProvider>
+    <AuthProvider>
+      <MenuOptionsProvider>
+        <CartProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </CartProvider>
+      </MenuOptionsProvider>
+    </AuthProvider>
+  </LangProvider>
+);
 
 export default App;

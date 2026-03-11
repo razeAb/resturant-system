@@ -167,7 +167,9 @@ router.post("/", async (req, res) => {
       method: newOrder.paymentDetails?.method,
       status: newOrder.status,
     });
-    sendWhatsAppNotification(newOrder);
+    sendWhatsAppNotification(newOrder).catch((err) => {
+      console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+    });
     // ---- loyalty updates ----
     if (user) {
       const foundUser = await User.findById(user);

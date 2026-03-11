@@ -9,6 +9,8 @@ const translations = {
       subtitle:
         "אנחנו מסעדת בשרים מעושנים, יש לנו מבחר בשר גם להזמנות ואירועים בהתאמה אישית מראש (לפני יום לפחות)",
       cta: "תפריט / איסוף עצמי",
+      closedTitle: "סליחה, אנחנו סגורים היום.",
+      closedSubtitle: "ימי הסגירה שלנו הם ראשון ורביעי.",
     },
     about: {
       heading: "למה לאכול אצלנו?",
@@ -209,6 +211,8 @@ const translations = {
       title: "Hungry smoked meat",
       subtitle: "We serve smoked meats with a selection available for pre-ordered events (at least one day in advance).",
       cta: "Menu / Pickup",
+      closedTitle: "We’re sorry, we are closed today.",
+      closedSubtitle: "Our closing days are Sundays and Wednesdays.",
     },
     about: {
       heading: "Why eat with us?",
