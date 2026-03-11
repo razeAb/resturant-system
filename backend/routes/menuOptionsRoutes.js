@@ -5,6 +5,18 @@ const { protect } = require("../middleware/authMiddleware");
 
 const DEFAULT_MENU_OPTIONS = {
   vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"],
+  sauces: [
+    "איולי סומק",
+    "איולי חריף",
+    "ברביקיו",
+    "חלפיניו",
+    "קונפי שום",
+    "דבש",
+    "2 שקיות קטשוב",
+    "2 שקיות מיונז",
+    "2 שקיית אליפאים",
+    "חרדל דיגון",
+  ],
   weightedAdditions: [
     { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26 },
     { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26 },
@@ -23,6 +35,10 @@ const DEFAULT_MENU_OPTIONS = {
 const sanitize = (options = {}) => {
   const sanitizedVegetables = Array.isArray(options.vegetables)
     ? options.vegetables.map((v) => String(v || "").trim()).filter(Boolean)
+    : [];
+
+  const sanitizedSauces = Array.isArray(options.sauces)
+    ? options.sauces.map((v) => String(v || "").trim()).filter(Boolean)
     : [];
 
   const sanitizedWeighted = Array.isArray(options.weightedAdditions)
@@ -46,6 +62,7 @@ const sanitize = (options = {}) => {
 
   return {
     vegetables: sanitizedVegetables,
+    sauces: sanitizedSauces,
     weightedAdditions: sanitizedWeighted,
     fixedAdditions: sanitizedFixed,
   };
@@ -82,6 +99,7 @@ router.put("/", protect, async (req, res) => {
     }
 
     options.vegetables = sanitized.vegetables;
+    options.sauces = sanitized.sauces;
     options.weightedAdditions = sanitized.weightedAdditions;
     options.fixedAdditions = sanitized.fixedAdditions;
 

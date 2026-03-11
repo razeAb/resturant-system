@@ -3,6 +3,18 @@ import api from "../api";
 
 export const DEFAULT_MENU_OPTIONS = {
   vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"],
+  sauces: [
+    "איולי סומק",
+    "איולי חריף",
+    "ברביקיו",
+    "חלפיניו",
+    "קונפי שום",
+    "דבש",
+    "2 שקיות קטשוב",
+    "2 שקיות מיונז",
+    "2 שקיית אליפאים",
+    "חרדל דיגון",
+  ],
   weightedAdditions: [
     { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26 },
     { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26 },
@@ -40,6 +52,7 @@ export const MenuOptionsProvider = ({ children }) => {
       if (data) {
         setOptions({
           vegetables: Array.isArray(data.vegetables) && data.vegetables.length ? data.vegetables : DEFAULT_MENU_OPTIONS.vegetables,
+          sauces: Array.isArray(data.sauces) && data.sauces.length ? data.sauces : DEFAULT_MENU_OPTIONS.sauces,
           weightedAdditions:
             Array.isArray(data.weightedAdditions) && data.weightedAdditions.length
               ? data.weightedAdditions

@@ -14,6 +14,16 @@ const OPTION_TRANSLATIONS = {
   "🧀 רוטב גבינה": { en: "🧀 Cheese sauce", he: "🧀 רוטב גבינה" },
   "🍄 פטריות": { en: "🍄 Mushrooms", he: "🍄 פטריות" },
   "🥖 ג׳בטה": { en: "🥖 Ciabatta", he: "🥖 ג׳בטה" },
+  "איולי סומק": { en: "Sumac aioli", he: "איולי סומק" },
+  "איולי חריף": { en: "Spicy aioli", he: "איולי חריף" },
+  "ברביקיו": { en: "BBQ", he: "ברביקיו" },
+  "חלפיניו": { en: "Jalapeno", he: "חלפיניו" },
+  "קונפי שום": { en: "Garlic confit", he: "קונפי שום" },
+  "דבש": { en: "Honey", he: "דבש" },
+  "2 שקיות קטשוב": { en: "2 ketchup packets", he: "2 שקיות קטשוב" },
+  "2 שקיות מיונז": { en: "2 mayo packets", he: "2 שקיות מיונז" },
+  "2 שקיית אליפאים": { en: "2 Thousand Island packets", he: "2 שקיית אליפאים" },
+  "חרדל דיגון": { en: "Dijon mustard", he: "חרדל דיגון" },
 };
 
 export const translateOptionLabel = (label, lang) => {

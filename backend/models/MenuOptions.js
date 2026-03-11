@@ -20,6 +20,7 @@ const fixedAdditionSchema = new mongoose.Schema(
 const menuOptionsSchema = new mongoose.Schema(
   {
     vegetables: { type: [String], default: [] },
+    sauces: { type: [String], default: [] },
     weightedAdditions: { type: [weightedAdditionSchema], default: [] },
     fixedAdditions: { type: [fixedAdditionSchema], default: [] },
   },

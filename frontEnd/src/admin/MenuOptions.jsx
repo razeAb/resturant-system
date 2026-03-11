@@ -30,7 +30,7 @@ const ActionButton = ({ title, onClick, icon, disabled }) => (
 );
 
 export default function MenuOptionsAdmin() {
-  const { vegetables, weightedAdditions, fixedAdditions, refresh, setOptions } = useMenuOptions();
+  const { vegetables, sauces, weightedAdditions, fixedAdditions, refresh, setOptions } = useMenuOptions();
   const [form, setForm] = useState(DEFAULT_MENU_OPTIONS);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
@@ -40,10 +40,11 @@ export default function MenuOptionsAdmin() {
   useEffect(() => {
     setForm({
       vegetables: vegetables || [],
+      sauces: sauces || [],
       weightedAdditions: weightedAdditions || [],
       fixedAdditions: fixedAdditions || [],
     });
-  }, [vegetables, weightedAdditions, fixedAdditions]);
+  }, [vegetables, sauces, weightedAdditions, fixedAdditions]);
 
   const handleArrayChange = (section, index, field, value) => {
     setForm((prev) => ({
@@ -59,9 +60,20 @@ export default function MenuOptionsAdmin() {
     }));
   };
 
+  const handleSauceChange = (index, value) => {
+    setForm((prev) => ({
+      ...prev,
+      sauces: prev.sauces.map((item, i) => (i === index ? value : item)),
+    }));
+  };
+
   const addRow = (section) => {
     const emptyRow =
-      section === "vegetables" ? "" : section === "fixedAdditions" ? { name: "", price: 0 } : { name: "", pricePer50: 0, pricePer100: 0 };
+      section === "vegetables" || section === "sauces"
+        ? ""
+        : section === "fixedAdditions"
+        ? { name: "", price: 0 }
+        : { name: "", pricePer50: 0, pricePer100: 0 };
     setForm((prev) => ({ ...prev, [section]: [...prev[section], emptyRow] }));
   };
 
@@ -79,6 +91,7 @@ export default function MenuOptionsAdmin() {
         `/api/menu-options`,
         {
           vegetables: form.vegetables,
+          sauces: form.sauces,
           weightedAdditions: form.weightedAdditions.map((item) => ({
             ...item,
             pricePer50: Number(item.pricePer50) || 0,
@@ -102,7 +115,12 @@ export default function MenuOptionsAdmin() {
   };
 
   const totalItems = useMemo(() => {
-    return (form.vegetables?.length || 0) + (form.fixedAdditions?.length || 0) + (form.weightedAdditions?.length || 0);
+    return (
+      (form.vegetables?.length || 0) +
+      (form.sauces?.length || 0) +
+      (form.fixedAdditions?.length || 0) +
+      (form.weightedAdditions?.length || 0)
+    );
   }, [form]);
 
   return (
@@ -170,6 +188,34 @@ export default function MenuOptionsAdmin() {
                   <button
                     type="button"
                     onClick={() => removeRow("vegetables", idx)}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
+                    aria-label="הסר"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="רוטבים"
+            description="רוטבים לבחירה (כולל חישוב כמות חינם לפי סוג המנה)"
+            action={<ActionButton title="הוסף רוטב" icon={<Plus size={16} />} onClick={() => addRow("sauces")} />}
+          >
+            <div className="space-y-3">
+              {form.sauces?.length === 0 && <div className="text-sm text-white/60">אין רוטבים להציג.</div>}
+              {form.sauces?.map((sauce, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <input
+                    value={sauce}
+                    onChange={(e) => handleSauceChange(idx, e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
+                    placeholder="לדוגמה: איולי סומק"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRow("sauces", idx)}
                     className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
                     aria-label="הסר"
                   >
@@ -272,6 +318,10 @@ export default function MenuOptionsAdmin() {
               <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <div className="text-xs text-white/60">ירקות</div>
                 <div className="text-lg font-bold">{form.vegetables?.length || 0}</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                <div className="text-xs text-white/60">רוטבים</div>
+                <div className="text-lg font-bold">{form.sauces?.length || 0}</div>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <div className="text-xs text-white/60">תוספות בגרמים</div>

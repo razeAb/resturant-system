@@ -10,16 +10,18 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     vegetables: [],
     additions: [],
   });
+  const [selectedSauces, setSelectedSauces] = useState([]);
 
   const { addToCart } = useContext(CartContext); // Access addToCart function from CartContext
   const { t, lang } = useLang();
 
   const [comment, setComment] = useState(""); // Initial comment is an empty string
 
-  const { vegetables, fixedAdditions } = useMenuOptions();
+  const { vegetables, fixedAdditions, sauces } = useMenuOptions();
 
   const availableVegetables = vegetables?.length ? vegetables : [];
   const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
+  const availableSauces = Array.isArray(sauces) ? sauces : [];
 
   if (!isOpen) return null;
 
@@ -44,13 +46,32 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     }));
   };
 
+  const handleSauceToggle = (sauce) => {
+    setSelectedSauces((prev) => (prev.includes(sauce) ? prev.filter((item) => item !== sauce) : [...prev, sauce]));
+  };
+
+  const saucePrice = 2;
+  const freeSauceLimit = 3 + Math.max(0, Math.floor((selectedGrams - 200) / 100)) * 2;
+  const extraSauceCount = Math.max(0, selectedSauces.length - freeSauceLimit);
+  const extraSauceTotal = extraSauceCount * saucePrice;
+
+  const buildSauceAdditions = () => {
+    const saucePrefix = t("modal.saucePrefix", "רוטב");
+    return selectedSauces.map((sauce, index) => {
+      const isPaid = index >= freeSauceLimit;
+      const suffix = isPaid ? ` (+₪${saucePrice})` : "";
+      const label = `${saucePrefix}: ${translateOptionLabel(sauce, lang)}${suffix}`;
+      return { addition: label, price: isPaid ? saucePrice : 0, sauce: true };
+    });
+  };
+
   // Calculate the total price
   const calculateTotalPrice = () => {
     // Sum up the prices of the selected additions
     const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
 
     // Multiply the base price by the selected grams (divided by 100) and add the additions
-    const totalPrice = parseFloat(price) * (selectedGrams / 100) + additionsTotal;
+    const totalPrice = parseFloat(price) * (selectedGrams / 100) + additionsTotal + extraSauceTotal;
 
     // Format to show no decimals for whole numbers and two decimals for non-whole numbers
     return Number.isInteger(totalPrice) ? totalPrice : totalPrice.toFixed(2);
@@ -58,6 +79,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
 
   const handleAddToCart = () => {
     // Calculate the total price based on grams and additions
+    const sauceAdditions = buildSauceAdditions();
     const totalPrice = calculateTotalPrice();
 
     // Add the item to the cart
@@ -71,7 +93,11 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
       price: parseFloat(price),
       quantity: selectedGrams,
       isWeighted: true,
-      selectedOptions,
+      selectedOptions: {
+        ...selectedOptions,
+        additions: [...selectedOptions.additions, ...sauceAdditions],
+        sauces: selectedSauces,
+      },
       comment,
       totalPrice: parseFloat(totalPrice),
     };
@@ -79,6 +105,7 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     const targetAdd = onAddToCart || addToCart;
     targetAdd(itemToAdd); // Add the item to the cart via context or caller
     setComment(""); // Clear the comment
+    setSelectedSauces([]);
     onClose(); // Close the modal
   };
 
@@ -132,6 +159,33 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
               </label>
             </div>
           ))}
+
+          {availableSauces.length > 0 && (
+            <>
+              <h4 className="text-lg font-semibold text-center pb-4">{t("modal.sauces", "תוספות רטבים")}</h4>
+              <p className="text-sm text-center text-gray-500 pb-6">
+                {t("modal.freeSauces", "חינם")}: {freeSauceLimit} · {t("modal.extraSaucePrice", "כל רוטב נוסף ₪2")}
+              </p>
+              {availableSauces.map((sauce, index) => (
+                <div key={index} className="checkbox-wrapper-30 checkbox-container">
+                  <span className="checkbox">
+                    <input
+                      type="checkbox"
+                      id={`weight-sauce-option-${index}`}
+                      onChange={() => handleSauceToggle(sauce)}
+                      checked={selectedSauces.includes(sauce)}
+                    />
+                    <svg>
+                      <use xlinkHref="#checkbox-30" className="checkbox"></use>
+                    </svg>
+                  </span>
+                  <label htmlFor={`weight-sauce-option-${index}`} className="checkbox-label pl-2">
+                    {translateOptionLabel(sauce, lang)}
+                  </label>
+                </div>
+              ))}
+            </>
+          )}
 
           <div className="modal-comment">
             <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.addComment", ":הוסף הערה")}</h3>
