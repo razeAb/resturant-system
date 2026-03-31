@@ -43,6 +43,7 @@ const Modal = ({
   const availableSauces = Array.isArray(sauces) ? sauces : [];
   const availableWeightedAdditions = weightedAdditions;
   const availableFixedAdditions = fixedAdditions;
+  const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
 
   if (!isOpen) return null;
 
@@ -71,7 +72,8 @@ const Modal = ({
   const isFullSandwich = selectedOptions.additions.some((item) => item.fullSandwich);
   const isHalfSandwich = selectedOptions.additions.some((item) => item.halfSandwich);
   const freeSauceLimit = isSandwichItem ? (hasFullSandwichOption ? (isHalfSandwich ? 3 : 6) : 6) : 0;
-  const extraSauceCount = Math.max(0, selectedSauces.length - freeSauceLimit);
+  const totalSauceCount = selectedSauces.length;
+  const extraSauceCount = Math.max(0, totalSauceCount - freeSauceLimit);
   const extraSauceTotal = extraSauceCount * saucePrice;
 
   const buildSauceAdditions = () => {
@@ -154,8 +156,21 @@ const Modal = ({
     });
   };
 
-  const handleSauceToggle = (sauce) => {
-    setSelectedSauces((prev) => (prev.includes(sauce) ? prev.filter((item) => item !== sauce) : [...prev, sauce]));
+  const getSauceCount = (sauce) => selectedSauces.filter((item) => item === sauce).length;
+
+  const handleSauceIncrement = (sauce) => {
+    setSelectedSauces((prev) => {
+      if (sauceSelectionLimit && prev.length >= sauceSelectionLimit) return prev;
+      return [...prev, sauce];
+    });
+  };
+
+  const handleSauceDecrement = (sauce) => {
+    setSelectedSauces((prev) => {
+      const index = prev.lastIndexOf(sauce);
+      if (index === -1) return prev;
+      return [...prev.slice(0, index), ...prev.slice(index + 1)];
+    });
   };
 
   const handleAddToCart = () => {
@@ -455,23 +470,34 @@ const Modal = ({
             <div className="text-sm text-center text-gray-500 pb-4 space-y-1">
               <div>{t("modal.sandwichSauceHalfNote", "")}</div>
               <div>{t("modal.sandwichSauceFullNote", "")}</div>
+              {sauceSelectionLimit !== null && (
+                <div className="font-semibold text-slate-700">
+                  {totalSauceCount}/{sauceSelectionLimit}
+                </div>
+              )}
             </div>
             {availableSauces.map((sauce, index) => (
-              <div key={index} className="checkbox-wrapper-30 checkbox-container">
-                <span className="checkbox">
-                  <input
-                    type="checkbox"
-                    id={`sauce-option-${index}`}
-                    onChange={() => handleSauceToggle(sauce)}
-                    checked={selectedSauces.includes(sauce)}
-                  />
-                  <svg>
-                    <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                  </svg>
-                </span>
-                <label htmlFor={`sauce-option-${index}`} className="checkbox-label pl-2">
-                  {translateOptionLabel(sauce, lang)}
-                </label>
+              <div key={index} className="flex items-center justify-between gap-4 py-2">
+                <span className="checkbox-label pl-2">{translateOptionLabel(sauce, lang)}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSauceDecrement(sauce)}
+                    disabled={getSauceCount(sauce) === 0}
+                    className="h-8 w-8 rounded-full border border-slate-300 text-slate-700 disabled:opacity-40"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[2ch] text-center font-semibold">{getSauceCount(sauce)}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSauceIncrement(sauce)}
+                    disabled={sauceSelectionLimit !== null && totalSauceCount >= sauceSelectionLimit}
+                    className="h-8 w-8 rounded-full border border-slate-300 text-slate-700 disabled:opacity-40"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             ))}
           </div>
