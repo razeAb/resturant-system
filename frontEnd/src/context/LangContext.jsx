@@ -48,7 +48,7 @@ const translations = {
     modal: {
       vegetablesOnDish: ":ירקות על המנה",
       vegetablesSide: ":ירקות בצד למנה",
-      additionsRegular: ":תוספת למנה רגילה",
+      additionsRegular: "\u200F:תוספת למנה רגילה",
       sandwichSize: "גודל סנדוויץ'",
       halfSandwich: "חצי סנדוויץ'",
       halfSandwichPrice: "מחיר חצי",
@@ -60,7 +60,7 @@ const translations = {
       addComment: ":הוסף הערה",
       commentPlaceholder: "הוסף הערה (לא חובה)",
       addToCart: "הוספה לעגלה",
-      sauces: "תוספות רטבים",
+      sauces: "\u200Fתוספות רטבים",
       freeSauces: "חינם",
       extraSaucePrice: "כל רוטב נוסף ₪2",
       sandwichSauceHalfNote: "חצי סנדוויץ' – 3 רטבים חינם, כל רוטב נוסף ₪2",

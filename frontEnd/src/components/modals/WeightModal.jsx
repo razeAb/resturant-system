@@ -38,15 +38,31 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
     }));
   };
 
-  const handleAdditionChange = (addition) => {
-    const label = `${addition.name} (+₪${addition.price})`;
+  const formatAdditionLabel = (addition) => `${addition.name} (+₪${addition.price})`;
 
+  const getAdditionCount = (addition) => {
+    const label = formatAdditionLabel(addition);
+    return selectedOptions.additions.filter((item) => item.addition === label).length;
+  };
+
+  const handleAdditionIncrement = (addition) => {
+    const label = formatAdditionLabel(addition);
     setSelectedOptions((prev) => ({
       ...prev,
-      additions: prev.additions.some((item) => item.addition === label)
-        ? prev.additions.filter((item) => item.addition !== label)
-        : [...prev.additions, { addition: label, price: addition.price }],
+      additions: [...prev.additions, { addition: label, price: addition.price }],
     }));
+  };
+
+  const handleAdditionDecrement = (addition) => {
+    const label = formatAdditionLabel(addition);
+    setSelectedOptions((prev) => {
+      const index = prev.additions.map((item) => item.addition).lastIndexOf(label);
+      if (index === -1) return prev;
+      return {
+        ...prev,
+        additions: [...prev.additions.slice(0, index), ...prev.additions.slice(index + 1)],
+      };
+    });
   };
 
   const saucePrice = 2;
@@ -159,21 +175,28 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-10">{t("modal.additionsRegular", ":תוספת למנה רגילה")}</h3>
           {availableFixedAdditions.map((addition, index) => (
-            <div key={index} className="checkbox-wrapper-30 checkbox-container">
-              <span className="checkbox">
-                <input
-                  type="checkbox"
-                  id={`addition-option-${index}`}
-                  onChange={() => handleAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
-                />
-                <svg>
-                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                </svg>
+            <div key={index} className="flex items-center justify-between gap-4 py-2">
+              <span className="checkbox-label pl-2">
+                {translateOptionLabel(addition.name, lang)} (₪{addition.price})
               </span>
-              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
-                {translateOptionLabel(addition.name, lang)} (₪{addition.price}){" "}
-              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAdditionDecrement(addition)}
+                  disabled={getAdditionCount(addition) === 0}
+                  className="h-8 w-8 rounded-full border border-slate-300 text-slate-700 disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="min-w-[2ch] text-center font-semibold">{getAdditionCount(addition)}</span>
+                <button
+                  type="button"
+                  onClick={() => handleAdditionIncrement(addition)}
+                  className="h-8 w-8 rounded-full border border-slate-300 text-slate-700"
+                >
+                  +
+                </button>
+              </div>
             </div>
           ))}
 

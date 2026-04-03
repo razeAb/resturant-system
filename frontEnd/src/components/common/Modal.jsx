@@ -44,6 +44,7 @@ const Modal = ({
   const availableWeightedAdditions = weightedAdditions;
   const availableFixedAdditions = fixedAdditions;
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
+  const isHebrew = lang === "he";
 
   if (!isOpen) return null;
 
@@ -135,23 +136,27 @@ const Modal = ({
     });
   };
 
-  const handleFixedAdditionChange = (addition) => {
+  const getFixedAdditionCount = (addition) => {
+    const label = formatAdditionLabel(addition.name, "", addition.price);
+    return selectedOptions.additions.filter((item) => item.addition === label).length;
+  };
+
+  const handleFixedAdditionIncrement = (addition) => {
+    const label = formatAdditionLabel(addition.name, "", addition.price);
+    setSelectedOptions((prev) => ({
+      ...prev,
+      additions: [...prev.additions, { addition: label, price: addition.price }],
+    }));
+  };
+
+  const handleFixedAdditionDecrement = (addition) => {
+    const label = formatAdditionLabel(addition.name, "", addition.price);
     setSelectedOptions((prev) => {
-      const label = formatAdditionLabel(addition.name, "", addition.price);
-      const alreadySelected = prev.additions.some((item) => item.addition === label);
-
-      if (alreadySelected) {
-        // Remove if already selected
-        return {
-          ...prev,
-          additions: prev.additions.filter((item) => item.addition !== label),
-        };
-      }
-
-      // Add if not selected
+      const index = prev.additions.map((item) => item.addition).lastIndexOf(label);
+      if (index === -1) return prev;
       return {
         ...prev,
-        additions: [...prev.additions, { addition: label, price: addition.price }],
+        additions: [...prev.additions.slice(0, index), ...prev.additions.slice(index + 1)],
       };
     });
   };
@@ -419,21 +424,32 @@ const Modal = ({
 
           {/* Fixed-price additions */}
           {availableFixedAdditions.map((addition, index) => (
-            <div key={index} className="checkbox-wrapper-30 checkbox-container">
-              <span className="checkbox">
-                <input
-                  type="checkbox"
-                  id={`addition-option-${index}`}
-                  onChange={() => handleFixedAdditionChange(addition)}
-                  checked={selectedOptions.additions.some((item) => item.addition.includes(addition.name))}
-                />
-                <svg>
-                  <use xlinkHref="#checkbox-30" className="checkbox"></use>
-                </svg>
-              </span>
-              <label htmlFor={`addition-option-${index}`} className="checkbox-label pl-2">
+            <div
+              key={index}
+              className={`flex items-center justify-between gap-4 py-2 ${isHebrew ? "flex-row-reverse text-right" : ""}`}
+              dir={isHebrew ? "rtl" : "ltr"}
+            >
+              <span className="checkbox-label pl-2">
                 {translateOptionLabel(addition.name, lang)} (₪{addition.price})
-              </label>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleFixedAdditionDecrement(addition)}
+                  disabled={getFixedAdditionCount(addition) === 0}
+                  className="h-8 w-8 rounded-full border border-slate-300 text-slate-700 disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="min-w-[2ch] text-center font-semibold">{getFixedAdditionCount(addition)}</span>
+                <button
+                  type="button"
+                  onClick={() => handleFixedAdditionIncrement(addition)}
+                  className="h-8 w-8 rounded-full border border-slate-300 text-slate-700"
+                >
+                  +
+                </button>
+              </div>
             </div>
           ))}
 
@@ -476,9 +492,8 @@ const Modal = ({
                 </div>
               )}
             </div>
-            {availableSauces.map((sauce, index) => (
-              <div key={index} className="flex items-center justify-between gap-4 py-2">
-                <span className="checkbox-label pl-2">{translateOptionLabel(sauce, lang)}</span>
+            {availableSauces.map((sauce, index) => {
+              const counter = (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -498,8 +513,24 @@ const Modal = ({
                     +
                   </button>
                 </div>
-              </div>
-            ))}
+              );
+              const label = <span className="checkbox-label pl-2">{translateOptionLabel(sauce, lang)}</span>;
+              return (
+                <div key={index} className="flex items-center justify-between gap-4 py-2" dir={isHebrew ? "rtl" : "ltr"}>
+                  {isHebrew ? (
+                    <>
+                      {counter}
+                      {label}
+                    </>
+                  ) : (
+                    <>
+                      {label}
+                      {counter}
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
