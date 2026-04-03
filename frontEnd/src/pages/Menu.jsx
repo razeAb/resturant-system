@@ -13,11 +13,12 @@ const Menu = () => {
   const resolveName = (item) => (lang === "en" ? item.name_en ?? item.name : item.name_he ?? item.name);
   const resolveDescription = (item) => (lang === "en" ? item.description_en ?? item.description : item.description_he ?? item.description);
 
+  const weightedCategories = ["Meats", "premium Meat", "Weighted Meat"];
   const categoriesList = [
     { id: "all", label: t("menu.categories.all", "הכל"), icon: LayoutGrid, accent: "bg-[#f59e0b]/15 text-[#f59e0b]" },
     { id: "starters", label: t("menu.categories.starters", "מנות פתיחה"), filter: ["Starters"], icon: Soup, accent: "bg-[#38bdf8]/15 text-[#38bdf8]" },
     { id: "sandwiches", label: t("menu.categories.sandwiches", "כריכים"), filter: ["Sandwiches"], icon: Sandwich, accent: "bg-[#f97316]/15 text-[#f97316]" },
-    { id: "meats", label: t("menu.categories.meats", "בשרים במשקל"), filter: ["Meats", "premium Meat"], icon: Beef, accent: "bg-[#ef4444]/15 text-[#ef4444]" },
+    { id: "meats", label: t("menu.categories.meats", "בשרים במשקל"), filter: weightedCategories, icon: Beef, accent: "bg-[#ef4444]/15 text-[#ef4444]" },
     { id: "sides", label: t("menu.categories.sides", "תוספות בצד"), filter: ["Side Dishes"], icon: Salad, accent: "bg-[#22c55e]/15 text-[#22c55e]" },
     { id: "drinks", label: t("menu.categories.drinks", "שתיה"), filter: ["Drinks"], icon: CupSoda, accent: "bg-[#a78bfa]/15 text-[#a78bfa]" },
   ];
@@ -67,7 +68,7 @@ const Menu = () => {
               isActive={item.isActive}
               isOrder={item.isOrder}
               toggleOptions
-              modalType={item.category === "Meat" ? "weighted" : undefined}
+              modalType={weightedCategories.includes(item.category) ? "weighted" : undefined}
             />
           ))}
         </div>
@@ -131,7 +132,7 @@ const Menu = () => {
         <>
           {renderSection(t("menu.sections.starters", "מנות פתיחה"), ["Starters"])}
           {renderSection(t("menu.sections.sandwiches", "כריכים"), ["Sandwiches"])}
-          {renderSection(t("menu.sections.meats", "בשרים במשקל"), ["Meats", "premium Meat"])}
+          {renderSection(t("menu.sections.meats", "בשרים במשקל"), weightedCategories)}
           {renderSection(t("menu.sections.sides", "תוספות בצד"), ["Side Dishes"])}
           {renderSection(t("menu.sections.drinks", "שתיה"), ["Drinks"])}
         </>

@@ -30,13 +30,15 @@ const DishesCard = (props) => {
     wingsNameRegex.test(normalizedTitlePlain) ||
     wingsNameRegex.test(normalizedNameHePlain);
 
+  const isWeightedCategory = props.category === "Meats" || props.category === "premium Meat" || props.category === "Weighted Meat";
+
   const handleButtonClick = () => {
     console.log("isOrder:", props.isOrder);
     if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
     } else if (isWingsMeal) {
       setIsModalOpen(true); // Wings/comment modal
-    } else if (props.category === "Meats") {
+    } else if (isWeightedCategory) {
       setIsModalOpen(true); // Weighted modal
     } else if (props.category === "Sandwiches") {
       setIsModalOpen(true); // Sandwich modal
@@ -112,11 +114,7 @@ const DishesCard = (props) => {
         </div>
       </div>
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted ||
-        props.category === "Sandwiches" ||
-        props.category === "Meats" ||
-        props.category === "Starters" ||
-        isWingsMeal) && (
+      {(props.isWeighted || props.category === "Sandwiches" || isWeightedCategory || props.category === "Starters" || isWingsMeal) && (
         <>
           {isWingsMeal ? (
             <CommentModal
@@ -132,7 +130,7 @@ const DishesCard = (props) => {
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
             />
-          ) : props.category === "Meats" ? (
+          ) : isWeightedCategory ? (
             <WeightedModal
               _id={props.id} // ⬅️ חשוב
               img={props.img}
