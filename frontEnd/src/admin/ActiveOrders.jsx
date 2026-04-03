@@ -9,8 +9,14 @@ import { Menu } from "lucide-react";
 import io from "socket.io-client"; // ✅ default import
 
 // ✅ single socket instance (robust connection options)
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5001", {
-  transports: ["websocket"],
+const SOCKET_URL = (
+  import.meta.env.VITE_API_URL?.trim?.() ||
+  import.meta.env.VITE_API_BASE_URL?.trim?.() ||
+  "http://localhost:5001"
+).replace(/\/$/, "");
+
+const socket = io(SOCKET_URL, {
+  transports: ["websocket", "polling"],
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,
