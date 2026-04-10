@@ -77,6 +77,7 @@ const translations = {
       donenessMediumWell: "מדיום וול",
       donenessWellDone: "וול דאן",
       donenessRequired: "בחר מידת עשייה לפני ההוספה לעגלה",
+      sandwichSizeRequired: "בחר גודל סנדוויץ' לפני ההוספה לעגלה",
       grams: "גרם",
     },
     cartNav: {
@@ -283,6 +284,7 @@ const translations = {
       donenessMediumWell: "Medium well",
       donenessWellDone: "Well done",
       donenessRequired: "Please choose a doneness option before adding to cart",
+      sandwichSizeRequired: "Please choose a sandwich size before adding to cart",
       grams: "g",
     },
     cartNav: {

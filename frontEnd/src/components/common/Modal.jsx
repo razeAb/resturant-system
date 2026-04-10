@@ -51,7 +51,9 @@ const Modal = ({
   const basePrice = Number(price) || 0;
   const fullPrice = Number(fullSandwichPrice);
   const hasFullSandwichOption = Number.isFinite(fullPrice) && fullPrice > 0;
-  const fullSandwichExtra = hasFullSandwichOption ? fullPrice - basePrice : 0;
+  const isFullPriceExtra = hasFullSandwichOption && fullPrice <= basePrice;
+  const fullSandwichExtra = hasFullSandwichOption ? (isFullPriceExtra ? fullPrice : fullPrice - basePrice) : 0;
+  const fullSandwichTotal = hasFullSandwichOption ? (isFullPriceExtra ? basePrice + fullPrice : fullPrice) : basePrice;
   const isSandwichItem = category === "Sandwiches" || hasFullSandwichOption;
   const extraPattyValue = Number(extraPattyPrice);
   const hasExtraPattyOption = Number.isFinite(extraPattyValue) && extraPattyValue > 0;
@@ -179,6 +181,10 @@ const Modal = ({
   };
 
   const handleAddToCart = () => {
+    if (hasFullSandwichOption && !isHalfSandwich && !isFullSandwich) {
+      showToast(t("modal.sandwichSizeRequired", "בחר גודל סנדוויץ' לפני ההוספה לעגלה"));
+      return;
+    }
     if (isBurgerItem && !selectedOptions.doneness) {
       showToast(t("modal.donenessRequired", "Please choose a doneness option"));
       return;
@@ -339,7 +345,8 @@ const Modal = ({
               <label htmlFor="full-sandwich-option" className="checkbox-label pl-2">
                 🥪 {t("modal.fullSandwich", "סנדוויץ' מלא")}
                 <span className="pl-2 text-sm text-gray-500">
-                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", 'סה"כ')} ₪{formatPrice(fullPrice)})
+                  (+₪{formatPrice(Math.max(0, fullSandwichExtra))} · {t("modal.fullSandwichTotal", 'סה"כ')} ₪
+                  {formatPrice(fullSandwichTotal)})
                 </span>
               </label>
             </div>
