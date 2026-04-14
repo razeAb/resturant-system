@@ -78,8 +78,8 @@ export default function ActiveOrdersPage() {
   const resolveOrderItemName = (item) => {
     const product = item?.product || {};
     return lang === "en"
-      ? (product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item")
-      : (product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט");
+      ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Item"
+      : product.name ?? item.name ?? product.name_he ?? item.name_he ?? item.title ?? "פריט";
   };
   const resolveDonenessLabel = (item) => {
     const value = item?.doneness || item?.selectedOptions?.doneness || "";

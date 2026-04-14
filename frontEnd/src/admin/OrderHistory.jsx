@@ -52,7 +52,7 @@ export default function OrderHistory() {
     const product = item?.product || {};
     return lang === "en"
       ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Unknown"
-      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "לא ידוע";
+      : product.name ?? item.name ?? product.name_he ?? item.name_he ?? item.title ?? "לא ידוע";
   };
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");

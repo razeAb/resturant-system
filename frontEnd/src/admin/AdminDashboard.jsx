@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   const [revenueView, setRevenueView] = useState("year"); // "year" | "week" | "day"
   const { lang } = useLang();
   const resolveProductName = (p) =>
-    lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name;
+    lang === "en" ? p?.name_en ?? p?.name : p?.name ?? p?.name_he;
 
   /** Fetch **/
   const fetchDashboard = useCallback(async (signal) => {

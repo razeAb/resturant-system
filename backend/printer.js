@@ -138,7 +138,7 @@ const translatePaymentMethod = (method) => {
             : method || "";
 };
 
-const getItemName = (it) => it?.name_he || it?.title || it?.name || it?.product?.name_he || it?.product?.name || "פריט";
+const getItemName = (it) => it?.name || it?.title || it?.name_he || it?.product?.name || it?.product?.name_he || "פריט";
 
 const getQtyLabel = (it) => {
   if (it?.isWeighted) {

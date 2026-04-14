@@ -60,7 +60,7 @@ export default function AdminProducts() {
   // ---- סטטיסטיקות
   const [categoryStats, setCategoryStats] = useState([]); // [{name, count}]
   const { lang } = useLang();
-  const resolveName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
+  const resolveName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name ?? p?.name_he);
 
   /** טעינת מוצרים + סטטיסטיקות */
   useEffect(() => {

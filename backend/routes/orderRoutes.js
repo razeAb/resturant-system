@@ -288,7 +288,7 @@ router.get("/active", async (req, res) => {
       status: { $nin: ["done", "pending_payment", "failed", "canceled"] },
     })
       .populate("user", "name phone")
-      .populate("items.product", "name name_he name_en")
+      .populate("items.product", "name name_en")
       .sort({ createdAt: -1 });
 
     res.status(200).json(activeOrders);
@@ -304,7 +304,7 @@ router.get("/history", protect, async (req, res) => {
     let query = { status: "done" };
     if (!req.user.isAdmin) query.user = req.user._id;
 
-    const orders = await Order.find(query).populate("user", "name phone").populate("items.product", "name name_he name_en").sort({ createdAt: -1 });
+    const orders = await Order.find(query).populate("user", "name phone").populate("items.product", "name name_en").sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (error) {
@@ -332,7 +332,7 @@ router.get("/phone/:phone", async (req, res) => {
 // ✅ Get order by MongoDB _id
 router.get("/:id", async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate("user", "name phone").populate("items.product", "name name_he name_en");
+    const order = await Order.findById(req.params.id).populate("user", "name phone").populate("items.product", "name name_en");
 
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);

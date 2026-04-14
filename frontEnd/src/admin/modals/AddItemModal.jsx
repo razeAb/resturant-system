@@ -8,7 +8,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const { lang } = useLang();
-  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
+  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name ?? p?.name_he);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -44,7 +44,7 @@ const AddItemModal = ({ orderId, onClose, onItemAdded }) => {
       product: product._id,
       title: resolveProductName(product),
       name_en: product.name_en,
-      name_he: product.name_he,
+      name_he: product.name,
       price: product.price,
       quantity: quantity,
       isWeighted: isMeat, // optional: in case you need to flag it as a gram item

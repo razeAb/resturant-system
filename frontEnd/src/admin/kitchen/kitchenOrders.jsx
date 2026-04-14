@@ -47,7 +47,7 @@ export default function KitchenOrders() {
     const product = item?.product || {};
     return lang === "en"
       ? product.name_en ?? item.name_en ?? product.name ?? item.name ?? item.title ?? "Unknown item"
-      : product.name_he ?? item.name_he ?? product.name ?? item.name ?? item.title ?? "פריט לא ידוע";
+      : product.name ?? item.name ?? product.name_he ?? item.name_he ?? item.title ?? "פריט לא ידוע";
   };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

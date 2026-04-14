@@ -84,11 +84,11 @@ const TableIcon = ({ shape, size = 64, label }) => {
 
 export default function FloorOrders() {
   const { t, lang } = useLang();
-  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name_he ?? p?.name);
+  const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name ?? p?.name_he);
   const resolveProductDescription = (p) =>
     lang === "en" ? p?.description_en ?? p?.description : p?.description_he ?? p?.description;
   const resolveItemName = (item) =>
-    lang === "en" ? item?.name_en ?? item?.name ?? item?.title : item?.name_he ?? item?.name ?? item?.title;
+    lang === "en" ? item?.name_en ?? item?.name ?? item?.title : item?.name ?? item?.name_he ?? item?.title;
   const [tables, setTables] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
@@ -138,7 +138,7 @@ export default function FloorOrders() {
         product: p._id,
         title: resolveProductName(p),
         name_en: p.name_en,
-        name_he: p.name_he,
+        name_he: p.name,
         img: p.image || p.img,
         price: Number(p.price) || 0,
         quantity: 1,
@@ -216,7 +216,7 @@ export default function FloorOrders() {
         product: item._id || item.id,
         title: item.title,
         name_en: item.name_en || modalProduct?.name_en,
-        name_he: item.name_he || modalProduct?.name_he,
+        name_he: item.name_he || modalProduct?.name,
         price: Number(item.totalPrice || item.price) || 0,
         quantity: item.quantity || 1,
         isWeighted: !!item.isWeighted,
@@ -429,7 +429,7 @@ export default function FloorOrders() {
           extraPattyPrice={modalProduct.extraPattyPrice}
           description={resolveProductDescription(modalProduct) || ""}
           name_en={modalProduct?.name_en}
-          name_he={modalProduct?.name_he}
+          name_he={modalProduct?.name}
           options={modalProduct.options || {}}
           isOpen={true}
           onClose={closeModal}
@@ -444,7 +444,7 @@ export default function FloorOrders() {
           price={modalProduct.price}
           description={resolveProductDescription(modalProduct) || ""}
           name_en={modalProduct?.name_en}
-          name_he={modalProduct?.name_he}
+          name_he={modalProduct?.name}
           options={modalProduct.options || {}}
           isOpen={true}
           onClose={closeModal}
@@ -459,7 +459,7 @@ export default function FloorOrders() {
           price={modalProduct.price}
           description={resolveProductDescription(modalProduct) || ""}
           name_en={modalProduct?.name_en}
-          name_he={modalProduct?.name_he}
+          name_he={modalProduct?.name}
           isOpen={true}
           onClose={closeModal}
           onAddToCart={handleModalAdd}

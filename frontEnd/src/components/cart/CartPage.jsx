@@ -42,7 +42,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
-    lang === "en" ? item.name_en ?? item.name ?? item.title : item.name_he ?? item.name ?? item.title;
+    lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
 
   useEffect(() => {
     if (isDrawer && isOpen) {

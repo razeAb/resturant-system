@@ -10,7 +10,7 @@ const Menu = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { t, dir, lang } = useLang();
 
-  const resolveName = (item) => (lang === "en" ? item.name_en ?? item.name : item.name_he ?? item.name);
+  const resolveName = (item) => (lang === "en" ? item.name_en ?? item.name : item.name ?? item.name_he);
   const resolveDescription = (item) => (lang === "en" ? item.description_en ?? item.description : item.description_he ?? item.description);
 
   const weightedCategories = ["Meats", "premium Meat", "Weighted Meat"];
@@ -56,7 +56,7 @@ const Menu = () => {
               img={item.image}
               title={resolveName(item)}
               name_en={item.name_en}
-              name_he={item.name_he}
+              name_he={item.name}
               price={item.price}
               fullSandwichPrice={item.fullSandwichPrice}
               extraPattyPrice={item.extraPattyPrice}
