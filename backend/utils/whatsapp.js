@@ -1,39 +1,26 @@
-const axios = require("axios");
+const twilio = require("twilio");
 
-async function sendWhatsAppNotification(order) {
-  const to = process.env.OWNER_PHONE;
+const requiredEnv = [
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_WHATSAPP_FROM",
+  "OWNER_WHATSAPP_TO",
+  "TWILIO_WHATSAPP_TEMPLATE_SID",
+];
 
-  // simplest: send a TEMPLATE (recommended for reliability)
-  // Create a template in Meta called: "new_order_alert"
-  // with variables: {{1}} orderId, {{2}} total, {{3}} delivery
-  return axios.post(
-    `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
-    {
-      messaging_product: "whatsapp",
-      to,
-      type: "template",
-      template: {
-        name: "new_order_alert",
-        language: { code: "en" },
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: String(order._id) },
-              { type: "text", text: String(order.totalPrice ?? order.total ?? "") },
-              { type: "text", text: String(order.deliveryOption ?? order.deliveryType ?? "") },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
+const hasWhatsAppConfig = () => requiredEnv.every((key) => Boolean(process.env[key]));
+
+async function sendWhatsAppNotification() {
+  if (!hasWhatsAppConfig()) {
+    return;
+  }
+
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  await client.messages.create({
+    from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
+    to: `whatsapp:${process.env.OWNER_WHATSAPP_TO}`,
+    contentSid: process.env.TWILIO_WHATSAPP_TEMPLATE_SID,
+  });
 }
 
 module.exports = { sendWhatsAppNotification };
