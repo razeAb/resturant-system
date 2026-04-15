@@ -6,6 +6,7 @@ import Modal from "../components/common/Modal";
 import WeightModal from "../components/modals/WeightModal";
 import CommentModal from "../components/modals/CommentModal";
 import { Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY = "floorLayoutTables";
 
@@ -82,8 +83,10 @@ const TableIcon = ({ shape, size = 64, label }) => {
   );
 };
 
-export default function FloorOrders() {
+export default function FloorOrders({ variant = "admin" }) {
   const { t, lang } = useLang();
+  const isWorkerView = variant === "worker";
+  const navigate = useNavigate();
   const resolveProductName = (p) => (lang === "en" ? p?.name_en ?? p?.name : p?.name ?? p?.name_he);
   const resolveProductDescription = (p) =>
     lang === "en" ? p?.description_en ?? p?.description : p?.description_he ?? p?.description;
@@ -262,25 +265,40 @@ export default function FloorOrders() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex" dir="rtl">
-      <div className="hidden md:block">
-        <SideMenu />
-      </div>
-      {menuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMenuOpen(false)} />}
-      {menuOpen && (
-        <div className="md:hidden">
-          <SideMenu onClose={() => setMenuOpen(false)} />
-        </div>
+      {!isWorkerView && (
+        <>
+          <div className="hidden md:block">
+            <SideMenu />
+          </div>
+          {menuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMenuOpen(false)} />}
+          {menuOpen && (
+            <div className="md:hidden">
+              <SideMenu onClose={() => setMenuOpen(false)} />
+            </div>
+          )}
+        </>
       )}
       <div className="flex-1 p-4 md:p-6" dir="rtl">
         <div className="max-w-6xl mx-auto space-y-4">
           <div className="flex items-center justify-between gap-3 flex-row-reverse md:flex-row">
-            <button
-              className="md:hidden inline-flex items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu size={20} />
-            </button>
+            {isWorkerView && (
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition"
+              >
+                ← {t("common.back", "חזרה")}
+              </button>
+            )}
+            {!isWorkerView && (
+              <button
+                className="md:hidden inline-flex items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <div className="flex flex-col items-start text-right md:items-start md:text-right">
               <h2 className="text-2xl font-semibold">{t("floorOrders.title", "הזמנה לשולחן")}</h2>
             </div>

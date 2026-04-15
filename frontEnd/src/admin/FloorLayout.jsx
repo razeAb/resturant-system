@@ -135,6 +135,16 @@ export default function FloorLayout() {
   const [editRotation, setEditRotation] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const canvasRef = useRef(null);
+  const tablesRef = useRef(tables);
+  const draggingIdRef = useRef(draggingId);
+
+  useEffect(() => {
+    tablesRef.current = tables;
+  }, [tables]);
+
+  useEffect(() => {
+    draggingIdRef.current = draggingId;
+  }, [draggingId]);
 
   const updatePos = (clientX, clientY) => {
     const el = canvasRef.current;
@@ -146,20 +156,39 @@ export default function FloorLayout() {
   };
 
   const handleDragMove = (e) => {
-    if (!draggingId) return;
+    const activeId = draggingIdRef.current;
+    if (!activeId) return;
     setDragged(true);
     const pos = updatePos(e.clientX, e.clientY);
     if (!pos) return;
-    setTables((prev) => prev.map((t) => (t.id === draggingId ? { ...t, ...pos } : t)));
+    setTables((prev) => {
+      const next = prev.map((t) => (t.id === activeId ? { ...t, ...pos } : t));
+      tablesRef.current = next;
+      return next;
+    });
   };
 
   const handleDragEnd = () => {
-    if (!draggingId) return;
-    save(tables);
+    if (!draggingIdRef.current) return;
+    save(tablesRef.current);
     setDraggingId(null);
+    draggingIdRef.current = null;
     // avoid opening edit modal on click after drag
     setTimeout(() => setDragged(false), 0);
   };
+
+  useEffect(() => {
+    if (!draggingId) return;
+    const onMove = (e) => handleDragMove(e);
+    const onUp = () => handleDragEnd();
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draggingId]);
 
   const handleDropNew = (e) => {
     e.preventDefault();

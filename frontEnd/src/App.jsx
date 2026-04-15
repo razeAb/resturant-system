@@ -120,6 +120,7 @@ const AppContent = () => {
         <Route path="/kitchen" element={<KitchenOrders />} />
         <Route path="/worker/dashboard" element={<WorkerDashboard />} />
         <Route path="/worker/tables" element={<WaiterTables />} />
+        <Route path="/worker/floor-orders" element={<FloorOrders variant="worker" />} />
         <Route path="/admin/manage-shifts" element={<ManageShifts />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failure" element={<PaymentFailure />} />

@@ -194,6 +194,14 @@ export default function WorkingHoursPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/worker/floor-orders")}
+            className="bg-white text-gray-900 rounded-full px-4 py-2 shadow-sm border border-gray-200 hover:bg-gray-50 transition"
+          >
+            הזמנה לשולחן
+          </button>
+
           {worker.onShift ? (
             <button
               onClick={handleEndShift}
