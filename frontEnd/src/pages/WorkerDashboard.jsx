@@ -52,7 +52,7 @@ export default function WorkingHoursPage() {
   useEffect(() => {
     const token = localStorage.getItem("workerToken");
     if (!token) {
-      navigate("/worker/login");
+      navigate("/login");
       return;
     }
     fetchShifts();

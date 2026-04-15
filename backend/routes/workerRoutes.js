@@ -3,6 +3,7 @@ const router = express.Router();
 const Worker = require("../models/Worker");
 const Shift = require("../models/Shift");
 const { protect } = require("../middleware/authMiddleware");
+const { workerProtect } = require("../middleware/workerAuthMiddleware");
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => jwt.sign({ workerId: id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -16,7 +17,9 @@ router.post("/", protect, async (req, res) => {
     const exists = await Worker.findOne({ username });
     if (exists) return res.status(400).json({ message: "❌ Username already exists" });
     const worker = await Worker.create({ username, password, role });
-    res.status(201).json({ message: "✅ Worker created", worker });
+    const safeWorker = worker.toObject();
+    delete safeWorker.password;
+    res.status(201).json({ message: "✅ Worker created", worker: safeWorker });
   } catch (err) {
     console.error("Error creating worker:", err);
     res.status(500).json({ message: err.message });
@@ -57,25 +60,39 @@ router.post("/login", async (req, res) => {
     if (!worker || !(await worker.matchPassword(password))) {
       return res.status(400).json({ message: "❌ Invalid credentials" });
     }
-    worker.onShift = true;
-    worker.shiftStart = new Date();
-    await worker.save();
+    // Note: starting/stopping shifts is handled via `/api/shifts/*`.
+    // Keep login side-effect free so Worker.onShift reflects real active shifts.
+    const activeShift = await Shift.findOne({ user: worker._id, end: null }).sort({ start: -1 }).lean();
+    const onShift = Boolean(activeShift);
+    const shiftStart = activeShift?.start || null;
+
+    // Best-effort sync in case legacy code left stale onShift values.
+    if (worker.onShift !== onShift || String(worker.shiftStart || "") !== String(shiftStart || "")) {
+      worker.onShift = onShift;
+      worker.shiftStart = shiftStart;
+      await worker.save();
+    }
     const token = generateToken(worker._id);
     res.json({
-      message: "✅ Shift started",
+      message: "✅ Logged in",
       token,
       worker: {
         _id: worker._id,
         username: worker.username,
         role: worker.role,
-        shiftStart: worker.shiftStart,
-        onShift: worker.onShift,
+        shiftStart,
+        onShift,
       },
     });
   } catch (err) {
     console.error("Worker login error:", err);
     res.status(500).json({ message: err.message });
   }
+});
+
+// Worker: get own profile
+router.get("/me", workerProtect, async (req, res) => {
+  res.json(req.user);
 });
 
 module.exports = router;

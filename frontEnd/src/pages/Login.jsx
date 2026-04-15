@@ -4,7 +4,7 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { initializeFirebase } from "../firebase"; // ✅ חדש
 import CartContext from "../context/CartContext";
-import { UserPlus, KeyRound, BadgeCheck } from "lucide-react";
+import { UserPlus, KeyRound } from "lucide-react";
 import { useLang } from "../context/LangContext";
 
 const Login = () => {
@@ -12,7 +12,7 @@ const Login = () => {
   const { clearCart } = useContext(CartContext);
   const { t, dir } = useLang();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,31 +22,47 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    // quick client-side validation for clearer feedback before hitting the server
-    if (!email.trim()) {
-      setError("Email is required");
-      return;
-    }
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-      setError("Enter a valid email address");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
     try {
       setLoading(true);
-      const response = await api.post(`/api/auth/login`, { email, password });
-      const user = response.data.user;
+      if (!identifier.trim()) {
+        setError(t("login.identifierRequired", "Email or username is required"));
+        return;
+      }
 
-      clearCart();
-      localStorage.removeItem("cartItems");
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // 1) Try user/admin login by email
+      try {
+        const response = await api.post(`/api/auth/login`, { email: identifier, password });
+        const user = response.data.user;
 
-      navigate(user.isAdmin ? "/admin/dashboard" : "/");
+        clearCart();
+        localStorage.removeItem("cartItems");
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // avoid wrong token precedence in axios interceptor
+        localStorage.removeItem("workerToken");
+        localStorage.removeItem("worker");
+
+        navigate(user.isAdmin ? "/admin/dashboard" : "/");
+        return;
+      } catch (userErr) {
+        const status = userErr?.response?.status;
+        // only fall back on auth failures
+        if (status && status !== 400 && status !== 401 && status !== 403) throw userErr;
+      }
+
+      // 2) Fallback: worker login by username
+      const { data } = await api.post("/api/workers/login", { username: identifier, password });
+      const token = data?.token;
+      const worker = data?.worker;
+      if (token) localStorage.setItem("workerToken", token);
+      if (worker) localStorage.setItem("worker", JSON.stringify(worker));
+
+      // avoid wrong token precedence in axios interceptor
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      navigate("/worker/dashboard");
     } catch (error) {
       console.error("Login Error:", error.response || error.message || error);
       setError(error.response?.data?.message || "משהו השתבש בהתחברות");
@@ -88,6 +104,8 @@ const Login = () => {
 
     localStorage.setItem("token", response.data.token);
     localStorage.setItem("user", JSON.stringify(response.data.user));
+    localStorage.removeItem("workerToken");
+    localStorage.removeItem("worker");
     navigate(response.data.user.isAdmin ? "/admin/dashboard" : "/");
   };
 
@@ -107,16 +125,16 @@ const Login = () => {
         )}
 
         <input
-          type="email"
-          placeholder={t("login.email", "Email")}
+          type="text"
+          placeholder={t("login.identifier", "Email / Username")}
           className="w-full p-2 border border-gray-300 rounded mb-4"
-          value={email}
+          value={identifier}
           onChange={(e) => {
-            setEmail(e.target.value);
+            setIdentifier(e.target.value);
             if (error) setError("");
           }}
           required
-          autoComplete="email"
+          autoComplete="username"
         />
 
         <div className="w-full mb-4 relative">
@@ -169,16 +187,6 @@ const Login = () => {
           >
             <span className="inline-flex items-center gap-2">
               <KeyRound size={16} /> {t("login.forgotPassword", "Forgot password?")}
-            </span>
-            <span className="text-xs">→</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/worker/login")}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-800 text-sm font-medium hover:bg-indigo-100 transition"
-          >
-            <span className="inline-flex items-center gap-2">
-              <BadgeCheck size={16} /> {t("login.workerLogin", "Worker login")}
             </span>
             <span className="text-xs">→</span>
           </button>
