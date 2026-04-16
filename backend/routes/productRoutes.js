@@ -19,13 +19,34 @@ router.get("/", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
     }
 
-    const newProduct = new Product({ name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice });
+    const sanitizedPortionOptions = Array.isArray(portionOptions)
+      ? portionOptions
+          .map((opt) => ({
+            label_he: String(opt?.label_he || "").trim(),
+            label_en: String(opt?.label_en || "").trim(),
+            price: Number(opt?.price) || 0,
+          }))
+          .filter((opt) => (opt.label_he || opt.label_en) && opt.price > 0)
+      : [];
+
+    const newProduct = new Product({
+      name,
+      price,
+      stock,
+      description,
+      image,
+      category,
+      isWeighted,
+      fullSandwichPrice,
+      extraPattyPrice,
+      portionOptions: sanitizedPortionOptions,
+    });
     await newProduct.save();
 
     res.status(201).json({ message: "✅ Product added successfully.", product: newProduct });
@@ -86,12 +107,33 @@ router.post("/add-products", protect, async (req, res) => {
 // ✅ Edit/Update Product by ID
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions } = req.body;
     const productId = req.params.id;
+
+    const sanitizedPortionOptions = Array.isArray(portionOptions)
+      ? portionOptions
+          .map((opt) => ({
+            label_he: String(opt?.label_he || "").trim(),
+            label_en: String(opt?.label_en || "").trim(),
+            price: Number(opt?.price) || 0,
+          }))
+          .filter((opt) => (opt.label_he || opt.label_en) && opt.price > 0)
+      : undefined;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
-      { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice },
+      {
+        name,
+        price,
+        stock,
+        description,
+        image,
+        category,
+        isWeighted,
+        fullSandwichPrice,
+        extraPattyPrice,
+        ...(sanitizedPortionOptions !== undefined ? { portionOptions: sanitizedPortionOptions } : {}),
+      },
       { new: true, runValidators: true }
     );
 

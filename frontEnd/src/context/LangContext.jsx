@@ -78,6 +78,11 @@ const translations = {
       donenessWellDone: "וול דאן",
       donenessRequired: "בחר מידת עשייה לפני ההוספה לעגלה",
       sandwichSizeRequired: "בחר גודל סנדוויץ' לפני ההוספה לעגלה",
+      portionSize: "גודל מנה",
+      riceSize: "גודל אורז",
+      ricePersonal: "אישי",
+      riceCouple: "זוגי",
+      riceFamilyTray: "מגש משפחתי",
       grams: "גרם",
     },
     cartNav: {
@@ -285,6 +290,11 @@ const translations = {
       donenessWellDone: "Well done",
       donenessRequired: "Please choose a doneness option before adding to cart",
       sandwichSizeRequired: "Please choose a sandwich size before adding to cart",
+      portionSize: "Portion size",
+      riceSize: "Rice size",
+      ricePersonal: "Personal",
+      riceCouple: "Couple",
+      riceFamilyTray: "Family tray",
       grams: "g",
     },
     cartNav: {

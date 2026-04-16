@@ -14,6 +14,13 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true }, // ✅ Added required category
   fullSandwichPrice: { type: Number, default: 0 },
   extraPattyPrice: { type: Number, default: 0 },
+  portionOptions: [
+    {
+      label_he: { type: String, default: "" },
+      label_en: { type: String, default: "" },
+      price: { type: Number, default: 0 },
+    },
+  ],
   isActive:{
     type: Boolean,
     default: true

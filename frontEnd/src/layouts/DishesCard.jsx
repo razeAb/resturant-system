@@ -3,6 +3,7 @@ import Button from "../components/common/Button";
 import Modal from "../components/common/Modal";
 import WeightedModal from "../components/modals/WeightModal";
 import CommentModal from "../components/modals/CommentModal";
+import PortionSizeModal from "../components/modals/PortionSizeModal";
 import AlertModal from "../components/common/AlertModal"; // Import AlertModal
 import "./DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
@@ -31,6 +32,19 @@ const DishesCard = (props) => {
     wingsNameRegex.test(normalizedNameHePlain);
 
   const isWeightedCategory = props.category === "Meats" || props.category === "premium Meat" || props.category === "Weighted Meat";
+  const isSideCategory = (props.category || "").toLowerCase().includes("side");
+  const hasPortionOptions = Array.isArray(props.portionOptions) && props.portionOptions.length > 0;
+  const riceRegex = /rice|אורז/i;
+  const isRiceSide = isSideCategory && [props.title, props.name_en, props.name_he].some((value) => riceRegex.test(String(value || "")));
+  const fallbackRicePortions = isRiceSide
+    ? [
+        { label_he: "אישי", label_en: "Personal", price: 13 },
+        { label_he: "זוגי", label_en: "Couple", price: 25 },
+        { label_he: "מגש משפחתי", label_en: "Family tray", price: 45 },
+      ]
+    : null;
+  const effectivePortionOptions = hasPortionOptions ? props.portionOptions : fallbackRicePortions;
+  const hasSidePortions = isSideCategory && Array.isArray(effectivePortionOptions) && effectivePortionOptions.length > 0;
 
   const handleButtonClick = () => {
     console.log("isOrder:", props.isOrder);
@@ -40,6 +54,8 @@ const DishesCard = (props) => {
       setIsModalOpen(true); // Wings/comment modal
     } else if (isWeightedCategory) {
       setIsModalOpen(true); // Weighted modal
+    } else if (hasSidePortions) {
+      setIsModalOpen(true); // Side portion size modal
     } else if (props.category === "Sandwiches") {
       setIsModalOpen(true); // Sandwich modal
     } else if (props.category === "Starters") {
@@ -114,7 +130,7 @@ const DishesCard = (props) => {
         </div>
       </div>
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || isWeightedCategory || props.category === "Starters" || isWingsMeal) && (
+      {(props.isWeighted || props.category === "Sandwiches" || isWeightedCategory || props.category === "Starters" || isWingsMeal || hasSidePortions) && (
         <>
           {isWingsMeal ? (
             <CommentModal
@@ -126,6 +142,19 @@ const DishesCard = (props) => {
               price={props.price}
               description={props.description}
               isWingsMeal={isWingsMeal}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+              onAddToCart={handleAddToCart}
+            />
+          ) : hasSidePortions ? (
+            <PortionSizeModal
+              _id={props.id}
+              img={props.img}
+              title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
+              description={props.description}
+              portionOptions={effectivePortionOptions}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
