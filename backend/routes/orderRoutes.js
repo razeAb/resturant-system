@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { protect } = require("../middleware/authMiddleware");
-const { sendWhatsAppNotification } = require("../utils/whatsapp");
+const { notifyOwnerWhatsAppForOrder } = require("../utils/whatsapp");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -168,7 +168,7 @@ router.post("/", async (req, res) => {
       method: newOrder.paymentDetails?.method,
       status: newOrder.status,
     });
-    sendWhatsAppNotification(newOrder).catch((err) => {
+    notifyOwnerWhatsAppForOrder(newOrder._id).catch((err) => {
       console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
     });
     // ---- loyalty updates ----
@@ -221,6 +221,9 @@ router.post("/success", async (req, res) => {
     order.paymentStatus = "paid";
     order.paidAt = new Date();
     await order.save();
+    notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
+      console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+    });
 
     res.status(200).json({ message: "Payment success recorded" });
   } catch (err) {
@@ -290,6 +293,14 @@ router.get("/active", async (req, res) => {
       .populate("user", "name phone")
       .populate("items.product", "name name_en")
       .sort({ createdAt: -1 });
+
+    activeOrders.forEach((order) => {
+      if (!order?.ownerWhatsApp?.notifiedAt) {
+        notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
+          console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+        });
+      }
+    });
 
     res.status(200).json(activeOrders);
   } catch (error) {

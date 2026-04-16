@@ -6,6 +6,7 @@ const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/Order");
+const { notifyOwnerWhatsAppForOrder } = require("./utils/whatsapp");
 
 dotenv.config();
 
@@ -114,6 +115,9 @@ app.post("/api/tranzila-webhook", async (req, res) => {
 
     await order.save();
     console.log("✅ Order updated as paid:", order._id);
+    notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
+      console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+    });
 
     // 🔔 notify admin dashboard in real-time
     if (io && io.emit) {
