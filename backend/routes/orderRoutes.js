@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { protect } = require("../middleware/authMiddleware");
-const { notifyOwnerWhatsAppForOrder } = require("../utils/whatsapp");
+const { notifyOwnerWhatsAppForOrder, notifyCustomerEtaWhatsApp } = require("../utils/whatsapp");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -238,13 +238,27 @@ router.put("/:id/status", async (req, res) => {
   const { status, estimatedTime } = req.body;
 
   try {
-    const updateFields = { status };
-    if (estimatedTime) updateFields.estimatedTime = estimatedTime;
+    const updateFields = {};
+    if (status) updateFields.status = status;
+    const etaMinutes = Number(estimatedTime);
+    if (Number.isFinite(etaMinutes) && etaMinutes > 0) updateFields.estimatedTime = etaMinutes;
 
     const order = await Order.findByIdAndUpdate(id, updateFields, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    res.json(order);
+    let whatsappEta = null;
+    if (updateFields.estimatedTime) {
+      try {
+        whatsappEta = await notifyCustomerEtaWhatsApp(order._id, updateFields.estimatedTime);
+      } catch (err) {
+        console.error("❌ Customer WhatsApp ETA failed:", err?.response?.data || err?.message || err);
+        whatsappEta = { error: err?.message || "failed" };
+      }
+    }
+
+    const payload = order?.toObject ? order.toObject() : order;
+    payload.whatsappEta = whatsappEta;
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -2,13 +2,19 @@ const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/Order");
 const { notifyOwnerWhatsAppForOrder } = require("./utils/whatsapp");
 
-dotenv.config();
+(() => {
+  const envFile = process.env.ENV_FILE || (process.env.NODE_ENV === "production" ? ".env.production" : ".env");
+  const envPath = path.join(__dirname, envFile);
+  if (fs.existsSync(envPath)) dotenv.config({ path: envPath });
+  else dotenv.config();
+})();
 
 const app = express();
 const PORT = process.env.PORT || 5001;

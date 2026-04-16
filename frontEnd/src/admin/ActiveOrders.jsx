@@ -365,10 +365,12 @@ export default function ActiveOrdersPage() {
 
   const updateOrderStatus = async (orderId, data) => {
     try {
-      await api.put(`/api/orders/${orderId}/status`, data);
+      const res = await api.put(`/api/orders/${orderId}/status`, data);
       fetchOrders();
+      return res.data;
     } catch (err) {
       console.error("שגיאה בעדכון סטטוס:", err);
+      return null;
     }
   };
 
@@ -383,16 +385,21 @@ export default function ActiveOrdersPage() {
   };
 
   const handleTimeChange = async (orderId, time) => {
-    const order = orders.find((o) => o._id === orderId);
-    const phone = order?.user?.phone || order?.phone;
-
-    await updateOrderStatus(orderId, { status: ORDER_STATUS?.PREPARING, estimatedTime: time });
-
-    // ✅ WhatsApp stays intact
-    const formattedPhone = formatPhoneNumber(phone);
-    const message = `ההזמנה שלך תהיה מוכנה בעוד ${time} דקות!\n\nבדוק את סטטוס ההזמנה כאן:\nhttps://hungryresturant.netlify.app/order-status`;
-    if (formattedPhone) window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, "_blank");
-    alert(`הלקוח יקבל הודעה בוואטסאפ`);
+    const updated = await updateOrderStatus(orderId, { status: ORDER_STATUS?.PREPARING, estimatedTime: time });
+    const wa = updated?.whatsappEta;
+    if (wa?.sent) {
+      alert(`נשלחה הודעת וואטסאפ ללקוח ✅`);
+      return;
+    }
+    if (wa?.skipped) {
+      alert(`לא נשלחה הודעת וואטסאפ: ${wa.reason || "skipped"}`);
+      return;
+    }
+    if (wa?.error) {
+      alert(`שגיאה בשליחת וואטסאפ: ${wa.error}`);
+      return;
+    }
+    alert(`עודכן זמן הכנה. לא התקבלה תשובה על שליחת וואטסאפ`);
   };
 
   const markAsDone = async (orderId) => {
