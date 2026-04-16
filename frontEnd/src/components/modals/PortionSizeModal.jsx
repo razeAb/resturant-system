@@ -10,7 +10,7 @@ const resolvePortionLabel = (option, lang) => {
   return he || en;
 };
 
-const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAddToCart, name_en, name_he, portionOptions }) => {
+const PortionSizeModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he, portionOptions }) => {
   const { addToCart } = useContext(CartContext);
   const { t, lang } = useLang();
   const [quantity, setQuantity] = useState(1);
@@ -26,20 +26,23 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
       .filter((opt) => opt.label && opt.price > 0);
   }, [portionOptions, lang]);
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   if (!isOpen) return null;
   if (!options.length) return null;
 
-  const selected = options[Math.min(selectedIndex, options.length - 1)] || options[0];
+  const selected = selectedIndex === null ? null : options[Math.min(selectedIndex, options.length - 1)];
   const unitPrice = Number(selected?.price) || 0;
-  const totalPrice = unitPrice * quantity;
+  const baseUnitPrice = Number(price) || 0;
+  const displayedUnitPrice = selectedIndex === null ? baseUnitPrice : unitPrice;
+  const totalPrice = displayedUnitPrice * quantity;
 
   const handleQuantityChange = (delta) => {
     setQuantity((prev) => Math.max(1, prev + delta));
   };
 
   const handleAddToCart = () => {
+    if (selectedIndex === null) return;
     const sizeLabel = selected?.label || "";
     const sizeAddition = { addition: `🍽️ ${t("modal.portionSize", "גודל מנה")}: ${sizeLabel}`, price: 0, portion: true };
 
@@ -55,14 +58,14 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
       isWeighted: false,
       selectedOptions: { additions: [sizeAddition] },
       comment,
-      totalPrice,
+      totalPrice: unitPrice * quantity,
     };
 
     const targetAdd = onAddToCart || addToCart;
     targetAdd(itemToAdd);
     setComment("");
     setQuantity(1);
-    setSelectedIndex(0);
+    setSelectedIndex(null);
     onClose();
   };
 
@@ -78,17 +81,18 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
 
         <div className="modal-options">
           <h3 className="text-2xl font-semibold text-center pb-6">{t("modal.portionSize", "גודל מנה")}</h3>
+          {selectedIndex === null && (
+            <div className="text-sm text-center text-gray-500 pb-4">{t("modal.portionSizeRequired", "בחר גודל מנה לפני ההוספה לעגלה")}</div>
+          )}
           <div className="flex flex-col gap-3 items-start">
             {options.map((option, index) => (
               <div key={`${option.label}-${index}`} className="checkbox-wrapper-30 checkbox-container w-full">
                 <span className="checkbox">
                   <input
-                    type="radio"
+                    type="checkbox"
                     id={`portion-size-${index}-${_id || title}`}
-                    name={`portion-size-${_id || title}`}
-                    value={index}
                     checked={selectedIndex === index}
-                    onChange={() => setSelectedIndex(index)}
+                    onChange={(e) => setSelectedIndex(e.target.checked ? index : null)}
                   />
                   <svg>
                     <use xlinkHref="#checkbox-30" className="checkbox"></use>
@@ -96,7 +100,7 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
                 </span>
                 <label htmlFor={`portion-size-${index}-${_id || title}`} className="checkbox-label pl-2">
                   {option.label}
-                  <span className="pl-2 text-sm text-gray-500">₪{option.price}</span>
+                  <span className="pl-2 text-sm text-gray-500"> ₪{option.price}</span>
                 </label>
               </div>
             ))}
@@ -131,6 +135,7 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
           </div>
           <button
             onClick={handleAddToCart}
+            disabled={selectedIndex === null}
             className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
           >
             <span>{t("modal.addToCart", "הוספה לעגלה")}</span>
@@ -156,4 +161,3 @@ const PortionSizeModal = ({ _id, img, title, description, isOpen, onClose, onAdd
 };
 
 export default PortionSizeModal;
-

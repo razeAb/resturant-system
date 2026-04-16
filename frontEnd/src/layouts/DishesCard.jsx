@@ -151,6 +151,7 @@ const DishesCard = (props) => {
               _id={props.id}
               img={props.img}
               title={props.title}
+              price={props.price}
               name_en={props.name_en}
               name_he={props.name_he}
               description={props.description}
