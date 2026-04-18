@@ -1725,7 +1725,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           display: flex;
           justify-content: center;
           align-items: center;
-          z-index: 1000; /* Ensures it appears on top */
+          z-index: 2600; /* Above cart drawer and page content */
         }
 
         .modal-content {
