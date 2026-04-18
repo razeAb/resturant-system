@@ -9,17 +9,23 @@ import { ORDER_STATUS } from "../../../constants/orderStatus";
 import checkGif from "../../assets/check.gif";
 import TranzilaIframe from "../TranzilaIframe";
 import { QuantitySelector } from "../QuantitySelector";
+import Modal from "../common/Modal";
+import WeightedModal from "../modals/WeightModal";
+import CommentModal from "../modals/CommentModal";
+import PortionSizeModal from "../modals/PortionSizeModal";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
 };
 
 const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
-  const { cartItems, removeFromCart, updateItemQuantity, clearCart } = useContext(CartContext);
+  const { cartItems, removeFromCart, updateItemQuantity, updateCartItem, clearCart } = useContext(CartContext);
   const isDrawer = variant === "drawer";
   const [isClosedModalOpen, setIsClosedModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [drawerStep, setDrawerStep] = useState("items");
+  const [editState, setEditState] = useState({ isOpen: false, item: null, product: null });
+  const [editLoading, setEditLoading] = useState(false);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -43,6 +49,96 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
+
+  const isObjectId = (value) => typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
+
+  const getProductIdForItem = (item) => {
+    const candidate = item?._id || item?.id;
+    return isObjectId(candidate) ? candidate : null;
+  };
+
+  const stripSauceAdditions = (additions) => (Array.isArray(additions) ? additions.filter((a) => !a?.sauce) : []);
+
+  const deriveWingsMeal = (product, item) => {
+    const title = product?.name || product?.name_he || product?.name_en || item?.title || "";
+    const titleLower = String(title || "").toLowerCase();
+    const nameEnLower = String(product?.name_en || item?.name_en || "").toLowerCase();
+    const nameHe = String(product?.name_he || item?.name_he || "");
+    const wingsNameRegex = /כנפ[יים]*\s+מעוש/i;
+    const plainTitle = titleLower.replace(/\s+/g, " ").trim();
+    const plainHe = nameHe.replace(/\s+/g, " ").trim();
+    return (
+      titleLower.includes("wings") ||
+      nameEnLower.includes("wings") ||
+      titleLower.includes("wing") ||
+      nameEnLower.includes("wing") ||
+      titleLower.includes("כנפ") ||
+      nameHe.includes("כנפ") ||
+      wingsNameRegex.test(plainTitle) ||
+      wingsNameRegex.test(plainHe)
+    );
+  };
+
+  const deriveInitialSauceChoice = (item) => {
+    const additions = Array.isArray(item?.selectedOptions?.additions) ? item.selectedOptions.additions : [];
+    const sauceText = additions.map((a) => String(a?.addition || "")).join(" ");
+    if (sauceText.includes("מיקס")) return "mix";
+    if (sauceText.includes("חריף")) return "hot";
+    if (sauceText.includes("מתוק")) return "sweet";
+    return null;
+  };
+
+  const deriveInitialPortionIndex = (product, item) => {
+    const opts = Array.isArray(product?.portionOptions) ? product.portionOptions : [];
+    if (!opts.length) return null;
+    const itemPrice = Number(item?.price);
+    if (Number.isFinite(itemPrice)) {
+      const byPrice = opts.findIndex((o) => Number(o?.price) === itemPrice);
+      if (byPrice >= 0) return byPrice;
+    }
+    const additions = Array.isArray(item?.selectedOptions?.additions) ? item.selectedOptions.additions : [];
+    const portionAddition = additions.find((a) => a?.portion || String(a?.addition || "").includes("גודל מנה"));
+    const text = String(portionAddition?.addition || "");
+    const label = text.split(":").slice(1).join(":").trim();
+    if (!label) return null;
+    const byLabel = opts.findIndex((o) => String(o?.label_he || "").trim() === label || String(o?.label_en || "").trim() === label);
+    return byLabel >= 0 ? byLabel : null;
+  };
+
+  const openEditItem = async (item) => {
+    const productId = getProductIdForItem(item);
+    if (!productId) {
+      alert(t("cartPage.editUnsupported", "לא ניתן לערוך פריט זה"));
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const res = await api.get(`/api/products/${productId}`);
+      const product = res.data?.product;
+      if (!product) throw new Error("Product not found");
+      setEditState({ isOpen: true, item, product });
+    } catch (err) {
+      console.error("❌ Failed to load product for edit:", err?.response?.data || err?.message || err);
+      alert(t("cartPage.editLoadError", "שגיאה בטעינת המוצר לעריכה"));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const closeEditItem = () => setEditState({ isOpen: false, item: null, product: null });
+
+  const handleEditSave = (updatedItem) => {
+    const original = editState.item;
+    const product = editState.product;
+    if (!original || !updatedItem) return;
+    updateCartItem(original.id, {
+      ...updatedItem,
+      id: original.id,
+      _id: original._id || product?._id || getProductIdForItem(original),
+      category: product?.category || original.category,
+    });
+    closeEditItem();
+  };
 
   useEffect(() => {
     if (isDrawer && isOpen) {
@@ -845,6 +941,15 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                     />
                   )}
                   <button
+                    className="cart-edit"
+                    onClick={() => openEditItem(item)}
+                    aria-label={t("cartPage.edit", "ערוך")}
+                    disabled={editLoading}
+                    title={t("cartPage.edit", "ערוך")}
+                  >
+                    ✎
+                  </button>
+                  <button
                     className="cart-remove"
                     onClick={() => removeFromCart(item.id)}
                     aria-label={t("cartPage.remove", "הסר")}
@@ -1042,6 +1147,116 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         </div>
       )}
 
+      {editState.isOpen && editState.item && editState.product ? (
+        (() => {
+          const item = editState.item;
+          const product = editState.product;
+          const weightedCategories = ["Meats", "premium Meat", "Weighted Meat"];
+          const isWeightedCategory = weightedCategories.includes(product.category);
+          const isSandwich = product.category === "Sandwiches";
+          const isStarters = product.category === "Starters";
+          const isSide = String(product.category || "").toLowerCase().includes("side");
+          const hasPortions = isSide && Array.isArray(product.portionOptions) && product.portionOptions.length > 0;
+          const isWingsMeal = deriveWingsMeal(product, item);
+
+          const selectedOptions = item.selectedOptions || {};
+          const initialSelectedOptions = {
+            ...selectedOptions,
+            additions: stripSauceAdditions(selectedOptions.additions),
+          };
+          const initialSelectedSauces = Array.isArray(selectedOptions.sauces) ? selectedOptions.sauces : [];
+
+          if (hasPortions) {
+            return (
+              <PortionSizeModal
+                _id={product._id}
+                img={product.image || item.img}
+                title={resolveItemName({ ...item, ...product })}
+                name_en={product.name_en}
+                name_he={product.name || product.name_he}
+                price={product.price}
+                description={lang === "en" ? product.description_en ?? product.description : product.description_he ?? product.description}
+                portionOptions={product.portionOptions}
+                initialQuantity={item.quantity}
+                initialComment={item.comment}
+                initialSelectedIndex={deriveInitialPortionIndex(product, item)}
+                isOpen={editState.isOpen}
+                onClose={closeEditItem}
+                onAddToCart={handleEditSave}
+              />
+            );
+          }
+
+          if (isWeightedCategory) {
+            return (
+              <WeightedModal
+                _id={product._id}
+                img={product.image || item.img}
+                title={resolveItemName({ ...item, ...product })}
+                name_en={product.name_en}
+                name_he={product.name || product.name_he}
+                price={product.price}
+                description={lang === "en" ? product.description_en ?? product.description : product.description_he ?? product.description}
+                isOpen={editState.isOpen}
+                onClose={closeEditItem}
+                onAddToCart={(next) => handleEditSave({ ...next, isWeighted: true })}
+                initialGrams={item.quantity}
+                initialSelectedOptions={initialSelectedOptions}
+                initialSelectedSauces={initialSelectedSauces}
+                initialComment={item.comment}
+              />
+            );
+          }
+
+          if (isSandwich) {
+            return (
+              <Modal
+                _id={product._id}
+                img={product.image || item.img}
+                title={resolveItemName({ ...item, ...product })}
+                name_en={product.name_en}
+                name_he={product.name || product.name_he}
+                price={product.price}
+                fullSandwichPrice={product.fullSandwichPrice}
+                extraPattyPrice={product.extraPattyPrice}
+                description={lang === "en" ? product.description_en ?? product.description : product.description_he ?? product.description}
+                category={product.category}
+                isOpen={editState.isOpen}
+                onClose={closeEditItem}
+                onAddToCart={handleEditSave}
+                initialQuantity={item.quantity}
+                initialSelectedOptions={initialSelectedOptions}
+                initialSelectedSauces={initialSelectedSauces}
+                initialComment={item.comment}
+              />
+            );
+          }
+
+          if (isStarters || isWingsMeal) {
+            return (
+              <CommentModal
+                _id={product._id}
+                img={product.image || item.img}
+                title={resolveItemName({ ...item, ...product })}
+                name_en={product.name_en}
+                name_he={product.name || product.name_he}
+                price={product.price}
+                description={lang === "en" ? product.description_en ?? product.description : product.description_he ?? product.description}
+                isWingsMeal={isWingsMeal}
+                isOpen={editState.isOpen}
+                onClose={closeEditItem}
+                onAddToCart={handleEditSave}
+                initialQuantity={item.quantity}
+                initialComment={item.comment}
+                initialSauceChoice={deriveInitialSauceChoice(item)}
+              />
+            );
+          }
+
+          return null;
+        })()
+      ) : null}
+
       <style>{`
 
     @keyframes fadeOut {
@@ -1171,6 +1386,25 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
+        }
+
+        .cart-edit {
+          background: #0ea5e9;
+          border: none;
+          padding: 6px 10px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: white;
+          font-weight: 800;
+          line-height: 1;
+        }
+
+        .cart-edit:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .cart-remove-icon {
@@ -1647,6 +1881,10 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           .cart-item-bottom .cart-remove {
             margin-right: auto;
             align-self: flex-end;
+          }
+
+          .cart-item-bottom .cart-edit {
+            align-self: flex-start;
           }
 
           .cart-summary,

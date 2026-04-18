@@ -52,14 +52,20 @@ export const CartProvider = ({ children }) => {
     );
   }, []);
 
+  // Replace/update an existing cart item by id
+  const updateCartItem = useCallback((itemId, nextItem) => {
+    if (!itemId) return;
+    setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, ...nextItem, id: itemId } : item)));
+  }, []);
+
   // Calculate total number of items
   const totalItems = cartItems.reduce((acc, item) => {
     const qty = item.isWeighted ? 1 : item.quantity || 0;
     return acc + qty;
   }, 0);
   const value = useMemo(
-    () => ({ cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems }),
-    [cartItems, addToCart, removeFromCart, updateItemQuantity, clearCart, totalItems]
+    () => ({ cartItems, addToCart, removeFromCart, updateItemQuantity, updateCartItem, clearCart, totalItems }),
+    [cartItems, addToCart, removeFromCart, updateItemQuantity, updateCartItem, clearCart, totalItems]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

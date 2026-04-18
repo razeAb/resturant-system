@@ -1,9 +1,24 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import { useLang } from "../../context/LangContext";
 
-const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he, isWingsMeal }) => {
+const CommentModal = ({
+  _id,
+  img,
+  title,
+  price,
+  description,
+  isOpen,
+  onClose,
+  onAddToCart,
+  name_en,
+  name_he,
+  isWingsMeal,
+  initialQuantity,
+  initialComment,
+  initialSauceChoice,
+}) => {
   const { addToCart } = useContext(CartContext);
   const { t } = useLang();
   const [quantity, setQuantity] = useState(1);
@@ -30,6 +45,17 @@ const CommentModal = ({ _id, img, title, price, description, isOpen, onClose, on
     { value: "mix", label: `🔥 ${t("modal.sauceMix", "מיקס מתוק/חריף")}` },
   ];
   const [sauceChoice, setSauceChoice] = useState(sauceOptions[0].value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setQuantity(Number(initialQuantity) > 0 ? Number(initialQuantity) : 1);
+    setComment(typeof initialComment === "string" ? initialComment : "");
+    if (initialSauceChoice && sauceOptions.some((opt) => opt.value === initialSauceChoice)) {
+      setSauceChoice(initialSauceChoice);
+    } else {
+      setSauceChoice(sauceOptions[0].value);
+    }
+  }, [isOpen, _id]);
 
   if (!isOpen) return null;
 

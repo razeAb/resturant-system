@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import { useLang } from "../../context/LangContext";
@@ -10,7 +10,22 @@ const resolvePortionLabel = (option, lang) => {
   return he || en;
 };
 
-const PortionSizeModal = ({ _id, img, title, price, description, isOpen, onClose, onAddToCart, name_en, name_he, portionOptions }) => {
+const PortionSizeModal = ({
+  _id,
+  img,
+  title,
+  price,
+  description,
+  isOpen,
+  onClose,
+  onAddToCart,
+  name_en,
+  name_he,
+  portionOptions,
+  initialQuantity,
+  initialComment,
+  initialSelectedIndex,
+}) => {
   const { addToCart } = useContext(CartContext);
   const { t, lang } = useLang();
   const [quantity, setQuantity] = useState(1);
@@ -27,6 +42,17 @@ const PortionSizeModal = ({ _id, img, title, price, description, isOpen, onClose
   }, [portionOptions, lang]);
 
   const [selectedIndex, setSelectedIndex] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setQuantity(Number(initialQuantity) > 0 ? Number(initialQuantity) : 1);
+    setComment(typeof initialComment === "string" ? initialComment : "");
+    if (Number.isFinite(Number(initialSelectedIndex)) && Number(initialSelectedIndex) >= 0) {
+      setSelectedIndex(Number(initialSelectedIndex));
+    } else {
+      setSelectedIndex(null);
+    }
+  }, [isOpen, _id]);
 
   if (!isOpen) return null;
   if (!options.length) return null;

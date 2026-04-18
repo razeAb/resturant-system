@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
 
@@ -21,15 +21,15 @@ const Modal = ({
   name_en,
   name_he,
   category,
+  initialQuantity,
+  initialSelectedOptions,
+  initialSelectedSauces,
+  initialComment,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState({
-    vegetables: [],
-    additions: [],
-    doneness: "",
-  });
+  const [selectedOptions, setSelectedOptions] = useState({ vegetables: [], additions: [], doneness: "" });
   const [selectedSauces, setSelectedSauces] = useState([]);
-  const [comment, setComment] = useState(""); // ✅ missing state added
+  const [comment, setComment] = useState("");
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
@@ -45,6 +45,21 @@ const Modal = ({
   const availableFixedAdditions = fixedAdditions;
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
   const isHebrew = lang === "he";
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setQuantity(Number(initialQuantity) > 0 ? Number(initialQuantity) : 1);
+    setSelectedOptions(() => {
+      const next = initialSelectedOptions && typeof initialSelectedOptions === "object" ? initialSelectedOptions : {};
+      return {
+        vegetables: Array.isArray(next.vegetables) ? next.vegetables : [],
+        additions: Array.isArray(next.additions) ? next.additions : [],
+        doneness: next.doneness || "",
+      };
+    });
+    setSelectedSauces(Array.isArray(initialSelectedSauces) ? initialSelectedSauces : []);
+    setComment(typeof initialComment === "string" ? initialComment : "");
+  }, [isOpen, _id]);
 
   if (!isOpen) return null;
 

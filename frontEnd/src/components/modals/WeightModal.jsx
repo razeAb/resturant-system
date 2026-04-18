@@ -1,10 +1,26 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
 import { useMenuOptions } from "../../context/MenuOptionsContext";
 import { useLang } from "../../context/LangContext";
 import { translateOptionLabel } from "../../utils/optionTranslations";
-const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, onAddToCart, name_en, name_he }) => {
+const Modal = ({
+  _id,
+  img,
+  title,
+  price,
+  description,
+  options,
+  isOpen,
+  onClose,
+  onAddToCart,
+  name_en,
+  name_he,
+  initialGrams,
+  initialSelectedOptions,
+  initialSelectedSauces,
+  initialComment,
+}) => {
   const [selectedGrams, setSelectedGrams] = useState(200); // Default quantity is 200 grams
   const [selectedOptions, setSelectedOptions] = useState({
     vegetables: [],
@@ -25,6 +41,21 @@ const Modal = ({ _id, img, title, price, description, options, isOpen, onClose, 
   const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
   const availableSauces = Array.isArray(sauces) ? sauces : [];
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const grams = Number(initialGrams);
+    setSelectedGrams(Number.isFinite(grams) && grams > 0 ? grams : 200);
+    setSelectedOptions(() => {
+      const next = initialSelectedOptions && typeof initialSelectedOptions === "object" ? initialSelectedOptions : {};
+      return {
+        vegetables: Array.isArray(next.vegetables) ? next.vegetables : [],
+        additions: Array.isArray(next.additions) ? next.additions : [],
+      };
+    });
+    setSelectedSauces(Array.isArray(initialSelectedSauces) ? initialSelectedSauces : []);
+    setComment(typeof initialComment === "string" ? initialComment : "");
+  }, [isOpen, _id]);
 
   if (!isOpen) return null;
 
