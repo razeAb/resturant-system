@@ -46,6 +46,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [policyChecked, setPolicyChecked] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const { user, updateUser } = useContext(AuthContext); // ✅ get user and updater
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
@@ -182,7 +183,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
 
   //state to track in the order is ready to got to backend
   const [, setIsOrderReady] = useState(false);
-  const { user, updateUser } = useContext(AuthContext); // ✅ get user and updater
   const handleCloseModal = () => {
     setIsClosedModalOpen(false);
   };
