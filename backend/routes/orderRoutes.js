@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { protect } = require("../middleware/authMiddleware");
-const { notifyOwnerWhatsAppForOrder, notifyCustomerEtaWhatsApp } = require("../utils/whatsapp");
+const { notifyOwnerSmsForOrder, notifyCustomerEtaWhatsApp } = require("../utils/whatsapp");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -168,8 +168,8 @@ router.post("/", async (req, res) => {
       method: newOrder.paymentDetails?.method,
       status: newOrder.status,
     });
-    notifyOwnerWhatsAppForOrder(newOrder._id).catch((err) => {
-      console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+    notifyOwnerSmsForOrder(newOrder._id).catch((err) => {
+      console.error("❌ Owner SMS alert failed:", err?.response?.data || err?.message || err);
     });
     // ---- loyalty updates ----
     if (user) {
@@ -221,8 +221,8 @@ router.post("/success", async (req, res) => {
     order.paymentStatus = "paid";
     order.paidAt = new Date();
     await order.save();
-    notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
-      console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+    notifyOwnerSmsForOrder(order._id).catch((err) => {
+      console.error("❌ Owner SMS alert failed:", err?.response?.data || err?.message || err);
     });
 
     res.status(200).json({ message: "Payment success recorded" });
@@ -309,9 +309,9 @@ router.get("/active", async (req, res) => {
       .sort({ createdAt: -1 });
 
     activeOrders.forEach((order) => {
-      if (!order?.ownerWhatsApp?.notifiedAt) {
-        notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
-          console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+      if (!order?.ownerSms?.notifiedAt) {
+        notifyOwnerSmsForOrder(order._id).catch((err) => {
+          console.error("❌ Owner SMS alert failed:", err?.response?.data || err?.message || err);
         });
       }
     });

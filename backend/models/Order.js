@@ -101,6 +101,15 @@ const OrderSchema = new mongoose.Schema({
     sending: { type: Boolean, default: false },
     sendingAt: { type: Date, default: null },
   },
+  ownerSms: {
+    notifiedAt: { type: Date, default: null },
+    messageSid: { type: String, default: "" },
+    attempts: { type: Number, default: 0 },
+    lastAttemptAt: { type: Date, default: null },
+    lastError: { type: String, default: "" },
+    sending: { type: Boolean, default: false },
+    sendingAt: { type: Date, default: null },
+  },
   customerWhatsApp: {
     etaNotifiedAt: { type: Date, default: null },
     etaMinutes: { type: Number, default: null },

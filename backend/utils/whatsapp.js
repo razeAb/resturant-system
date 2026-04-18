@@ -19,6 +19,9 @@ let didWarnMissingEnv = false;
 const getMissingTwilioWhatsAppEnv = () =>
   ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM"].filter((key) => !process.env[key]);
 
+const getMissingTwilioSmsEnv = () =>
+  ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_SMS_FROM", "OWNER_SMS_TO"].filter((key) => !process.env[key]);
+
 const formatWhatsAppTo = (phone) => {
   const raw = String(phone || "").trim();
   if (!raw) return null;
@@ -47,6 +50,22 @@ async function sendWhatsAppNotification(order) {
     contentSid: process.env.TWILIO_WHATSAPP_TEMPLATE_SID,
   });
   return { sent: true, sid: message?.sid, orderId: order?._id?.toString?.() };
+}
+
+async function sendOwnerSms({ body }) {
+  const missing = getMissingTwilioSmsEnv();
+  if (missing.length) {
+    console.warn("⚠️ Owner SMS skipped (missing env):", missing.join(", "));
+    return { skipped: true, reason: "missing_env", missing };
+  }
+
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  const message = await client.messages.create({
+    from: process.env.TWILIO_SMS_FROM,
+    to: process.env.OWNER_SMS_TO,
+    body: String(body || "").trim(),
+  });
+  return { sent: true, sid: message?.sid, via: "sms" };
 }
 
 async function sendWhatsAppTemplate({ to, contentSid, contentVariables }) {
@@ -178,6 +197,99 @@ async function notifyOwnerWhatsAppForOrder(orderOrId) {
   }
 }
 
+async function notifyOwnerSmsForOrder(orderOrId) {
+  const orderId = typeof orderOrId === "string" ? orderOrId : orderOrId?._id?.toString?.() || orderOrId?._id;
+  if (!orderId) return { skipped: true, reason: "missing_order_id" };
+
+  const missing = getMissingTwilioSmsEnv();
+  if (missing.length) {
+    console.warn("⚠️ Owner SMS skipped (missing env):", missing.join(", "));
+    return { skipped: true, reason: "missing_env", missing };
+  }
+
+  const now = new Date();
+  const staleBefore = new Date(Date.now() - STALE_SENDING_MS);
+  const retryAfter = new Date(Date.now() - RETRY_COOLDOWN_MS);
+
+  const claimed = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      $and: [
+        { $or: [{ "ownerSms.notifiedAt": { $exists: false } }, { "ownerSms.notifiedAt": null }] },
+        {
+          $or: [
+            { "ownerSms.lastAttemptAt": { $exists: false } },
+            { "ownerSms.lastAttemptAt": null },
+            { "ownerSms.lastAttemptAt": { $lte: retryAfter } },
+          ],
+        },
+        {
+          $or: [
+            { "ownerSms.sending": { $ne: true } },
+            { "ownerSms.sendingAt": { $exists: false } },
+            { "ownerSms.sendingAt": null },
+            { "ownerSms.sendingAt": { $lte: staleBefore } },
+          ],
+        },
+      ],
+    },
+    {
+      $set: { "ownerSms.sending": true, "ownerSms.sendingAt": now, "ownerSms.lastAttemptAt": now },
+      $inc: { "ownerSms.attempts": 1 },
+    },
+    { new: true }
+  );
+
+  if (!claimed) return { skipped: true, reason: "already_sent_or_sending" };
+
+  const lastSix = String(orderId).slice(-6);
+  const total = Number(claimed?.totalPrice) || 0;
+  const delivery = claimed?.deliveryOption || "";
+  const itemsCount = Array.isArray(claimed?.items) ? claimed.items.length : 0;
+  const who = claimed?.customerName || claimed?.phone || claimed?.user?.toString?.() || "";
+  const deliveryLabel = delivery === "Pickup" ? "איסוף" : delivery === "Delivery" ? "משלוח" : delivery === "EatIn" ? "ישיבה במקום" : delivery;
+  const body = `הזמנה חדשה (${lastSix}) • ₪${total} • ${deliveryLabel}\nפריטים: ${itemsCount}\n${who}`;
+
+  try {
+    const result = await sendOwnerSms({ body });
+    if (result?.sent) {
+      await Order.updateOne(
+        { _id: orderId },
+        {
+          $set: {
+            "ownerSms.notifiedAt": new Date(),
+            "ownerSms.messageSid": result.sid || "",
+            "ownerSms.sending": false,
+            "ownerSms.sendingAt": null,
+            "ownerSms.lastError": "",
+          },
+        }
+      );
+    } else {
+      await Order.updateOne(
+        { _id: orderId },
+        {
+          $set: { "ownerSms.sending": false, "ownerSms.sendingAt": null },
+        }
+      );
+    }
+    return result;
+  } catch (err) {
+    const msg = err?.response?.data || err?.message || String(err);
+    await Order.updateOne(
+      { _id: orderId },
+      {
+        $set: {
+          "ownerSms.sending": false,
+          "ownerSms.sendingAt": null,
+          "ownerSms.lastError": String(msg).slice(0, 1000),
+        },
+      }
+    );
+    throw err;
+  }
+}
+
 async function notifyCustomerEtaWhatsApp(orderId, minutes) {
   const etaMinutes = Number(minutes);
   if (!Number.isFinite(etaMinutes) || etaMinutes <= 0) return { skipped: true, reason: "invalid_minutes" };
@@ -301,4 +413,4 @@ async function notifyCustomerEtaWhatsApp(orderId, minutes) {
   }
 }
 
-module.exports = { sendWhatsAppNotification, notifyOwnerWhatsAppForOrder, notifyCustomerEtaWhatsApp };
+module.exports = { sendWhatsAppNotification, notifyOwnerWhatsAppForOrder, notifyOwnerSmsForOrder, notifyCustomerEtaWhatsApp };

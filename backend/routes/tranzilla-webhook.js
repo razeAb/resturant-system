@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 const { io } = require("../server"); // <-- make sure the path points to where you export io
-const { notifyOwnerWhatsAppForOrder } = require("../utils/whatsapp");
+const { notifyOwnerSmsForOrder } = require("../utils/whatsapp");
 
 // If you use global app-level parsers, you could use urlencoded here.
 // Keeping text parser to be safe with Tranzila payloads.
@@ -77,8 +77,8 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
 
     console.log(isSuccess ? `✅ Order ${clientOrderId} marked as ${order.status.toUpperCase()}` : `❌ Payment FAILED for ${clientOrderId}`);
     if (isSuccess) {
-      notifyOwnerWhatsAppForOrder(order._id).catch((err) => {
-        console.error("❌ WhatsApp owner alert failed:", err?.response?.data || err?.message || err);
+      notifyOwnerSmsForOrder(order._id).catch((err) => {
+        console.error("❌ Owner SMS alert failed:", err?.response?.data || err?.message || err);
       });
     }
 
