@@ -51,19 +51,17 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
 
-  const isStaffUser = Boolean(user?.isAdmin || user?.role);
-
-  // Allow staff (admin/worker) to create multiple orders without a page refresh.
-  // Once they start building a new cart, clear the previous "submitted" lock.
+  // Allow creating multiple orders without a page refresh.
+  // Once the user starts building a new cart, clear the previous "submitted" lock.
   useEffect(() => {
-    if (!isStaffUser) return;
     if (orderSubmitted && cartItems.length > 0) {
       setOrderSubmitted(false);
       setOrderId(null);
       setIsPaymentConfirmed(false);
       setPaymentResult(null);
+      setShowCardPayment(false);
     }
-  }, [isStaffUser, orderSubmitted, cartItems.length]);
+  }, [orderSubmitted, cartItems.length]);
 
   const isObjectId = (value) => typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
 
