@@ -105,8 +105,10 @@ const Modal = ({
   };
 
   const calculateTotalPrice = () => {
-    const additionsTotal = selectedOptions.additions.reduce((total, item) => total + item.price, 0);
-    const totalPrice = basePrice * quantity + additionsTotal + extraSauceTotal;
+    // In the cart, additions/sauces are priced per unit and multiplied by quantity.
+    // Keep the modal total consistent with that behavior.
+    const additionsTotalPerUnit = selectedOptions.additions.reduce((total, item) => total + item.price, 0) + extraSauceTotal;
+    const totalPrice = (basePrice + additionsTotalPerUnit) * quantity;
     return Number.isInteger(totalPrice) ? totalPrice : parseFloat(totalPrice.toFixed(2));
   };
 
