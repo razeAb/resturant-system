@@ -366,7 +366,7 @@ async function notifyCustomerEtaWhatsApp(orderId, minutes) {
   }
 
   try {
-    const statusUrl = "https://hungryresturant.netlify.app/order-status";
+    const statusUrl = "https://hungrysmokedmeat.com/order-status";
     const result = await sendWhatsAppTemplate({
       to: phone,
       contentSid: templateSid,

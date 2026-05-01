@@ -55,7 +55,27 @@ function normalizeStatus({ method, rawStatus }) {
 // ✅ Create pre-payment order and return stable ID used as ud1
 router.post("/create-pre-payment", async (req, res) => {
   try {
-    const { items, totalPrice, deliveryOption, user, phone, customerName, comment, paymentDetails, couponUsed, couponCode, couponDiscount } = req.body;
+    const {
+      idempotencyKey,
+      items,
+      totalPrice,
+      deliveryOption,
+      user,
+      phone,
+      customerName,
+      comment,
+      paymentDetails,
+      couponUsed,
+      couponCode,
+      couponDiscount,
+    } = req.body;
+
+    if (idempotencyKey) {
+      const existing = await Order.findOne({ idempotencyKey });
+      if (existing) {
+        return res.status(200).json({ orderId: existing.clientOrderId || existing._id?.toString?.() });
+      }
+    }
 
     // minimal checks so we don't store trash documents
     if (!Array.isArray(items) || items.length === 0) {
@@ -79,6 +99,7 @@ router.post("/create-pre-payment", async (req, res) => {
       phone: phone || undefined,
       customerName: customerName || undefined,
       comment: comment || undefined,
+      idempotencyKey: idempotencyKey || undefined,
       paymentDetails: {
         ...(paymentDetails || {}),
         // ensure method exists for card flow even if React state was late
@@ -107,7 +128,29 @@ router.post("/create-pre-payment", async (req, res) => {
 // ✅ Create a New Order (VALIDATED)
 router.post("/", async (req, res) => {
   try {
-    const { user, items, totalPrice, deliveryOption, status, createdAt, phone, customerName, comment, paymentDetails, couponUsed, couponCode, couponDiscount } = req.body;
+    const {
+      idempotencyKey,
+      user,
+      items,
+      totalPrice,
+      deliveryOption,
+      status,
+      createdAt,
+      phone,
+      customerName,
+      comment,
+      paymentDetails,
+      couponUsed,
+      couponCode,
+      couponDiscount,
+    } = req.body;
+
+    if (idempotencyKey) {
+      const existing = await Order.findOne({ idempotencyKey });
+      if (existing) {
+        return res.status(200).json({ message: "✅ Order already created.", order: existing });
+      }
+    }
 
     console.log("🟢 incoming /api/orders payload:", {
       totalPrice,
@@ -147,6 +190,7 @@ router.post("/", async (req, res) => {
       phone: phone || undefined,
       customerName: customerName || undefined,
       comment: comment || undefined,
+      idempotencyKey: idempotencyKey || undefined,
       paymentDetails: {
         ...(paymentDetails || {}),
         method: normalizedMethod, // prevent enum crash if schema restricts it

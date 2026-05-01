@@ -10,6 +10,12 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     index: true,
   },
+  idempotencyKey: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true,
+  },
   items: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },

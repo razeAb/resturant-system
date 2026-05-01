@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
@@ -43,6 +43,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
   const [orderId, setOrderId] = useState(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
   const [policyChecked, setPolicyChecked] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -50,6 +51,18 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const { lang, t } = useLang();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
+
+  const idempotencyKeyRef = useRef(null);
+
+  const ensureIdempotencyKey = () => {
+    if (idempotencyKeyRef.current) return idempotencyKeyRef.current;
+    const key =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    idempotencyKeyRef.current = key;
+    return key;
+  };
 
   // Allow creating multiple orders without a page refresh.
   // Once the user starts building a new cart, clear the previous "submitted" lock.
@@ -60,6 +73,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setIsPaymentConfirmed(false);
       setPaymentResult(null);
       setShowCardPayment(false);
+      idempotencyKeyRef.current = null;
     }
   }, [orderSubmitted, cartItems.length]);
 
@@ -213,6 +227,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     setOrderSubmitted(false);
     setPolicyChecked(false);
     setShowPolicyModal(false);
+    idempotencyKeyRef.current = null;
   }, [user, clearCart]);
   useEffect(() => {
     if (!user || couponApplied || cartItems.length === 0) return;
@@ -251,8 +266,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   };
 
   //Final submission handler
-  const handleFinalSubmit = () => {
-    if (orderSubmitted) return;
+  const handleFinalSubmit = async () => {
+    if (orderSubmitted || isSubmittingOrder) return;
 
     if (!checkOrderReadiness()) {
       alert(t("cartPage.missingPaymentDelivery", "אנא בחר אמצעי תשלום ואפשרות משלוח לפני השלמת ההזמנה"));
@@ -287,7 +302,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       return;
     }
 
-    submitOrderToBackend();
+    setIsSubmittingOrder(true);
+    await submitOrderToBackend();
   };
 
   // Build order payload shared by submission and pre-payment creation
@@ -317,6 +333,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     const totalPrice = parseFloat(calculateFinalTotal());
 
     return {
+      idempotencyKey: ensureIdempotencyKey(),
       ...(loggedInUserId && { user: loggedInUserId }),
       ...(phoneNumber && !loggedInUserId && { phone: phoneNumber }),
       ...(guestName && !loggedInUserId && { customerName: guestName }),
@@ -334,6 +351,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
 
   // Create order before payment and return stable ID
   const createPrePaymentOrder = async (forcedMethod) => {
+    ensureIdempotencyKey();
     const payload = buildOrderPayload();
     // ensure method is present even if React state hasn't updated yet
     payload.paymentDetails = {
@@ -391,6 +409,9 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         console.error("❌ Failed to submit order:", error.response?.data || error.message);
         alert(t("cartPage.submitError", "שגיאה בשליחת ההזמנה"));
       }
+      setOrderSubmitted(false);
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
   // Group items by id and calculate the quantity for identical items
@@ -871,20 +892,20 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         <button
           className="submit-order-button"
           onClick={handleFinalSubmit}
-          disabled={orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked}
+          disabled={orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked}
           style={{
             padding: "12px 24px",
-            backgroundColor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
+            backgroundColor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
             color: "white",
             fontSize: "16px",
             fontWeight: "bold",
             borderRadius: "8px",
-            cursor: orderSubmitted || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
+            cursor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
             border: "none",
           }}
         >
           {t("cartPage.sendOrder", "שלח הזמנה")}
-          {orderSubmitted ? t("cartPage.orderSubmitted", "הזמנה נשלחה") : ""}
+          {isSubmittingOrder ? ` ${t("cartPage.sendingOrder", "שולח...")}` : orderSubmitted ? ` ${t("cartPage.orderSubmitted", "הזמנה נשלחה")}` : ""}
         </button>
       </div>
     </div>
