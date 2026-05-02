@@ -99,10 +99,12 @@ export default function FloorOrders({ variant = "admin" }) {
   const [selectedTable, setSelectedTable] = useState(null);
   const [guestCount, setGuestCount] = useState(2);
   const [cart, setCart] = useState([]);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [expanded, setExpanded] = useState(null);
   const [modalProduct, setModalProduct] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const idempotencyKeyRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -157,12 +159,24 @@ export default function FloorOrders({ variant = "admin" }) {
     setCart((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const submitOrder = () => {
+  const ensureIdempotencyKey = () => {
+    if (idempotencyKeyRef.current) return idempotencyKeyRef.current;
+    const key =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    idempotencyKeyRef.current = key;
+    return key;
+  };
+
+  const submitOrder = async () => {
+    if (isSubmittingOrder) return;
     if (!selectedTable || cart.length === 0) {
       alert("בחר שולחן והוסף פריטים להזמנה");
       return;
     }
     const payload = {
+      idempotencyKey: ensureIdempotencyKey(),
       items: cart.map((c) => ({
         product: c.product,
         title: c.title,
@@ -181,17 +195,19 @@ export default function FloorOrders({ variant = "admin" }) {
       paymentDetails: { method: "Cash" },
     };
 
-    api
-      .post("/api/orders", payload)
-      .then(() => {
-        alert("הזמנה נשלחה לשולחן ולמסך הזמנות פעילות");
-        setSelectedTable(null);
-        setCart([]);
-      })
-      .catch((err) => {
-        console.error("Failed to create order", err);
-        alert("שגיאה בשליחת ההזמנה");
-      });
+    try {
+      setIsSubmittingOrder(true);
+      await api.post("/api/orders", payload);
+      alert("הזמנה נשלחה לשולחן ולמסך הזמנות פעילות");
+      setSelectedTable(null);
+      setCart([]);
+    } catch (err) {
+      console.error("Failed to create order", err);
+      alert("שגיאה בשליחת ההזמנה");
+    } finally {
+      idempotencyKeyRef.current = null;
+      setIsSubmittingOrder(false);
+    }
   };
 
   const needsModal = (p) => {
@@ -414,7 +430,7 @@ export default function FloorOrders({ variant = "admin" }) {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <span className="text-base">פריטים בעגלה: {cart.length}</span>
-                  <button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-sm sm:text-base font-semibold shadow disabled:opacity-60" onClick={submitOrder} disabled={!cart.length}>
+                  <button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-sm sm:text-base font-semibold shadow disabled:opacity-60" onClick={submitOrder} disabled={!cart.length || isSubmittingOrder}>
                     שליחת הזמנה
                   </button>
                 </div>

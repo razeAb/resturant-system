@@ -13,11 +13,15 @@ const CountableDishesCard = (props) => {
 
   const handleAddToCart = () => {
     const itemToAdd = {
-      id: props.id,
+      id: props.id ?? props._id,
       img: props.img,
+      category: props.category,
       title: props.title,
       price: props.price, // Calculate total price based on quantity
       quantity, // Include the selected quantity
+      isWeighted: false,
+      selectedOptions: {},
+      totalPrice: (Number(props.price) || 0) * quantity,
     };
 
     addToCart(itemToAdd); // Add the item to the cart

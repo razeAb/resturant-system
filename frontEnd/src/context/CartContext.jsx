@@ -10,20 +10,49 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem("cartItems"); // optional: if you're storing in localStorage
   }, []);
 
+  const normalizeCartItem = (item) => {
+    if (!item || typeof item !== "object") return null;
+
+    const normalizedId = item.id ?? item._id ?? item.product ?? null;
+    if (!normalizedId) return null;
+
+    const quantity = Number(item.quantity ?? 1);
+    const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+
+    const basePrice = Number(item.price ?? 0);
+    const safePrice = Number.isFinite(basePrice) ? basePrice : 0;
+
+    const incomingTotal = Number(item.totalPrice);
+    const totalPrice = Number.isFinite(incomingTotal) ? incomingTotal : safePrice * safeQuantity;
+
+    return {
+      ...item,
+      id: normalizedId,
+      quantity: safeQuantity,
+      price: safePrice,
+      totalPrice,
+      selectedOptions: item.selectedOptions ?? {},
+    };
+  };
+
   // Add item to cart
   const addToCart = useCallback((item) => {
+    const normalized = normalizeCartItem(item);
+    if (!normalized) return;
     setCartItems((prevItems) => {
-      const existingItemIndex = prevItems.findIndex((i) => i.id === item.id);
+      const existingItemIndex = prevItems.findIndex((i) => i.id === normalized.id);
       if (existingItemIndex !== -1) {
         const updatedItems = [...prevItems];
+        const prevTotal = Number(updatedItems[existingItemIndex].totalPrice) || 0;
+        const nextTotal = Number(normalized.totalPrice) || 0;
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
-          quantity: updatedItems[existingItemIndex].quantity + item.quantity,
-          totalPrice: updatedItems[existingItemIndex].totalPrice + item.totalPrice,
+          quantity: (Number(updatedItems[existingItemIndex].quantity) || 0) + (Number(normalized.quantity) || 0),
+          totalPrice: prevTotal + nextTotal,
         };
         return updatedItems;
       }
-      return [...prevItems, item];
+      return [...prevItems, normalized];
     });
   }, []);
 
