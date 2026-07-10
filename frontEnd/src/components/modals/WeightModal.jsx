@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "../common/Modal.css";
-import { useMenuOptions } from "../../context/MenuOptionsContext";
+import { getActiveMenuOptionNames, getActiveMenuOptionObjects, useMenuOptions } from "../../context/MenuOptionsContext";
 import { useLang } from "../../context/LangContext";
 import { translateOptionLabel } from "../../utils/optionTranslations";
 const Modal = ({
@@ -37,9 +37,9 @@ const Modal = ({
   const sourceOptions = options && Object.keys(options).length ? options : menuOptions;
   const { vegetables, fixedAdditions, sauces } = sourceOptions;
 
-  const availableVegetables = vegetables?.length ? vegetables : [];
-  const availableFixedAdditions = fixedAdditions?.length ? fixedAdditions : [];
-  const availableSauces = Array.isArray(sauces) ? sauces : [];
+  const availableVegetables = getActiveMenuOptionNames(vegetables);
+  const availableFixedAdditions = getActiveMenuOptionObjects(fixedAdditions);
+  const availableSauces = getActiveMenuOptionNames(sauces);
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
 
   useEffect(() => {

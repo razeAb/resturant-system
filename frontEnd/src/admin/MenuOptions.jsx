@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Menu, Plus, RefreshCcw, Save, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Menu, Plus, RefreshCcw, Save, Trash2 } from "lucide-react";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
-import { DEFAULT_MENU_OPTIONS, useMenuOptions } from "../context/MenuOptionsContext";
+import { DEFAULT_MENU_OPTIONS, normalizeMenuOptions, useMenuOptions } from "../context/MenuOptionsContext";
 
 const SectionCard = ({ title, description, children, action }) => (
   <section className="bg-[#111824] border border-[#1f2a36] rounded-2xl p-4 sm:p-6">
@@ -29,6 +29,20 @@ const ActionButton = ({ title, onClick, icon, disabled }) => (
   </button>
 );
 
+const ToggleAvailabilityButton = ({ isActive, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-[12px] ${
+      isActive ? "bg-amber-500/90 hover:bg-amber-500" : "bg-emerald-600/90 hover:bg-emerald-600"
+    }`}
+    title={isActive ? "הסתר מהתפריט" : "הצג בתפריט"}
+  >
+    {isActive ? <EyeOff size={14} /> : <Eye size={14} />}
+    {isActive ? "הסתר" : "הצג"}
+  </button>
+);
+
 export default function MenuOptionsAdmin() {
   const { vegetables, sauces, weightedAdditions, fixedAdditions, refresh, setOptions } = useMenuOptions();
   const [form, setForm] = useState(DEFAULT_MENU_OPTIONS);
@@ -38,12 +52,7 @@ export default function MenuOptionsAdmin() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    setForm({
-      vegetables: vegetables || [],
-      sauces: sauces || [],
-      weightedAdditions: weightedAdditions || [],
-      fixedAdditions: fixedAdditions || [],
-    });
+    setForm(normalizeMenuOptions({ vegetables, sauces, weightedAdditions, fixedAdditions }));
   }, [vegetables, sauces, weightedAdditions, fixedAdditions]);
 
   const handleArrayChange = (section, index, field, value) => {
@@ -53,27 +62,20 @@ export default function MenuOptionsAdmin() {
     }));
   };
 
-  const handleVegetableChange = (index, value) => {
+  const handleToggleActive = (section, index) => {
     setForm((prev) => ({
       ...prev,
-      vegetables: prev.vegetables.map((item, i) => (i === index ? value : item)),
-    }));
-  };
-
-  const handleSauceChange = (index, value) => {
-    setForm((prev) => ({
-      ...prev,
-      sauces: prev.sauces.map((item, i) => (i === index ? value : item)),
+      [section]: prev[section].map((item, i) => (i === index ? { ...item, isActive: item.isActive === false } : item)),
     }));
   };
 
   const addRow = (section) => {
     const emptyRow =
       section === "vegetables" || section === "sauces"
-        ? ""
+        ? { name: "", isActive: true }
         : section === "fixedAdditions"
-        ? { name: "", price: 0 }
-        : { name: "", pricePer50: 0, pricePer100: 0 };
+        ? { name: "", price: 0, isActive: true }
+        : { name: "", pricePer50: 0, pricePer100: 0, isActive: true };
     setForm((prev) => ({ ...prev, [section]: [...prev[section], emptyRow] }));
   };
 
@@ -96,13 +98,14 @@ export default function MenuOptionsAdmin() {
             ...item,
             pricePer50: Number(item.pricePer50) || 0,
             pricePer100: Number(item.pricePer100) || 0,
+            isActive: item.isActive !== false,
           })),
-          fixedAdditions: form.fixedAdditions.map((item) => ({ ...item, price: Number(item.price) || 0 })),
+          fixedAdditions: form.fixedAdditions.map((item) => ({ ...item, price: Number(item.price) || 0, isActive: item.isActive !== false })),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const options = res.data?.options || form;
+      const options = normalizeMenuOptions(res.data?.options || form);
       setOptions(options);
       setStatus("הנתונים נשמרו בהצלחה");
       refresh();
@@ -178,17 +181,20 @@ export default function MenuOptionsAdmin() {
             <div className="space-y-3">
               {form.vegetables?.length === 0 && <div className="text-sm text-white/60">אין ירקות להציג.</div>}
               {form.vegetables?.map((veg, idx) => (
-                <div key={idx} className="flex items-center gap-3">
+                <div key={idx} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center ${veg.isActive === false ? "opacity-60" : ""}`}>
                   <input
-                    value={veg}
-                    onChange={(e) => handleVegetableChange(idx, e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
+                    value={veg.name}
+                    onChange={(e) => handleArrayChange("vegetables", idx, "name", e.target.value)}
+                    className="sm:col-span-8 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     placeholder="לדוגמה: 🥬 חסה"
                   />
+                  <div className="sm:col-span-2">
+                    <ToggleAvailabilityButton isActive={veg.isActive !== false} onClick={() => handleToggleActive("vegetables", idx)} />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeRow("vegetables", idx)}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
+                    className="sm:col-span-2 justify-self-end p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
                     aria-label="הסר"
                   >
                     <Trash2 size={16} />
@@ -206,17 +212,20 @@ export default function MenuOptionsAdmin() {
             <div className="space-y-3">
               {form.sauces?.length === 0 && <div className="text-sm text-white/60">אין רוטבים להציג.</div>}
               {form.sauces?.map((sauce, idx) => (
-                <div key={idx} className="flex items-center gap-3">
+                <div key={idx} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center ${sauce.isActive === false ? "opacity-60" : ""}`}>
                   <input
-                    value={sauce}
-                    onChange={(e) => handleSauceChange(idx, e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
+                    value={sauce.name}
+                    onChange={(e) => handleArrayChange("sauces", idx, "name", e.target.value)}
+                    className="sm:col-span-8 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     placeholder="לדוגמה: איולי סומק"
                   />
+                  <div className="sm:col-span-2">
+                    <ToggleAvailabilityButton isActive={sauce.isActive !== false} onClick={() => handleToggleActive("sauces", idx)} />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeRow("sauces", idx)}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
+                    className="sm:col-span-2 justify-self-end p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-rose-300"
                     aria-label="הסר"
                   >
                     <Trash2 size={16} />
@@ -234,11 +243,11 @@ export default function MenuOptionsAdmin() {
             <div className="space-y-3">
               {form.weightedAdditions?.length === 0 && <div className="text-sm text-white/60">אין תוספות להציג.</div>}
               {form.weightedAdditions?.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div key={idx} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center ${item.isActive === false ? "opacity-60" : ""}`}>
                   <input
                     value={item.name}
                     onChange={(e) => handleArrayChange("weightedAdditions", idx, "name", e.target.value)}
-                    className="sm:col-span-4 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
+                    className="sm:col-span-3 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     placeholder="🥩 שם התוספת"
                   />
                   <div className="sm:col-span-3 flex items-center gap-2">
@@ -259,7 +268,10 @@ export default function MenuOptionsAdmin() {
                       className="w-full px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-2 flex justify-end">
+                  <div className="sm:col-span-2">
+                    <ToggleAvailabilityButton isActive={item.isActive !== false} onClick={() => handleToggleActive("weightedAdditions", idx)} />
+                  </div>
+                  <div className="sm:col-span-1 flex justify-end">
                     <button
                       type="button"
                       onClick={() => removeRow("weightedAdditions", idx)}
@@ -282,11 +294,11 @@ export default function MenuOptionsAdmin() {
             <div className="space-y-3">
               {form.fixedAdditions?.length === 0 && <div className="text-sm text-white/60">אין תוספות להציג.</div>}
               {form.fixedAdditions?.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div key={idx} className={`grid grid-cols-1 sm:grid-cols-12 gap-3 items-center ${item.isActive === false ? "opacity-60" : ""}`}>
                   <input
                     value={item.name}
                     onChange={(e) => handleArrayChange("fixedAdditions", idx, "name", e.target.value)}
-                    className="sm:col-span-7 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
+                    className="sm:col-span-5 px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     placeholder="🧀 שם התוספת"
                   />
                   <div className="sm:col-span-3 flex items-center gap-2">
@@ -297,6 +309,9 @@ export default function MenuOptionsAdmin() {
                       onChange={(e) => handleArrayChange("fixedAdditions", idx, "price", e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-[#0f141c] border border-white/10 focus:border-emerald-400 outline-none"
                     />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <ToggleAvailabilityButton isActive={item.isActive !== false} onClick={() => handleToggleActive("fixedAdditions", idx)} />
                   </div>
                   <div className="sm:col-span-2 flex justify-end">
                     <button

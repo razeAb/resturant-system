@@ -5,6 +5,7 @@ const weightedAdditionSchema = new mongoose.Schema(
     name: { type: String, required: true },
     pricePer50: { type: Number, default: 0 },
     pricePer100: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
   },
   { _id: false }
 );
@@ -13,14 +14,15 @@ const fixedAdditionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     price: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
   },
   { _id: false }
 );
 
 const menuOptionsSchema = new mongoose.Schema(
   {
-    vegetables: { type: [String], default: [] },
-    sauces: { type: [String], default: [] },
+    vegetables: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    sauces: { type: [mongoose.Schema.Types.Mixed], default: [] },
     weightedAdditions: { type: [weightedAdditionSchema], default: [] },
     fixedAdditions: { type: [fixedAdditionSchema], default: [] },
   },

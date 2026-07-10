@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import CartContext from "../../context/CartContext";
 import "./Modal.css"; // Ensure this includes your existing modal and checkbox styles
 
-import { useMenuOptions } from "../../context/MenuOptionsContext";
+import { getActiveMenuOptionNames, getActiveMenuOptionObjects, useMenuOptions } from "../../context/MenuOptionsContext";
 import { useLang } from "../../context/LangContext";
 import { translateOptionLabel } from "../../utils/optionTranslations";
 
@@ -39,10 +39,10 @@ const Modal = ({
   const sourceOptions = options && Object.keys(options).length ? options : menuOptions;
   const { vegetables = [], sauces = [], weightedAdditions = [], fixedAdditions = [] } = sourceOptions;
 
-  const availableVegetables = vegetables;
-  const availableSauces = Array.isArray(sauces) ? sauces : [];
-  const availableWeightedAdditions = weightedAdditions;
-  const availableFixedAdditions = fixedAdditions;
+  const availableVegetables = getActiveMenuOptionNames(vegetables);
+  const availableSauces = getActiveMenuOptionNames(sauces);
+  const availableWeightedAdditions = getActiveMenuOptionObjects(weightedAdditions);
+  const availableFixedAdditions = getActiveMenuOptionObjects(fixedAdditions);
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
   const isHebrew = lang === "he";
 

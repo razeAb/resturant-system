@@ -2,7 +2,10 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "../api";
 
 export const DEFAULT_MENU_OPTIONS = {
-  vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"],
+  vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"].map((name) => ({
+    name,
+    isActive: true,
+  })),
   sauces: [
     "איולי סומק",
     "איולי חריף",
@@ -14,21 +17,64 @@ export const DEFAULT_MENU_OPTIONS = {
     "2 שקיות מיונז",
     "2 שקיית אליפאים",
     "חרדל דיגון",
-  ],
+  ].map((name) => ({ name, isActive: true })),
   weightedAdditions: [
-    { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26 },
-    { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26 },
-    { name: "🥩 אסאדו", pricePer50: 15, pricePer100: 30 },
-    { name: "🥩 צוואר טלה", pricePer50: 15, pricePer100: 30 },
-    { name: "🥩 בריסקת", pricePer50: 13, pricePer100: 26 },
+    { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26, isActive: true },
+    { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26, isActive: true },
+    { name: "🥩 אסאדו", pricePer50: 15, pricePer100: 30, isActive: true },
+    { name: "🥩 צוואר טלה", pricePer50: 15, pricePer100: 30, isActive: true },
+    { name: "🥩 בריסקת", pricePer50: 13, pricePer100: 26, isActive: true },
   ],
   fixedAdditions: [
-    { name: "🥓 ביקון טלה", price: 10 },
-    { name: "🧀 רוטב גבינה", price: 8 },
-    { name: "🍄 פטריות", price: 5 },
-    { name: "🥖 ג׳בטה", price: 5 },
+    { name: "🥓 ביקון טלה", price: 10, isActive: true },
+    { name: "🧀 רוטב גבינה", price: 8, isActive: true },
+    { name: "🍄 פטריות", price: 5, isActive: true },
+    { name: "🥖 ג׳בטה", price: 5, isActive: true },
   ],
 };
+
+const getOptionName = (item) => String(typeof item === "string" ? item : item?.name || "").trim();
+const getOptionActive = (item) => (typeof item === "object" && item !== null && item.isActive === false ? false : true);
+
+export const normalizeMenuOptions = (data = {}) => ({
+  vegetables:
+    Array.isArray(data.vegetables) && data.vegetables.length
+      ? data.vegetables.map((item) => ({ name: getOptionName(item), isActive: getOptionActive(item) })).filter((item) => item.name)
+      : DEFAULT_MENU_OPTIONS.vegetables,
+  sauces:
+    Array.isArray(data.sauces) && data.sauces.length
+      ? data.sauces.map((item) => ({ name: getOptionName(item), isActive: getOptionActive(item) })).filter((item) => item.name)
+      : DEFAULT_MENU_OPTIONS.sauces,
+  weightedAdditions:
+    Array.isArray(data.weightedAdditions) && data.weightedAdditions.length
+      ? data.weightedAdditions
+          .map((item) => ({
+            name: getOptionName(item),
+            pricePer50: Number(item?.pricePer50) || 0,
+            pricePer100: Number(item?.pricePer100) || 0,
+            isActive: getOptionActive(item),
+          }))
+          .filter((item) => item.name)
+      : DEFAULT_MENU_OPTIONS.weightedAdditions,
+  fixedAdditions:
+    Array.isArray(data.fixedAdditions) && data.fixedAdditions.length
+      ? data.fixedAdditions
+          .map((item) => ({
+            name: getOptionName(item),
+            price: Number(item?.price) || 0,
+            isActive: getOptionActive(item),
+          }))
+          .filter((item) => item.name)
+      : DEFAULT_MENU_OPTIONS.fixedAdditions,
+});
+
+export const getActiveMenuOptionNames = (items = []) =>
+  (Array.isArray(items) ? items : []).filter((item) => getOptionActive(item)).map((item) => getOptionName(item)).filter(Boolean);
+
+export const getActiveMenuOptionObjects = (items = []) =>
+  (Array.isArray(items) ? items : [])
+    .filter((item) => getOptionActive(item) && getOptionName(item))
+    .map((item) => (typeof item === "string" ? { name: item, isActive: true } : item));
 
 const MenuOptionsContext = createContext({
   ...DEFAULT_MENU_OPTIONS,
@@ -39,9 +85,10 @@ const MenuOptionsContext = createContext({
 });
 
 export const MenuOptionsProvider = ({ children }) => {
-  const [options, setOptions] = useState(DEFAULT_MENU_OPTIONS);
+  const [options, setOptionsState] = useState(DEFAULT_MENU_OPTIONS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const setOptions = (nextOptions) => setOptionsState(normalizeMenuOptions(nextOptions));
 
   const refresh = async () => {
     setLoading(true);
@@ -50,18 +97,7 @@ export const MenuOptionsProvider = ({ children }) => {
       const res = await api.get(`/api/menu-options`);
       const data = res.data?.options || res.data;
       if (data) {
-        setOptions({
-          vegetables: Array.isArray(data.vegetables) && data.vegetables.length ? data.vegetables : DEFAULT_MENU_OPTIONS.vegetables,
-          sauces: Array.isArray(data.sauces) && data.sauces.length ? data.sauces : DEFAULT_MENU_OPTIONS.sauces,
-          weightedAdditions:
-            Array.isArray(data.weightedAdditions) && data.weightedAdditions.length
-              ? data.weightedAdditions
-              : DEFAULT_MENU_OPTIONS.weightedAdditions,
-          fixedAdditions:
-            Array.isArray(data.fixedAdditions) && data.fixedAdditions.length
-              ? data.fixedAdditions
-              : DEFAULT_MENU_OPTIONS.fixedAdditions,
-        });
+        setOptions(data);
       } else {
         setOptions(DEFAULT_MENU_OPTIONS);
       }

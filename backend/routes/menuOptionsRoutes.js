@@ -4,7 +4,10 @@ const MenuOptions = require("../models/MenuOptions");
 const { protect } = require("../middleware/authMiddleware");
 
 const DEFAULT_MENU_OPTIONS = {
-  vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"],
+  vegetables: ["🥬 חסה", "🥒 מלפפון חמוץ", "🍅 עגבניה", "🧅 בצל", "🥗 סלט קרוב", "🌿 צימצורי"].map((name) => ({
+    name,
+    isActive: true,
+  })),
   sauces: [
     "איולי סומק",
     "איולי חריף",
@@ -16,29 +19,42 @@ const DEFAULT_MENU_OPTIONS = {
     "2 שקיות מיונז",
     "2 שקיית אליפאים",
     "חרדל דיגון",
-  ],
+  ].map((name) => ({ name, isActive: true })),
   weightedAdditions: [
-    { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26 },
-    { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26 },
-    { name: "🥩 אסאדו", pricePer50: 15, pricePer100: 30 },
-    { name: "🥩 צוואר טלה", pricePer50: 15, pricePer100: 30 },
-    { name: "🥩 בריסקת", pricePer50: 13, pricePer100: 26 },
+    { name: "🥩 צלי כתף", pricePer50: 13, pricePer100: 26, isActive: true },
+    { name: "🥩 אונטרייב", pricePer50: 13, pricePer100: 26, isActive: true },
+    { name: "🥩 אסאדו", pricePer50: 15, pricePer100: 30, isActive: true },
+    { name: "🥩 צוואר טלה", pricePer50: 15, pricePer100: 30, isActive: true },
+    { name: "🥩 בריסקת", pricePer50: 13, pricePer100: 26, isActive: true },
   ],
   fixedAdditions: [
-    { name: "🥓 ביקון טלה", price: 10 },
-    { name: "🧀 רוטב גבינה", price: 8 },
-    { name: "🍄 פטריות", price: 5 },
-    { name: "🥖 ג׳בטה", price: 5 },
+    { name: "🥓 ביקון טלה", price: 10, isActive: true },
+    { name: "🧀 רוטב גבינה", price: 8, isActive: true },
+    { name: "🍄 פטריות", price: 5, isActive: true },
+    { name: "🥖 ג׳בטה", price: 5, isActive: true },
   ],
 };
 
+const getName = (item) => String(typeof item === "string" ? item : item?.name || "").trim();
+const getIsActive = (item) => (typeof item === "object" && item !== null && item.isActive === false ? false : true);
+
 const sanitize = (options = {}) => {
   const sanitizedVegetables = Array.isArray(options.vegetables)
-    ? options.vegetables.map((v) => String(v || "").trim()).filter(Boolean)
+    ? options.vegetables
+        .map((v) => ({
+          name: getName(v),
+          isActive: getIsActive(v),
+        }))
+        .filter((item) => item.name)
     : [];
 
   const sanitizedSauces = Array.isArray(options.sauces)
-    ? options.sauces.map((v) => String(v || "").trim()).filter(Boolean)
+    ? options.sauces
+        .map((v) => ({
+          name: getName(v),
+          isActive: getIsActive(v),
+        }))
+        .filter((item) => item.name)
     : [];
 
   const sanitizedWeighted = Array.isArray(options.weightedAdditions)
@@ -47,6 +63,7 @@ const sanitize = (options = {}) => {
           name: String(item?.name || "").trim(),
           pricePer50: Number(item?.pricePer50) || 0,
           pricePer100: Number(item?.pricePer100) || 0,
+          isActive: getIsActive(item),
         }))
         .filter((item) => item.name)
     : [];
@@ -56,6 +73,7 @@ const sanitize = (options = {}) => {
         .map((item) => ({
           name: String(item?.name || "").trim(),
           price: Number(item?.price) || 0,
+          isActive: getIsActive(item),
         }))
         .filter((item) => item.name)
     : [];
