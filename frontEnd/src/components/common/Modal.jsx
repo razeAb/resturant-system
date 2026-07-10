@@ -5,6 +5,7 @@ import "./Modal.css"; // Ensure this includes your existing modal and checkbox s
 import { getActiveMenuOptionNames, getActiveMenuOptionObjects, useMenuOptions } from "../../context/MenuOptionsContext";
 import { useLang } from "../../context/LangContext";
 import { translateOptionLabel } from "../../utils/optionTranslations";
+import MealAddOnStep from "../modals/MealAddOnStep";
 
 const Modal = ({
   _id,
@@ -21,6 +22,7 @@ const Modal = ({
   name_en,
   name_he,
   category,
+  recommendations = [],
   initialQuantity,
   initialSelectedOptions,
   initialSelectedSauces,
@@ -31,6 +33,12 @@ const Modal = ({
   const [selectedSauces, setSelectedSauces] = useState([]);
   const [comment, setComment] = useState("");
   const [toast, setToast] = useState(null);
+  const [step, setStep] = useState("customize");
+  const [pendingMealItem, setPendingMealItem] = useState(null);
+  const [sideCounts, setSideCounts] = useState({});
+  const [drinkCounts, setDrinkCounts] = useState({});
+  const [skipSide, setSkipSide] = useState(false);
+  const [skipDrink, setSkipDrink] = useState(false);
   const toastTimerRef = useRef(null);
 
   const { addToCart } = useContext(CartContext); // Access addToCart function
@@ -45,6 +53,9 @@ const Modal = ({
   const availableFixedAdditions = getActiveMenuOptionObjects(fixedAdditions);
   const sauceSelectionLimit = Number.isFinite(Number(sourceOptions?.sauceLimit)) ? Number(sourceOptions.sauceLimit) : null;
   const isHebrew = lang === "he";
+  const sideRecommendationItems = recommendations.filter((item) => item?.category === "Side Dishes");
+  const drinkRecommendationItems = recommendations.filter((item) => item?.category === "Drinks");
+  const hasMealBuilderSteps = sideRecommendationItems.length > 0 || drinkRecommendationItems.length > 0;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -59,6 +70,12 @@ const Modal = ({
     });
     setSelectedSauces(Array.isArray(initialSelectedSauces) ? initialSelectedSauces : []);
     setComment(typeof initialComment === "string" ? initialComment : "");
+    setStep("customize");
+    setPendingMealItem(null);
+    setSideCounts({});
+    setDrinkCounts({});
+    setSkipSide(false);
+    setSkipDrink(false);
   }, [isOpen, _id]);
 
   if (!isOpen) return null;
@@ -216,6 +233,7 @@ const Modal = ({
       title,
       name_en,
       name_he,
+      category,
       price: parseFloat(price),
       quantity,
       isWeighted: false,
@@ -228,10 +246,22 @@ const Modal = ({
       totalPrice: parseFloat(totalPrice),
     };
 
-    const targetAdd = onAddToCart || addToCart;
-    targetAdd(itemToAdd);
+    if (hasMealBuilderSteps) {
+      setPendingMealItem(itemToAdd);
+      setSideCounts({});
+      setDrinkCounts({});
+      setSkipSide(false);
+      setSkipDrink(false);
+      setStep(sideRecommendationItems.length > 0 ? "sides" : "drinks");
+    } else {
+      const targetAdd = onAddToCart || addToCart;
+      targetAdd(itemToAdd);
+      resetCustomizeState();
+      onClose(); // Close the modal
+    }
+  };
 
-    // reset modal state
+  const resetCustomizeState = () => {
     setQuantity(1);
     setSelectedOptions({
       vegetables: [],
@@ -239,8 +269,58 @@ const Modal = ({
       doneness: "",
     });
     setSelectedSauces([]);
-    setComment(""); // Clear the comment
-    onClose(); // Close the modal
+    setComment("");
+  };
+
+  const buildRecommendationCartItem = (item, count) => ({
+    _id: item._id,
+    id: item._id || `${item.name || item.title}-${Math.random().toString(36).substring(7)}`,
+    img: item.image || item.img,
+    category: item.category,
+    title: lang === "en" ? item.name_en || item.name : item.name || item.name_he,
+    name_en: item.name_en,
+    name_he: item.name || item.name_he,
+    price: Number(item.price) || 0,
+    quantity: count,
+    isWeighted: false,
+    selectedOptions: {},
+    totalPrice: (Number(item.price) || 0) * count,
+  });
+
+  const addSelectedRecommendations = (items, counts) => {
+    const targetAdd = onAddToCart || addToCart;
+    items.forEach((item) => {
+      const count = Number(counts[item._id || item.id || item.name || item.title]) || 0;
+      if (count > 0) targetAdd(buildRecommendationCartItem(item, count), undefined, { keepOpen: true });
+    });
+  };
+
+  const finishMealBuilder = (nextDrinkCounts = drinkCounts) => {
+    const targetAdd = onAddToCart || addToCart;
+    if (pendingMealItem) targetAdd(pendingMealItem, undefined, { keepOpen: true });
+    addSelectedRecommendations(sideRecommendationItems, sideCounts);
+    addSelectedRecommendations(drinkRecommendationItems, nextDrinkCounts);
+    resetCustomizeState();
+    setPendingMealItem(null);
+    setSideCounts({});
+    setDrinkCounts({});
+    setSkipSide(false);
+    setSkipDrink(false);
+    onClose();
+  };
+
+  const setAddOnCount = (setter) => (key, count, singleSelect = false) => {
+    setter((prev) => (singleSelect ? { [key]: count } : { ...prev, [key]: count }));
+  };
+
+  const handleSideCountChange = (key, count, singleSelect = false) => {
+    setSkipSide(false);
+    setAddOnCount(setSideCounts)(key, count, singleSelect);
+  };
+
+  const handleDrinkCountChange = (key, count, singleSelect = false) => {
+    setSkipDrink(false);
+    setAddOnCount(setDrinkCounts)(key, count, singleSelect);
   };
 
   const handleFullSandwichToggle = () => {
@@ -318,6 +398,43 @@ const Modal = ({
         <button className="modal-close-button" onClick={onClose}>
           &times;
         </button>
+
+        {step === "sides" ? (
+          <MealAddOnStep
+            title={t("modal.chooseSide", "Choose a side")}
+            subtitle={t("modal.chooseSideSubtitle", "Pick a side dish or choose no side.")}
+            items={sideRecommendationItems}
+            counts={sideCounts}
+            maxCount={Math.max(1, Number(pendingMealItem?.quantity) || quantity || 1)}
+            skipSelected={skipSide}
+            onChangeCount={handleSideCountChange}
+            onSkipSelect={() => {
+              setSideCounts({});
+              setSkipSide(true);
+            }}
+            onBack={() => setStep("customize")}
+            onNext={() => (drinkRecommendationItems.length > 0 ? setStep("drinks") : finishMealBuilder({}))}
+            nextLabel={drinkRecommendationItems.length > 0 ? t("modal.next", "Next") : t("modal.addMealToCart", "Add meal to cart")}
+          />
+        ) : step === "drinks" ? (
+          <MealAddOnStep
+            title={t("modal.chooseDrink", "Choose a drink")}
+            subtitle={t("modal.chooseDrinkSubtitle", "Pick a drink or choose no drink.")}
+            items={drinkRecommendationItems}
+            counts={drinkCounts}
+            maxCount={Math.max(1, Number(pendingMealItem?.quantity) || quantity || 1)}
+            skipSelected={skipDrink}
+            onChangeCount={handleDrinkCountChange}
+            onSkipSelect={() => {
+              setDrinkCounts({});
+              setSkipDrink(true);
+            }}
+            onBack={() => (sideRecommendationItems.length > 0 ? setStep("sides") : setStep("customize"))}
+            onNext={() => finishMealBuilder()}
+            nextLabel={t("modal.addMealToCart", "Add meal to cart")}
+          />
+        ) : (
+          <>
 
         <img src={img} alt={title} className="modal-img" />
         <h2 className="font-semibold text-center text-xl pt-8">{title}</h2>
@@ -599,7 +716,7 @@ const Modal = ({
             onClick={handleAddToCart}
             className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 px-4 sm:px-6 py-3 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-200 rounded-full font-semibold shadow-md text-center text-sm sm:text-base"
           >
-            <span>{t("modal.addToCart", "הוספה לעגלה")}</span>
+            <span>{hasMealBuilderSteps ? t("modal.next", "Next") : t("modal.addToCart", "הוספה לעגלה")}</span>
             <span className="font-bold whitespace-nowrap text-lg sm:text-base">₪{calculateTotalPrice()}</span>
           </button>
         </div>
@@ -615,6 +732,8 @@ const Modal = ({
             />
           </symbol>
         </svg>
+          </>
+        )}
       </div>
     </div>
   );

@@ -43,6 +43,7 @@ const Menu = () => {
 
   const renderSection = (title, categoryFilter) => {
     const filtered = products.filter((p) => categoryFilter.includes(p.category) && p.isActive);
+    const recommendationProducts = products.filter((p) => ["Drinks", "Side Dishes"].includes(p.category) && p.isActive);
     if (filtered.length === 0) return null;
 
     return (
@@ -68,6 +69,7 @@ const Menu = () => {
               isWeighted={item.isWeighted}
               isActive={item.isActive}
               isOrder={item.isOrder}
+              recommendations={recommendationProducts.filter((product) => product._id !== item._id)}
               toggleOptions
               modalType={weightedCategories.includes(item.category) ? "weighted" : undefined}
             />

@@ -87,10 +87,10 @@ const DishesCard = (props) => {
     setIsAlertOpen(false); // Close the AlertModal
   };
 
-  const handleAddToCart = (itemOrQuantity, selectedOptions) => {
+  const handleAddToCart = (itemOrQuantity, selectedOptions, meta = {}) => {
     if (itemOrQuantity && typeof itemOrQuantity === "object") {
       addToCart(itemOrQuantity);
-      setIsModalOpen(false);
+      if (!meta.keepOpen) setIsModalOpen(false);
       return;
     }
 
@@ -110,7 +110,7 @@ const DishesCard = (props) => {
     };
 
     addToCart(itemToAdd);
-    setIsModalOpen(false);
+    if (!meta.keepOpen) setIsModalOpen(false);
   };
 
   return (
@@ -169,6 +169,8 @@ const DishesCard = (props) => {
               name_he={props.name_he}
               price={props.price}
               description={props.description}
+              category={props.category}
+              recommendations={props.recommendations}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
@@ -186,6 +188,7 @@ const DishesCard = (props) => {
               description={props.description}
               options={props.options}
               category={props.category}
+              recommendations={props.recommendations}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
               onAddToCart={handleAddToCart}
