@@ -386,20 +386,20 @@ export default function ActiveOrdersPage() {
 
   const handleTimeChange = async (orderId, time) => {
     const updated = await updateOrderStatus(orderId, { status: ORDER_STATUS?.PREPARING, estimatedTime: time });
-    const wa = updated?.whatsappEta;
-    if (wa?.sent) {
-      alert(`נשלחה הודעת וואטסאפ ללקוח ✅`);
+    const sms = updated?.etaSms;
+    if (sms?.sent) {
+      alert(`נשלחה הודעת SMS ללקוח ✅`);
       return;
     }
-    if (wa?.skipped) {
-      alert(`לא נשלחה הודעת וואטסאפ: ${wa.reason || "skipped"}`);
+    if (sms?.skipped) {
+      alert(`לא נשלחה הודעת SMS: ${sms.reason || "skipped"}`);
       return;
     }
-    if (wa?.error) {
-      alert(`שגיאה בשליחת וואטסאפ: ${wa.error}`);
+    if (sms?.error) {
+      alert(`שגיאה בשליחת SMS: ${sms.error}`);
       return;
     }
-    alert(`עודכן זמן הכנה. לא התקבלה תשובה על שליחת וואטסאפ`);
+    alert(`עודכן זמן הכנה. לא התקבלה תשובה על שליחת SMS`);
   };
 
   const markAsDone = async (orderId) => {

@@ -7,7 +7,7 @@ const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/Order");
-const { notifyOwnerSmsForOrder } = require("./utils/whatsapp");
+const { notifyOwnerSmsForOrder } = require("./utils/notifications");
 
 (() => {
   const envFile = process.env.ENV_FILE || (process.env.NODE_ENV === "production" ? ".env.production" : ".env");

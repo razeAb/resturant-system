@@ -98,15 +98,6 @@ const OrderSchema = new mongoose.Schema({
     type: Number,
     default: null,
   },
-  ownerWhatsApp: {
-    notifiedAt: { type: Date, default: null },
-    messageSid: { type: String, default: "" },
-    attempts: { type: Number, default: 0 },
-    lastAttemptAt: { type: Date, default: null },
-    lastError: { type: String, default: "" },
-    sending: { type: Boolean, default: false },
-    sendingAt: { type: Date, default: null },
-  },
   ownerSms: {
     notifiedAt: { type: Date, default: null },
     messageSid: { type: String, default: "" },
@@ -116,10 +107,9 @@ const OrderSchema = new mongoose.Schema({
     sending: { type: Boolean, default: false },
     sendingAt: { type: Date, default: null },
   },
-  customerWhatsApp: {
+  customerSms: {
     etaNotifiedAt: { type: Date, default: null },
     etaMinutes: { type: Number, default: null },
-    etaMessageSid: { type: String, default: "" },
     etaAttempts: { type: Number, default: 0 },
     etaLastAttemptAt: { type: Date, default: null },
     etaLastError: { type: String, default: "" },

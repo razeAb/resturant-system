@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 const { io } = require("../server"); // <-- make sure the path points to where you export io
-const { notifyOwnerSmsForOrder } = require("../utils/whatsapp");
+const { notifyOwnerSmsForOrder } = require("../utils/notifications");
 
 // If you use global app-level parsers, you could use urlencoded here.
 // Keeping text parser to be safe with Tranzila payloads.
