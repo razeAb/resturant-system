@@ -1,0 +1,18 @@
+.order-list-title {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  min-width: fit-content;
+}
+
+.order-list-title h1 {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 40px;
+  color: #ffffff;
+  margin: 0;
+  padding: 8px;
+}
