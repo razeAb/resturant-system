@@ -13,6 +13,8 @@ import Modal from "../common/Modal";
 import WeightedModal from "../modals/WeightModal";
 import CommentModal from "../modals/CommentModal";
 import PortionSizeModal from "../modals/PortionSizeModal";
+import DeliveryAddressPicker from "./DeliveryAddressPicker";
+import { computeDeliveryFee } from "../../utils/deliveryPricing";
 
 const isValidPhoneNumber = (phone) => {
   return /^05\d{8}$/.test(phone); // starts with 05 and has exactly 10 digits
@@ -35,6 +37,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [couponApplied, setCouponApplied] = useState(false);
   const [eligibleReward, setEligibleReward] = useState(null); // 'drink' or 'side'
   const [deliveryOption, setDeliveryOption] = useState(null);
+  const [deliveryAddress, setDeliveryAddress] = useState(null);
+  const [restaurantConfig, setRestaurantConfig] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -63,6 +67,19 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     idempotencyKeyRef.current = key;
     return key;
   };
+
+  // Fetched once so the checkout can estimate the delivery fee live as the customer moves the pin.
+  useEffect(() => {
+    api
+      .get("/api/restaurant")
+      .then((res) => setRestaurantConfig(res.data))
+      .catch((err) => console.error("❌ Failed to load restaurant config:", err.response?.data || err.message));
+  }, []);
+
+  const deliveryPricing =
+    deliveryOption === "Delivery" && deliveryAddress && restaurantConfig ? computeDeliveryFee(restaurantConfig, deliveryAddress) : null;
+  const deliveryFee = deliveryPricing?.fee || 0;
+  const isDeliveryOutOfRange = !!deliveryPricing?.outOfRange;
 
   // Allow creating multiple orders without a page refresh.
   // Once the user starts building a new cart, clear the previous "submitted" lock.
@@ -212,6 +229,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     }
     setPaymentMethod(null);
     setDeliveryOption(null);
+    setDeliveryAddress(null);
     setShowCardPayment(false);
     setPhoneNumber("");
     setGuestName("");
@@ -261,8 +279,13 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   }, [cartItems, user, couponApplied]);
 
   //check if payment and delivery options are selected
+  const hasValidDeliveryAddress = () => Number.isFinite(deliveryAddress?.lat) && Number.isFinite(deliveryAddress?.lng);
+
   const checkOrderReadiness = () => {
-    return paymentMethod && deliveryOption;
+    if (!paymentMethod || !deliveryOption) return false;
+    if (deliveryOption === "Delivery" && !hasValidDeliveryAddress()) return false;
+    if (deliveryOption === "Delivery" && isDeliveryOutOfRange) return false;
+    return true;
   };
 
   //Final submission handler
@@ -341,6 +364,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       items: itemsForBackend,
       totalPrice,
       deliveryOption,
+      ...(deliveryOption === "Delivery" && deliveryAddress && { deliveryAddress }),
       paymentDetails: { method: paymentMethod },
       status: ORDER_STATUS.PENDING,
       createdAt: new Date(),
@@ -550,8 +574,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   // calculate final total including delivery fee if selected
   const calculateFinalTotal = () => {
     const base = parseFloat(calculateCartTotal());
-    const finalTotal = Math.max(base - couponDiscount, 0);
-    return finalTotal.toFixed(2); // Removed + deliveryFee
+    const finalTotal = Math.max(base - couponDiscount, 0) + deliveryFee;
+    return finalTotal.toFixed(2);
   };
 
   const _sendWhatsAppOrder = (deliveryOption) => {
@@ -719,6 +743,14 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 alert(t("cartPage.chooseDeliveryAlert", "אנא בחר אפשרות משלוח לפני תשלום בכרטיס"));
                 return;
               }
+              if (deliveryOption === "Delivery" && !hasValidDeliveryAddress()) {
+                alert(t("cartPage.chooseAddressAlert", "אנא בחר מיקום למשלוח על גבי המפה"));
+                return;
+              }
+              if (deliveryOption === "Delivery" && isDeliveryOutOfRange) {
+                alert(t("cartPage.outOfRangeAlert", "מצטערים, הכתובת מחוץ לאזור המשלוח שלנו"));
+                return;
+              }
               if (isGuest()) {
                 if (!guestName.trim()) {
                   alert(t("cartPage.guestNameAlert", "אנא הזן שם לפני השלמת ההזמנה"));
@@ -841,9 +873,22 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         </button>
       </div>
       {deliveryOption === "Delivery" && (
-        <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
-          {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
-        </p>
+        <>
+          <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
+            {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
+          </p>
+          <DeliveryAddressPicker value={deliveryAddress} onChange={setDeliveryAddress} />
+          {deliveryPricing && !deliveryPricing.outOfRange && !deliveryPricing.unconfigured && (
+            <p style={{ fontSize: "14px", color: "#16a34a", marginTop: "8px", fontWeight: "600" }}>
+              {t("cartPage.deliveryFeeLabel", "דמי משלוח")}: ₪{deliveryPricing.fee} ({deliveryPricing.distanceKm.toFixed(1)} ק"מ)
+            </p>
+          )}
+          {isDeliveryOutOfRange && (
+            <p style={{ fontSize: "14px", color: "#dc2626", marginTop: "8px", fontWeight: "600" }}>
+              {t("cartPage.outOfRangeAlert", "מצטערים, הכתובת מחוץ לאזור המשלוח שלנו")}
+            </p>
+          )}
+        </>
       )}
       {paymentMethod === "Card" && showCardPayment && !paymentResult && orderId && <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />}
       {paymentResult === "success" && (
@@ -892,15 +937,15 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         <button
           className="submit-order-button"
           onClick={handleFinalSubmit}
-          disabled={orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked}
+          disabled={orderSubmitted || isSubmittingOrder || !checkOrderReadiness() || !policyChecked}
           style={{
             padding: "12px 24px",
-            backgroundColor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
+            backgroundColor: orderSubmitted || isSubmittingOrder || !checkOrderReadiness() || !policyChecked ? "gray" : "green",
             color: "white",
             fontSize: "16px",
             fontWeight: "bold",
             borderRadius: "8px",
-            cursor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
+            cursor: orderSubmitted || isSubmittingOrder || !checkOrderReadiness() || !policyChecked ? "not-allowed" : "pointer",
             border: "none",
           }}
         >

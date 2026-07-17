@@ -17,6 +17,7 @@ import {
   MapPinned,
   ClipboardSignature,
   Tag,
+  Settings,
 } from "lucide-react";
 import { useLang } from "../context/LangContext";
 const navItems = [
@@ -32,6 +33,7 @@ const navItems = [
   { to: "/admin/collections", key: "sideMenu.collections", fallback: "collections", icon: ClipboardList },
   { to: "/admin/revenue", key: "sideMenu.revenue", fallback: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", key: "sideMenu.workers", fallback: "עובדים", icon: Users },
+  { to: "/admin/restaurant-settings", key: "sideMenu.restaurantSettings", fallback: "הגדרות מסעדה", icon: Settings },
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {

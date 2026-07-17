@@ -2,8 +2,11 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
+const Restaurant = require("../models/Restaurant");
 const { protect } = require("../middleware/authMiddleware");
 const { notifyOwnerSmsForOrder, notifyCustomerEtaSms } = require("../utils/notifications");
+const { broadcastDeliveryToDrivers } = require("../utils/driverNotifications");
+const { computeDeliveryFee } = require("../utils/deliveryPricing");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -50,6 +53,42 @@ function normalizeStatus({ method, rawStatus }) {
   return "pending_payment"; // default for card/unknown
 }
 
+// For Delivery orders: resolves the restaurant, computes the distance-based fee,
+// and blocks the order (error) if the address is outside the configured delivery area.
+// If the restaurant hasn't set its own address yet, delivery is allowed through with
+// a ₪0 fee rather than blocking every order (backward-compatible until admin configures it).
+async function resolveDeliveryPricing(deliveryAddress) {
+  const restaurant = await Restaurant.findOne();
+  if (!restaurant) return { error: "No restaurant configured" };
+
+  const pricing = computeDeliveryFee(restaurant, deliveryAddress);
+  if (pricing.unconfigured) {
+    return { restaurantId: restaurant._id, deliveryFee: 0, deliveryDistanceKm: null };
+  }
+  if (pricing.outOfRange) {
+    return { error: `Sorry, this address is outside our delivery area (${pricing.distanceKm.toFixed(1)}km away)` };
+  }
+  return { restaurantId: restaurant._id, deliveryFee: pricing.fee, deliveryDistanceKm: pricing.distanceKm };
+}
+
+// Validates deliveryAddress for Delivery orders; returns { error } or { deliveryAddress }
+function buildDeliveryAddress({ deliveryOption, deliveryAddress }) {
+  if (deliveryOption !== "Delivery") return { deliveryAddress: undefined };
+  const lat = Number(deliveryAddress?.lat);
+  const lng = Number(deliveryAddress?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return { error: "deliveryAddress with valid lat/lng is required for Delivery orders" };
+  }
+  return {
+    deliveryAddress: {
+      text: deliveryAddress?.text || "",
+      lat,
+      lng,
+      notes: deliveryAddress?.notes || "",
+    },
+  };
+}
+
 /* ---------------- routes ---------------- */
 
 // ✅ Create pre-payment order and return stable ID used as ud1
@@ -60,6 +99,7 @@ router.post("/create-pre-payment", async (req, res) => {
       items,
       totalPrice,
       deliveryOption,
+      deliveryAddress,
       user,
       phone,
       customerName,
@@ -94,6 +134,19 @@ router.post("/create-pre-payment", async (req, res) => {
       return res.status(400).json({ message: "No valid items after validation", invalidItems: invalid });
     }
 
+    const { error: addressError, deliveryAddress: cleanedAddress } = buildDeliveryAddress({ deliveryOption, deliveryAddress });
+    if (addressError) {
+      return res.status(400).json({ message: addressError });
+    }
+
+    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryDistanceKm: null };
+    if (deliveryOption === "Delivery") {
+      deliveryPricing = await resolveDeliveryPricing(cleanedAddress);
+      if (deliveryPricing.error) {
+        return res.status(400).json({ message: deliveryPricing.error });
+      }
+    }
+
     const order = new Order({
       user: user || undefined,
       phone: phone || undefined,
@@ -111,6 +164,10 @@ router.post("/create-pre-payment", async (req, res) => {
       items: cleaned,
       totalPrice: priceNumber, // ✅ parsed (you had an undefined parsedPrice before)
       deliveryOption,
+      deliveryAddress: cleanedAddress,
+      deliveryFee: deliveryPricing.deliveryFee,
+      deliveryDistanceKm: deliveryPricing.deliveryDistanceKm,
+      restaurant: deliveryPricing.restaurantId,
       status: "pending_payment",
       createdAt: new Date(),
     });
@@ -134,6 +191,7 @@ router.post("/", async (req, res) => {
       items,
       totalPrice,
       deliveryOption,
+      deliveryAddress,
       status,
       createdAt,
       phone,
@@ -178,6 +236,19 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "No valid items after validation.", invalidItems: invalid });
     }
 
+    const { error: addressError, deliveryAddress: cleanedAddress } = buildDeliveryAddress({ deliveryOption, deliveryAddress });
+    if (addressError) {
+      return res.status(400).json({ message: addressError });
+    }
+
+    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryDistanceKm: null };
+    if (deliveryOption === "Delivery") {
+      deliveryPricing = await resolveDeliveryPricing(cleanedAddress);
+      if (deliveryPricing.error) {
+        return res.status(400).json({ message: deliveryPricing.error });
+      }
+    }
+
     // ---- normalize method & status ----
     const incomingMethod = paymentDetails?.method;
     const normalizedMethod = ALLOWED_METHODS.has(incomingMethod) ? incomingMethod : undefined;
@@ -201,6 +272,10 @@ router.post("/", async (req, res) => {
       items: cleaned,
       totalPrice: priceNumber,
       deliveryOption,
+      deliveryAddress: cleanedAddress,
+      deliveryFee: deliveryPricing.deliveryFee,
+      deliveryDistanceKm: deliveryPricing.deliveryDistanceKm,
+      restaurant: deliveryPricing.restaurantId,
       status: normalizedStatus, // ✅ use normalized value (fixes 'pending' enum error)
       createdAt: createdAt || new Date(),
     });
@@ -286,6 +361,9 @@ router.put("/:id/status", async (req, res) => {
     if (status) updateFields.status = status;
     const etaMinutes = Number(estimatedTime);
     if (Number.isFinite(etaMinutes) && etaMinutes > 0) updateFields.estimatedTime = etaMinutes;
+    if (updateFields.status === "preparing" && updateFields.estimatedTime) {
+      updateFields["delivery.etaAnchoredAt"] = new Date();
+    }
 
     const order = await Order.findByIdAndUpdate(id, updateFields, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -298,6 +376,12 @@ router.put("/:id/status", async (req, res) => {
         console.error("❌ Customer ETA SMS failed:", err?.response?.data || err?.message || err);
         etaSms = { error: err?.message || "failed" };
       }
+    }
+
+    if (updateFields.status === "preparing" && updateFields.estimatedTime && order.deliveryOption === "Delivery") {
+      broadcastDeliveryToDrivers(order._id).catch((err) => {
+        console.error("❌ Driver broadcast failed:", err?.message || err);
+      });
     }
 
     const payload = order?.toObject ? order.toObject() : order;
@@ -350,6 +434,7 @@ router.get("/active", async (req, res) => {
     })
       .populate("user", "name phone")
       .populate("items.product", "name name_en")
+      .populate("delivery.driver", "name phone")
       .sort({ createdAt: -1 });
 
     activeOrders.forEach((order) => {
@@ -401,7 +486,10 @@ router.get("/phone/:phone", async (req, res) => {
 // ✅ Get order by MongoDB _id
 router.get("/:id", async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate("user", "name phone").populate("items.product", "name name_en");
+    const order = await Order.findById(req.params.id)
+      .populate("user", "name phone")
+      .populate("items.product", "name name_en")
+      .populate("delivery.driver", "name phone");
 
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);

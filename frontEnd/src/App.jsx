@@ -28,6 +28,7 @@ import RevenuePage from "./admin/RevenuePage";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
 import ManageWorkers from "./admin/ManageWorkers";
+import RestaurantSettings from "./admin/RestaurantSettings";
 import WorkerLogin from "./pages/WorkerLogin";
 import FloorLayout from "./admin/FloorLayout";
 import FloorOrders from "./admin/FloorOrders";
@@ -125,6 +126,7 @@ const AppContent = () => {
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failure" element={<PaymentFailure />} />
         <Route path="/admin/workers" element={<ManageWorkers />} />
+        <Route path="/admin/restaurant-settings" element={<RestaurantSettings />} />
         <Route path="/worker/login" element={<WorkerLogin />} />
       </Routes>
 

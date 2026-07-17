@@ -1,3 +1,9 @@
+const dns = require("dns");
+// Windows sometimes hands Node an IPv6-only DNS server that its resolver
+// can't reach for SRV lookups (ECONNREFUSED), even though the OS resolver
+// works fine. Force known-reachable IPv4 DNS servers so mongodb+srv:// works.
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
@@ -8,6 +14,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/Order");
 const { notifyOwnerSmsForOrder } = require("./utils/notifications");
+const { ensureDefaultRestaurant } = require("./utils/ensureDefaultRestaurant");
 
 (() => {
   const envFile = process.env.ENV_FILE || (process.env.NODE_ENV === "production" ? ".env.production" : ".env");
@@ -22,11 +29,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 module.exports.io = io;
 
-// ✅ MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Error:", err));
+mongoose.set("bufferCommands", false);
 
 // ✅ Middleware
 app.use(express.urlencoded({ extended: false }));
@@ -59,6 +62,8 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/workers", require("./routes/workerRoutes"));
+app.use("/api/drivers", require("./routes/driverRoutes"));
+app.use("/api/restaurant", require("./routes/restaurantRoutes"));
 app.use("/api/upload", require("./uploadRoute"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/menu-options", require("./routes/menuOptionsRoutes"));
@@ -150,4 +155,19 @@ app.post("/api/tranzila-webhook", async (req, res) => {
 
 // ✅ Server Ready
 app.get("/", (req, res) => res.send("🚀 Server Running"));
-server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+    });
+    console.log("✅ MongoDB Connected");
+    await ensureDefaultRestaurant();
+    server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+  } catch (err) {
+    console.error("❌ MongoDB Error:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
