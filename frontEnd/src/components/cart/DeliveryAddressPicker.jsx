@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, GeoJSON, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -39,8 +39,15 @@ function DraggableMarker({ position, onChange }) {
   );
 }
 
-const DeliveryAddressPicker = ({ value, onChange }) => {
-  const { t } = useLang();
+const DeliveryAddressPicker = ({
+  value,
+  onChange,
+  hideAddressFields = false,
+  mapHeight = "220px",
+  settlementBoundary = null,
+  zones = [],
+}) => {
+  const { t, dir } = useLang();
   const [position, setPosition] = useState(value?.lat && value?.lng ? [value.lat, value.lng] : DEFAULT_CENTER);
   const [text, setText] = useState(value?.text || "");
   const [notes, setNotes] = useState(value?.notes || "");
@@ -104,7 +111,7 @@ const DeliveryAddressPicker = ({ value, onChange }) => {
   };
 
   return (
-    <div style={{ marginTop: "14px", direction: "rtl" }}>
+    <div style={{ marginTop: "14px", direction: dir }}>
       <button
         type="button"
         onClick={useMyLocation}
@@ -124,34 +131,56 @@ const DeliveryAddressPicker = ({ value, onChange }) => {
       </button>
       {locateError && <p style={{ color: "#dc2626", fontSize: "13px" }}>{locateError}</p>}
 
-      <div style={{ height: "220px", borderRadius: "8px", overflow: "hidden", border: "1px solid #ddd" }}>
+      <div style={{ height: mapHeight, borderRadius: "8px", overflow: "hidden", border: "1px solid #ddd" }}>
         <MapContainer center={position} zoom={15} style={{ height: "100%", width: "100%" }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <DraggableMarker position={position} onChange={handlePositionChange} />
-          <RecenterOnChange position={position} />
+          {settlementBoundary && (
+            <GeoJSON
+              key={settlementBoundary.name}
+              data={settlementBoundary.geojson}
+              pathOptions={{ color: "#8b5cf6", weight: 2, dashArray: "6 4", fill: false }}
+            />
+          )}
+          {zones.map((zone) => (
+            <GeoJSON
+              key={zone.name}
+              data={zone.geojson}
+              pathOptions={{ color: zone.color, fillColor: zone.color, fillOpacity: 0.15, weight: 2 }}
+            />
+          ))}
+          {settlementBoundary || zones.length ? (
+            <FitToBoundaries position={position} zones={zones} settlementBoundary={settlementBoundary} />
+          ) : (
+            <RecenterOnChange position={position} />
+          )}
         </MapContainer>
       </div>
       <p style={{ fontSize: "12px", color: "#777", marginTop: "4px" }}>
         {t("cartPage.dragPinHint", "ניתן לגרור את הסיכה או ללחוץ על המפה כדי לכוון את מיקום המשלוח")}
       </p>
 
-      <input
-        type="text"
-        value={text}
-        onChange={handleTextChange}
-        placeholder={t("cartPage.addressPlaceholder", "כתובת (רחוב, מספר בית, עיר)")}
-        style={{ width: "100%", padding: "10px", marginTop: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
-      />
-      <input
-        type="text"
-        value={notes}
-        onChange={handleNotesChange}
-        placeholder={t("cartPage.addressNotesPlaceholder", "הערות למשלוח (קומה, כניסה, קוד שער)")}
-        style={{ width: "100%", padding: "10px", marginTop: "8px", borderRadius: "8px", border: "1px solid #ccc" }}
-      />
+      {!hideAddressFields && (
+        <>
+          <input
+            type="text"
+            value={text}
+            onChange={handleTextChange}
+            placeholder={t("cartPage.addressPlaceholder", "כתובת (רחוב, מספר בית, עיר)")}
+            style={{ width: "100%", padding: "10px", marginTop: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+          <input
+            type="text"
+            value={notes}
+            onChange={handleNotesChange}
+            placeholder={t("cartPage.addressNotesPlaceholder", "הערות למשלוח (קומה, כניסה, קוד שער)")}
+            style={{ width: "100%", padding: "10px", marginTop: "8px", borderRadius: "8px", border: "1px solid #ccc" }}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -163,6 +192,25 @@ function RecenterOnChange({ position }) {
     map.setView(position, map.getZoom());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position[0], position[1]]);
+  return null;
+}
+
+// Zooms/pans so all the delivery-zone boundaries (plus the restaurant's own settlement
+// outline) stay fully in view, instead of the fixed street-level zoom used otherwise.
+function FitToBoundaries({ position, zones, settlementBoundary }) {
+  const map = useMap();
+  const geometries = [...(settlementBoundary ? [settlementBoundary.geojson] : []), ...zones.map((z) => z.geojson)];
+  const boundsKey = [settlementBoundary?.name, ...zones.map((z) => z.name)].join("|");
+
+  React.useEffect(() => {
+    if (!geometries.length) {
+      map.setView(position, map.getZoom());
+      return;
+    }
+    const bounds = L.geoJSON(geometries).getBounds();
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [16, 16] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position[0], position[1], boundsKey]);
   return null;
 }
 
