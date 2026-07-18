@@ -693,6 +693,14 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           <button
             className="payment-button"
             onClick={() => {
+              // If the customer had already started a Card payment, that created a
+              // real "pending_payment" order and cached its idempotency key. Clear
+              // both so switching to Cash creates a fresh order instead of the
+              // backend's idempotency check silently returning the abandoned one.
+              if (paymentMethod === "Card") {
+                setOrderId(null);
+                idempotencyKeyRef.current = null;
+              }
               setPaymentMethod("Cash");
               setShowCardPayment(false);
               setPaymentResult(null);
