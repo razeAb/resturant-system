@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import CartContext from "../../context/CartContext";
 import CartNavbar from "./CartNavbar";
 import ClosedModal from "../modals/ClosedModal";
@@ -40,7 +41,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [guestName, setGuestName] = useState("");
   const [storeComment, setStoreComment] = useState("");
   const [showCardPayment, setShowCardPayment] = useState(false);
-  const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failure' | null
+  const [showFailure, setShowFailure] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -49,6 +50,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const { user, updateUser } = useContext(AuthContext); // ✅ get user and updater
   const { lang, t } = useLang();
+  const navigate = useNavigate();
   const resolveItemName = (item) =>
     lang === "en" ? item.name_en ?? item.name ?? item.title : item.name ?? item.name_he ?? item.title;
 
@@ -71,7 +73,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setOrderSubmitted(false);
       setOrderId(null);
       setIsPaymentConfirmed(false);
-      setPaymentResult(null);
       setShowCardPayment(false);
       idempotencyKeyRef.current = null;
     }
@@ -173,16 +174,59 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     }
   }, [isDrawer, isOpen]);
 
+  const closeCart = () => {
+    if (isDrawer) {
+      onClose();
+    } else {
+      navigate("/");
+    }
+  };
+
+  // Card payment succeeded (confirmed by the Tranzila webhook, via the poll below):
+  // finalize the order UI, clear the cart, close the cart, and show the success animation.
+  const finishSuccessfulOrder = () => {
+    setOrderSubmitted(true);
+    setIsPaymentConfirmed(true);
+    setShowCardPayment(false);
+    clearCart();
+    closeCart();
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+    setGuestName("");
+    setStoreComment("");
+    setPolicyChecked(false);
+    setShowPolicyModal(false);
+  };
+
+  // Card payment failed: keep the cart items intact so the customer can retry,
+  // just close the cart and let them know via the failure animation.
+  const finishFailedPayment = () => {
+    setShowCardPayment(false);
+    setOrderId(null);
+    idempotencyKeyRef.current = null;
+    closeCart();
+    setShowFailure(true);
+    setTimeout(() => setShowFailure(false), 3000);
+  };
+
+  // Tranzila confirms payment server-side via our webhook (no redirect pages involved),
+  // so once the card iframe is up we poll the order until the webhook has updated it.
   useEffect(() => {
     let interval;
-    if (paymentMethod === "Card" && orderSubmitted && orderId && !isPaymentConfirmed) {
+    if (paymentMethod === "Card" && showCardPayment && orderId && !isPaymentConfirmed) {
       interval = setInterval(async () => {
         try {
           const res = await api.get(`/api/orders/${orderId}`);
-          if (res.data?.paymentStatus === "paid" || res.data?.status === "paid") {
+          const paymentStatus = res.data?.paymentStatus;
+          const status = res.data?.status;
+          if (paymentStatus === "paid" || status === "paid") {
             console.log("✅ Payment confirmed via webhook");
-            setIsPaymentConfirmed(true);
             clearInterval(interval);
+            setIsPaymentConfirmed(true);
+          } else if (paymentStatus === "failed" || status === "failed") {
+            console.log("❌ Payment failed per webhook");
+            clearInterval(interval);
+            finishFailedPayment();
           }
         } catch (err) {
           console.warn("❌ Error checking payment status:", err.response?.data || err.message);
@@ -191,7 +235,15 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     }
 
     return () => clearInterval(interval); // Cleanup
-  }, [paymentMethod, orderId, orderSubmitted, isPaymentConfirmed]);
+  }, [paymentMethod, showCardPayment, orderId, isPaymentConfirmed]);
+
+  // Once the webhook poll confirms payment, finish the order the same way a
+  // manually-submitted (e.g. Cash) order does.
+  useEffect(() => {
+    if (isPaymentConfirmed && !orderSubmitted) {
+      finishSuccessfulOrder();
+    }
+  }, [isPaymentConfirmed, orderSubmitted]);
 
   //state to track in the order is ready to got to backend
   const [, setIsOrderReady] = useState(false);
@@ -286,22 +338,8 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       }
     }
 
-    if (paymentMethod === "Card") {
-      if (!orderId) {
-        alert(t("cartPage.cardNotComplete", "התשלום בכרטיס לא הושלם"));
-        return;
-      }
-      setOrderSubmitted(true);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-      clearCart();
-      setGuestName("");
-      setStoreComment("");
-      setPolicyChecked(false);
-      setShowPolicyModal(false);
-      return;
-    }
-
+    // Card payments finalize themselves once the Tranzila webhook confirms
+    // paid/failed (see the polling effect above) — this button is only for Cash.
     setIsSubmittingOrder(true);
     await submitOrderToBackend();
   };
@@ -383,6 +421,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       clearCart();
+      closeCart();
 
       if (user?._id) {
         try {
@@ -703,7 +742,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
               }
               setPaymentMethod("Cash");
               setShowCardPayment(false);
-              setPaymentResult(null);
             }}
             style={{
               flex: "1",
@@ -738,7 +776,6 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
                 }
               }
               setPaymentMethod("Card");
-              setPaymentResult(null);
               try {
                 if (!orderId) {
                   await createPrePaymentOrder("Card");
@@ -853,38 +890,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
         </p>
       )}
-      {paymentMethod === "Card" && showCardPayment && !paymentResult && orderId && <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />}
-      {paymentResult === "success" && (
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <img src="/icons/check-success.svg" alt="Success" style={{ width: "60px", marginBottom: "10px" }} />
-          <h3 style={{ color: "#16a34a" }}>{t("cartPage.paymentSuccessTitle", "התשלום הצליח!")}</h3>
-          <p>{t("cartPage.paymentSuccessBody", "ניתן כעת להשלים את ההזמנה")}</p>
-        </div>
-      )}
-      {paymentResult === "failure" && (
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <img src="/icons/fail-icon.svg" alt="Failure" style={{ width: "60px", marginBottom: "10px" }} />
-          <h3 style={{ color: "#dc2626" }}>{t("cartPage.paymentFailureTitle", "התשלום נכשל")}</h3>
-          <p>{t("cartPage.paymentFailureBody", "אנא נסה שוב או נסה אמצעי תשלום אחר")}</p>
-          <button
-            className="payment-retry-button"
-            onClick={() => {
-              setPaymentResult(null);
-              setShowCardPayment(true);
-            }}
-            style={{
-              marginTop: "15px",
-              padding: "10px 20px",
-              backgroundColor: "#1d4ed8",
-              color: "white",
-              borderRadius: "8px",
-              border: "none",
-            }}
-          >
-            {t("cartPage.tryAgain", "נסה שוב")}
-          </button>
-        </div>
-      )}
+      {paymentMethod === "Card" && showCardPayment && orderId && <TranzilaIframe amount={calculateFinalTotal()} orderId={orderId} />}
       <div style={{ marginTop: "15px", direction: "rtl", textAlign: "right" }}>
         <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input type="checkbox" checked={policyChecked} onChange={(e) => setPolicyChecked(e.target.checked)} />
@@ -897,24 +903,33 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
         </label>
       </div>
       <div className="modal-action-buttons" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-        <button
-          className="submit-order-button"
-          onClick={handleFinalSubmit}
-          disabled={orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked}
-          style={{
-            padding: "12px 24px",
-            backgroundColor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
-            color: "white",
-            fontSize: "16px",
-            fontWeight: "bold",
-            borderRadius: "8px",
-            cursor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
-            border: "none",
-          }}
-        >
-          {t("cartPage.sendOrder", "שלח הזמנה")}
-          {isSubmittingOrder ? ` ${t("cartPage.sendingOrder", "שולח...")}` : orderSubmitted ? ` ${t("cartPage.orderSubmitted", "הזמנה נשלחה")}` : ""}
-        </button>
+        {paymentMethod === "Card" ? (
+          showCardPayment &&
+          orderId && (
+            <p style={{ color: "#555", fontSize: "14px" }}>
+              {t("cartPage.awaitingCardConfirmation", "ממתין לאישור התשלום...")}
+            </p>
+          )
+        ) : (
+          <button
+            className="submit-order-button"
+            onClick={handleFinalSubmit}
+            disabled={orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "gray" : "green",
+              color: "white",
+              fontSize: "16px",
+              fontWeight: "bold",
+              borderRadius: "8px",
+              cursor: orderSubmitted || isSubmittingOrder || !paymentMethod || !deliveryOption || !policyChecked ? "not-allowed" : "pointer",
+              border: "none",
+            }}
+          >
+            {t("cartPage.sendOrder", "שלח הזמנה")}
+            {isSubmittingOrder ? ` ${t("cartPage.sendingOrder", "שולח...")}` : orderSubmitted ? ` ${t("cartPage.orderSubmitted", "הזמנה נשלחה")}` : ""}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1066,15 +1081,13 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   if (user === undefined) {
     return null; // Wait for AuthContext to resolve
   }
-  if (isDrawer && !isOpen) {
-    return null;
-  }
 
   const isEmptyCart = cartItems.length === 0;
 
-  return (
+  // Rendered regardless of whether the cart drawer/page is currently open, since
+  // both success and failure close the cart before the animation plays.
+  const paymentToasts = (
     <>
-      {!isDrawer && <CartNavbar />}
       {showSuccess && (
         <div
           className="order-success"
@@ -1103,6 +1116,61 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           </p>
         </div>
       )}
+
+      {showFailure && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "#ffffff",
+            padding: "24px",
+            borderRadius: "12px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            animation: "fadeOut 3s forwards",
+          }}
+        >
+          <div
+            style={{
+              width: "70px",
+              height: "70px",
+              borderRadius: "50%",
+              backgroundColor: "#fee2e2",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "16px",
+              fontSize: "36px",
+              color: "#dc2626",
+              lineHeight: 1,
+            }}
+          >
+            ✕
+          </div>
+          <p style={{ fontSize: "18px", fontWeight: "bold", color: "#dc2626" }}>
+            {t("cartPage.paymentFailureToast", "התשלום נכשל, נסה שוב")}
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  if (isDrawer && !isOpen) {
+    return paymentToasts;
+  }
+
+  return (
+    <>
+      {!isDrawer && <CartNavbar />}
+      {paymentToasts}
 
       {isDrawer ? (
         <div className="cart-drawer-overlay" onClick={onClose}>

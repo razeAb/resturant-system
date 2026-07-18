@@ -16,8 +16,6 @@ import ActiveOrders from "./admin/ActiveOrders";
 import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
 import OrderStatus from "./pages/OrderStatus";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentFailure from "./pages/PaymentFailure";
 import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import { MenuOptionsProvider } from "./context/MenuOptionsContext";
@@ -122,8 +120,6 @@ const AppContent = () => {
         <Route path="/worker/tables" element={<WaiterTables />} />
         <Route path="/worker/floor-orders" element={<FloorOrders variant="worker" />} />
         <Route path="/admin/manage-shifts" element={<ManageShifts />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/payment-failure" element={<PaymentFailure />} />
         <Route path="/admin/workers" element={<ManageWorkers />} />
         <Route path="/worker/login" element={<WorkerLogin />} />
       </Routes>
