@@ -7,6 +7,7 @@
     "lint": "eslint src",
     "start:frontend": "cd frontEnd && npm run dev",
     "start:backend": "cd backend && npm run dev",
+    "start:driver": "cd driverApp && npm start",
     "dev": "concurrently \"npm run start:frontend\" \"npm run start:backend\""
   },
   "keywords": [],
