@@ -80,7 +80,10 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     console.log("📩 Webhook received:", data);
 
     // אימות טוקן (אם יש)
-    const token = req.headers["x-tranzila-token"];
+    // Tranzila's notify callback can't send a custom header, but the notify URL
+    // configured in their terminal panel can include a query string — so the
+    // token travels as ?token=... instead of an x-tranzila-token header.
+    const token = req.query.token || req.headers["x-tranzila-token"];
     if (process.env.TRANZILA_WEBHOOK_TOKEN && token !== process.env.TRANZILA_WEBHOOK_TOKEN) {
       console.warn("⚠️ Invalid token");
       return res.status(403).send("Forbidden");

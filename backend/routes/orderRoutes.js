@@ -203,10 +203,19 @@ router.post("/", async (req, res) => {
       couponDiscount,
     } = req.body;
 
+    let reuseOrder = null;
     if (idempotencyKey) {
       const existing = await Order.findOne({ idempotencyKey });
       if (existing) {
-        return res.status(200).json({ message: "✅ Order already created.", order: existing });
+        if (existing.status !== "pending_payment") {
+          // Already a real, finalized order — safe to short-circuit.
+          return res.status(200).json({ message: "✅ Order already created.", order: existing });
+        }
+        // The key was reused from an abandoned card pre-payment placeholder
+        // (e.g. the customer switched from Card to Cash). Update that
+        // placeholder into the real order instead of silently returning it
+        // as-is, otherwise the actual order never gets created.
+        reuseOrder = existing;
       }
     }
 
@@ -255,30 +264,28 @@ router.post("/", async (req, res) => {
     const normalizedStatus = normalizeStatus({ method: normalizedMethod, rawStatus: typeof status === "string" ? status : undefined });
     console.log("🟢 normalized:", { normalizedMethod, normalizedStatus });
 
-    // ---- create ----
-    const newOrder = new Order({
-      user: user || undefined,
-      phone: phone || undefined,
-      customerName: customerName || undefined,
-      comment: comment || undefined,
-      idempotencyKey: idempotencyKey || undefined,
-      paymentDetails: {
-        ...(paymentDetails || {}),
-        method: normalizedMethod, // prevent enum crash if schema restricts it
-      },
-      couponUsed: couponUsed || undefined,
-      couponCode: couponCode || undefined,
-      couponDiscount: Number(couponDiscount) || 0,
-      items: cleaned,
-      totalPrice: priceNumber,
-      deliveryOption,
-      deliveryAddress: cleanedAddress,
-      deliveryFee: deliveryPricing.deliveryFee,
-      deliveryDistanceKm: deliveryPricing.deliveryDistanceKm,
-      restaurant: deliveryPricing.restaurantId,
-      status: normalizedStatus, // ✅ use normalized value (fixes 'pending' enum error)
-      createdAt: createdAt || new Date(),
-    });
+    // ---- create (or reuse an abandoned pending_payment placeholder) ----
+    const newOrder = reuseOrder || new Order({ idempotencyKey: idempotencyKey || undefined });
+    newOrder.user = user || undefined;
+    newOrder.phone = phone || undefined;
+    newOrder.customerName = customerName || undefined;
+    newOrder.comment = comment || undefined;
+    newOrder.paymentDetails = {
+      ...(paymentDetails || {}),
+      method: normalizedMethod, // prevent enum crash if schema restricts it
+    };
+    newOrder.couponUsed = couponUsed || undefined;
+    newOrder.couponCode = couponCode || undefined;
+    newOrder.couponDiscount = Number(couponDiscount) || 0;
+    newOrder.items = cleaned;
+    newOrder.totalPrice = priceNumber;
+    newOrder.deliveryOption = deliveryOption;
+    newOrder.deliveryAddress = cleanedAddress;
+    newOrder.deliveryFee = deliveryPricing.deliveryFee;
+    newOrder.deliveryDistanceKm = deliveryPricing.deliveryDistanceKm;
+    newOrder.restaurant = deliveryPricing.restaurantId;
+    newOrder.status = normalizedStatus; // ✅ use normalized value (fixes 'pending' enum error)
+    if (!reuseOrder) newOrder.createdAt = createdAt || new Date();
 
     await newOrder.save();
     console.log("✅ Order saved:", {
