@@ -325,11 +325,15 @@ export default function ActiveOrdersPage() {
       prevOrderCountRef.current += 1;
     };
 
+    const onDriverArrived = () => fetchOrders();
+
     socket.on("connect", () => console.log("🔌 admin socket connected"));
     socket.on("order_paid", onPaid);
+    socket.on("delivery:arrived", onDriverArrived);
 
     return () => {
       socket.off("order_paid", onPaid);
+      socket.off("delivery:arrived", onDriverArrived);
     };
   }, []);
 
@@ -497,7 +501,10 @@ export default function ActiveOrdersPage() {
                           <span className="text-white/90">{customer}</span>
                           {phone && <span className="text-white/40"> · {phone}</span>}
                         </div>
-                        <div className="col-span-2 text-white/70">{translateDeliveryOption(order.deliveryOption)}</div>
+                        <div className="col-span-2 text-white/70">
+                          {translateDeliveryOption(order.deliveryOption)}
+                          {order.feeUndetermined && <span title="יש להתקשר ללקוח לתיאום דמי המשלוח"> ☎️</span>}
+                        </div>
                         <div className="col-span-1 text-white/80">{order.totalPrice ? `₪${order.totalPrice}` : "-"}</div>
 
                         {/* status + details button */}
@@ -548,6 +555,7 @@ export default function ActiveOrdersPage() {
                         {/* Delivery type + total */}
                         <div className="text-white/70 text-sm mt-1">
                           {translateDeliveryOption(order.deliveryOption)} · {order.totalPrice ? `₪${order.totalPrice}` : "-"}
+                          {order.feeUndetermined && <span> · ☎️ תיאום מחיר</span>}
                         </div>
 
                         {/* Expand button */}
@@ -580,6 +588,16 @@ export default function ActiveOrdersPage() {
                               <div>
                                 <strong>אמצעי תשלום:</strong> {translatePaymentMethod(order.paymentDetails?.method)}
                               </div>
+                              {order.feeUndetermined && (
+                                <div className="mt-1 inline-block px-2 py-1 rounded-lg bg-amber-500/15 text-amber-200 border border-amber-500/25 text-sm">
+                                  ☎️ אין שליח זמין באזור {order.deliveryZoneName || ""} - יש להתקשר ללקוח לתיאום דמי המשלוח
+                                </div>
+                              )}
+                              {order.delivery?.status === "arrived_at_restaurant" && (
+                                <div className="mt-1 inline-block px-2 py-1 rounded-lg bg-sky-500/15 text-sky-200 border border-sky-500/25 text-sm">
+                                  🚗 השליח הגיע למסעדה
+                                </div>
+                              )}
                               <div>
                                 <strong>נוצר:</strong> {formatTime(order.createdAt)}
                               </div>

@@ -43,4 +43,15 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Shared gate for routes either the restaurant admin (isAdmin) or the delivery-platform
+// admin (isPlatformAdmin, the driver app's "Admin Mode") may use - e.g. driver-account
+// management, which isn't really restaurant-specific.
+const ensureAnyAdmin = (req, res) => {
+  if (!req.user?.isAdmin && !req.user?.isPlatformAdmin) {
+    res.status(403).json({ message: "❌ Unauthorized access." });
+    return false;
+  }
+  return true;
+};
+
+module.exports = { protect, ensureAnyAdmin };

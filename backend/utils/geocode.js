@@ -238,9 +238,49 @@ async function searchSettlementsNominatim(query) {
   return results;
 }
 
+// Settlement search via Google Places Text Search, used first when GOOGLE_PLACES_API_KEY
+// is set - generally the best-quality/most-forgiving matcher of the three (handles typos,
+// transliteration, and mixed scripts better than GovMap/Nominatim), and the only one that
+// gives a stable Place ID, so a zone stays correctly identified even if the admin later
+// re-adds a village typed slightly differently.
+async function searchSettlementsGoogle(query) {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await axios.post(
+    "https://places.googleapis.com/v1/places:searchText",
+    { textQuery: query, languageCode: "he", regionCode: "IL" },
+    {
+      timeout: 8000,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.id,places.location,places.displayName,places.formattedAddress",
+      },
+    }
+  );
+
+  const places = res.data?.places || [];
+  return places
+    .map((p) => ({
+      name: p.displayName?.text || p.formattedAddress,
+      lat: p.location?.latitude,
+      lng: p.location?.longitude,
+      placeId: p.id,
+    }))
+    .filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+}
+
 // Autocomplete search for city/village names (for the admin's "add a delivery area"
 // picker), supporting Hebrew, English, and Arabic input.
 async function searchSettlements(query) {
+  try {
+    const googleResults = await searchSettlementsGoogle(query);
+    if (googleResults?.length) return googleResults;
+  } catch (err) {
+    console.error("Google Places settlement search failed, falling back to GovMap/Nominatim", err.message);
+  }
+
   const script = detectScript(query);
 
   if (script !== "ar") {

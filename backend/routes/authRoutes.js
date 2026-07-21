@@ -3,6 +3,9 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID);
 
 // ✅ Helper to generate token (extended expiry to avoid forced logout)
 const generateToken = (userId) => {
@@ -101,6 +104,42 @@ router.post("/firebase-login", async (req, res) => {
       message: "Server error during Firebase login",
       details: error.message,
     });
+  }
+});
+
+// ✅ Google Sign-In (driver app "Admin Mode") - unlike /firebase-login, this actually
+// verifies the Google ID token server-side rather than trusting client-sent fields, since
+// it's used to gate admin access rather than just a regular customer account.
+router.post("/google-login", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ message: "❌ idToken is required" });
+    if (!process.env.GOOGLE_WEB_CLIENT_ID) {
+      return res.status(500).json({ message: "❌ Google sign-in isn't configured on the server" });
+    }
+
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_WEB_CLIENT_ID });
+    const payload = ticket.getPayload();
+    if (!payload?.email) return res.status(401).json({ message: "❌ Invalid Google token" });
+
+    let user = await User.findOne({ email: payload.email });
+    if (!user) {
+      user = await User.create({
+        name: payload.name || payload.email,
+        email: payload.email,
+        photo: payload.picture,
+        password: require("crypto").randomBytes(20).toString("hex"),
+        isAdmin: false,
+        orderCount: 0,
+        points: 0,
+      });
+    }
+
+    const token = generateToken(user._id);
+    res.status(200).json({ message: "✅ Login successful.", token, user });
+  } catch (error) {
+    console.error("❌ Google login error:", error.message);
+    res.status(401).json({ message: "❌ Invalid Google token" });
   }
 });
 

@@ -83,43 +83,6 @@ router.get("/dashboard", protect, async (req, res) => {
   }
 });
 
-// ✅ Calculate collection totals for a date range
-router.get("/collections", protect, async (req, res) => {
-  try {
-    if (!ensureAdmin(req, res)) return;
-
-    let { startDate, endDate } = req.query;
-    const now = new Date();
-    if (!startDate) {
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      startDate = first.toISOString().split("T")[0];
-    }
-    if (!endDate) {
-      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      endDate = last.toISOString().split("T")[0];
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    const orders = await Order.find({
-      createdAt: { $gte: start, $lte: end },
-    });
-
-    let totalCommission = 0;
-    orders.forEach((order) => {
-      const rate = order.deliveryOption === "Delivery" ? 0.08 : 0.05;
-      totalCommission += order.totalPrice * rate;
-    });
-
-    res.json({ startDate, endDate, totalCommission });
-  } catch (error) {
-    console.error("❌ Error calculating collections:", error);
-    res.status(500).json({ message: "❌ Server error." });
-  }
-});
-
 // ✅ Category stats (orders per category)
 router.get("/category-stats", protect, async (req, res) => {
   try {

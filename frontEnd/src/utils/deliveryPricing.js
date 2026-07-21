@@ -70,5 +70,5 @@ export function computeDeliveryFee(restaurant, deliveryAddress) {
 
   const fee = Math.round(BASE_FEE + PER_KM_FEE * distanceKm);
 
-  return { distanceKm, fee, zoneName: zone.name };
+  return { distanceKm, fee, zoneName: zone.name, zonePlaceId: zone.placeId || null };
 }

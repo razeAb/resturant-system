@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const Driver = require("../models/Driver");
+const { sendExpoPushNotifications } = require("./expoPush");
 
 function getIo() {
   // server.js sets module.exports.io before requiring route files, so this
@@ -21,9 +22,17 @@ async function broadcastDeliveryToDrivers(orderId) {
   );
   if (!claimed) return { skipped: true, reason: "already_broadcast_or_not_delivery" };
 
-  const onlineDrivers = await Driver.find({
+  // Only drivers who cover BOTH the restaurant's location and the customer's zone should
+  // be alerted - a driver near the customer but far from this particular restaurant's
+  // pickup area shouldn't be pinged. Drivers pick their own work areas independently, so
+  // match by Google Place ID rather than by zone name.
+  const matchingDrivers = await Driver.find({
     online: true,
     restaurant: claimed.restaurant,
+    $and: [
+      { zones: { $elemMatch: { placeId: claimed.deliveryZonePlaceId, active: true } } },
+      { zones: { $elemMatch: { placeId: claimed.restaurantZonePlaceId, active: true } } },
+    ],
   }).lean();
 
   getIo()?.emit?.("delivery:new", {
@@ -33,7 +42,14 @@ async function broadcastDeliveryToDrivers(orderId) {
     estimatedTime: claimed.estimatedTime,
   });
 
-  return { driversNotified: onlineDrivers.length, driverIds: onlineDrivers.map((d) => d._id) };
+  const tokens = matchingDrivers.flatMap((d) => d.expoPushTokens || []);
+  sendExpoPushNotifications(tokens, {
+    title: "משלוח חדש זמין",
+    body: [claimed.deliveryZoneName, claimed.deliveryFee ? `₪${claimed.deliveryFee}` : null].filter(Boolean).join(" · "),
+    data: { type: "delivery:new", orderId: String(orderId) },
+  }).catch((err) => console.error("❌ Driver push notify failed:", err?.message || err));
+
+  return { driversNotified: matchingDrivers.length, driverIds: matchingDrivers.map((d) => d._id) };
 }
 
 // Atomically assigns the order to the first driver who claims it; a second
@@ -51,4 +67,4 @@ async function claimOrderForDriver(orderId, driverId) {
   return claimed;
 }
 
-module.exports = { broadcastDeliveryToDrivers, claimOrderForDriver };
+module.exports = { broadcastDeliveryToDrivers, claimOrderForDriver, getIo };

@@ -239,6 +239,7 @@ const translations = {
       workers: "עובדים",
       cashRegister: "קופה",
       backHome: "חזרה לדף הבית",
+      logout: "התנתקות",
     },
     nav: {
       home: "בית",
@@ -511,6 +512,7 @@ const translations = {
       workers: "Workers",
       cashRegister: "Cash register",
       backHome: "Back to home",
+      logout: "Logout",
     },
     nav: {
       home: "Home",

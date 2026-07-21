@@ -111,21 +111,50 @@ const OrderSchema = new mongoose.Schema({
   },
   deliveryFee: { type: Number, default: 0 },
   deliveryDistanceKm: { type: Number, default: null },
+  deliveryZoneName: { type: String, default: null },
+  // Google Place ID of the resolved zone - used to match drivers by placeId instead of
+  // by name, since a driver's own zone list is independent of the restaurant's zone names.
+  deliveryZonePlaceId: { type: String, default: null },
+  // Place ID of the zone containing the restaurant itself (for this order's restaurant) -
+  // a driver must cover both this and deliveryZonePlaceId to be offered the delivery, so
+  // they're never sent on a pickup far from their own working area.
+  restaurantZonePlaceId: { type: String, default: null },
+  // True when the order's zone had no online driver covering it at checkout, so the fee
+  // was left at ₪0 pending a manual phone call to the customer to confirm the real fee.
+  feeUndetermined: { type: Boolean, default: false },
   delivery: {
     status: {
       type: String,
-      enum: ["none", "broadcasting", "claimed", "picked_up", "delivered", "canceled"],
+      enum: [
+        "none",
+        "broadcasting",
+        "claimed",
+        "arrived_at_restaurant",
+        "picked_up",
+        "delivered",
+        "customer_unavailable",
+        "returned_to_restaurant",
+        "canceled",
+      ],
       default: "none",
     },
     driver: { type: mongoose.Schema.Types.ObjectId, ref: "Driver", default: null },
     broadcastAt: { type: Date, default: null },
     broadcastAttempts: { type: Number, default: 0 },
     etaAnchoredAt: { type: Date, default: null },
+    // Drivers who declined this broadcast - excluded from their own future available-orders polls.
+    declinedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "Driver" }],
     claimedAt: { type: Date, default: null },
+    arrivedAt: { type: Date, default: null },
     pickedUpAt: { type: Date, default: null },
     deliveredAt: { type: Date, default: null },
     cashCollected: { type: Boolean, default: false },
     cashCollectedAt: { type: Date, default: null },
+    // Snapshot of what the driver earns for this delivery, and who still owes it -
+    // cash orders are self-collected on the spot; card orders are owed by the restaurant.
+    driverEarning: { type: Number, default: null },
+    driverPayoutStatus: { type: String, enum: ["self_collected", "owed", "paid"], default: null },
+    driverNote: { type: String, default: "" },
   },
   ownerSms: {
     notifiedAt: { type: Date, default: null },

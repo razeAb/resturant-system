@@ -63,6 +63,7 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/workers", require("./routes/workerRoutes"));
 app.use("/api/drivers", require("./routes/driverRoutes"));
+app.use("/api/admin-mode", require("./routes/adminModeRoutes"));
 app.use("/api/restaurant", require("./routes/restaurantRoutes"));
 app.use("/api/upload", require("./uploadRoute"));
 app.use("/api/payments", require("./routes/paymentRoutes"));

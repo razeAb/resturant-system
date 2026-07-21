@@ -16,7 +16,6 @@ import ActiveOrders from "./admin/ActiveOrders";
 import OrderHistory from "./admin/OrderHistory";
 import ResetPassword from "./pages/resetPassword";
 import OrderStatus from "./pages/OrderStatus";
-import CollectionsReport from "./admin/CollectionsReport";
 import { AuthProvider } from "./context/AuthContext"; // ✅
 import { MenuOptionsProvider } from "./context/MenuOptionsContext";
 import MenuOptionsAdmin from "./admin/MenuOptions";
@@ -26,6 +25,7 @@ import RevenuePage from "./admin/RevenuePage";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import ManageShifts from "./admin/ManageShifts";
 import ManageWorkers from "./admin/ManageWorkers";
+import ManageDrivers from "./admin/ManageDrivers";
 import RestaurantSettings from "./admin/RestaurantSettings";
 import WorkerLogin from "./pages/WorkerLogin";
 import FloorLayout from "./admin/FloorLayout";
@@ -109,7 +109,6 @@ const AppContent = () => {
         <Route path="/admin/products" element={<AdminProducts />} />
         <Route path="/admin/activeOrders" element={<ActiveOrders />} />
         <Route path="/admin/orderHistory" element={<OrderHistory />} />
-        <Route path="/admin/collections" element={<CollectionsReport />} />
         <Route path="/admin/revenue" element={<RevenuePage />} />
         <Route path="/admin/cash-register" element={<CashRegister />} />
         <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
@@ -122,6 +121,7 @@ const AppContent = () => {
         <Route path="/worker/floor-orders" element={<FloorOrders variant="worker" />} />
         <Route path="/admin/manage-shifts" element={<ManageShifts />} />
         <Route path="/admin/workers" element={<ManageWorkers />} />
+        <Route path="/admin/drivers" element={<ManageDrivers />} />
         <Route path="/admin/restaurant-settings" element={<RestaurantSettings />} />
         <Route path="/worker/login" element={<WorkerLogin />} />
       </Routes>

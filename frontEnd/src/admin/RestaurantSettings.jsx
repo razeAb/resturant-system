@@ -10,6 +10,7 @@ const ZONE_COLORS = ["#22c55e", "#f97316", "#3b82f6", "#eab308", "#ec4899", "#14
 export default function RestaurantSettings() {
   const { t, dir } = useLang();
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [address, setAddress] = useState(null); // { lat, lng, text, notes }
   const [zones, setZones] = useState([]); // [{ name, lat, lng, boundary }]
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,7 @@ export default function RestaurantSettings() {
       .then((res) => {
         const r = res.data;
         setName(r.name || "");
+        setPhone(r.phone || "");
         if (Number.isFinite(r.address?.lat) && Number.isFinite(r.address?.lng)) {
           setAddress({ lat: r.address.lat, lng: r.address.lng, text: r.address.text || "" });
         }
@@ -109,7 +111,12 @@ export default function RestaurantSettings() {
   };
 
   const handleAddZone = async (suggestion) => {
-    if (zones.some((z) => z.name === suggestion.name)) {
+    // Prefer Place ID for dedup when available - the same village can otherwise show up
+    // twice under slightly different spellings.
+    const isDuplicate = suggestion.placeId
+      ? zones.some((z) => z.placeId === suggestion.placeId)
+      : zones.some((z) => z.name === suggestion.name);
+    if (isDuplicate) {
       setZoneQuery("");
       setZoneSuggestions([]);
       return;
@@ -121,7 +128,10 @@ export default function RestaurantSettings() {
         params: { lat: suggestion.lat, lng: suggestion.lng },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setZones((prev) => [...prev, { name: suggestion.name, lat: suggestion.lat, lng: suggestion.lng, boundary: res.data.geojson }]);
+      setZones((prev) => [
+        ...prev,
+        { name: suggestion.name, placeId: suggestion.placeId || null, lat: suggestion.lat, lng: suggestion.lng, boundary: res.data.geojson },
+      ]);
       setZoneQuery("");
       setZoneSuggestions([]);
     } catch (err) {
@@ -150,8 +160,9 @@ export default function RestaurantSettings() {
         "/api/restaurant",
         {
           name,
+          phone,
           address: { text: address.text, lat: address.lat, lng: address.lng },
-          deliveryZones: zones.map((z) => ({ name: z.name, lat: z.lat, lng: z.lng, boundary: z.boundary })),
+          deliveryZones: zones.map((z) => ({ name: z.name, placeId: z.placeId || null, lat: z.lat, lng: z.lng, boundary: z.boundary })),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -222,6 +233,19 @@ export default function RestaurantSettings() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </section>
+
+              <section className="bg-[#17181d] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-sm text-white/80 mb-3">{t("restaurantSettings.restaurantPhoneTitle", "טלפון המסעדה")}</h3>
+                <p className="text-[12px] text-white/40 mb-2">
+                  {t("restaurantSettings.restaurantPhoneDesc", "מוצג לשליחים באפליקציית השליח כדי שיוכלו להתקשר למסעדה.")}
+                </p>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="050-0000000"
                   className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/30"
                 />
               </section>

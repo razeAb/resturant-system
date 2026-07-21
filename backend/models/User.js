@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
 usedDrinkCoupon: { type: Boolean, default: false },
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
   isAdmin: { type: Boolean, default: false },
+  // Separate from isAdmin (restaurant admin, used by the web dashboard) - this governs
+  // the delivery-platform "Admin Mode" inside the driver app, a platform-level concern
+  // independent of any single restaurant, so it holds up once more restaurants are added.
+  isPlatformAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -12,6 +12,7 @@ router.get("/", async (req, res) => {
     res.json({
       _id: restaurant._id,
       name: restaurant.name,
+      phone: restaurant.phone,
       address: restaurant.address,
       deliveryZones: restaurant.deliveryZones,
     });
@@ -24,11 +25,12 @@ router.get("/", async (req, res) => {
 router.put("/", protect, async (req, res) => {
   if (!req.user.isAdmin) return res.status(403).json({ message: "❌ Unauthorized" });
   try {
-    const { name, address, deliveryZones } = req.body;
+    const { name, phone, address, deliveryZones } = req.body;
     const restaurant = await Restaurant.findOne();
     if (!restaurant) return res.status(404).json({ message: "❌ No restaurant configured" });
 
     if (typeof name === "string" && name.trim()) restaurant.name = name.trim();
+    if (typeof phone === "string") restaurant.phone = phone.trim();
 
     if (address) {
       const lat = Number(address.lat);
@@ -47,7 +49,7 @@ router.put("/", protect, async (req, res) => {
         if (!zone.name || !Number.isFinite(lat) || !Number.isFinite(lng) || !zone.boundary) {
           return res.status(400).json({ message: "❌ Each delivery zone needs a name, lat/lng, and boundary" });
         }
-        cleaned.push({ name: zone.name, lat, lng, boundary: zone.boundary });
+        cleaned.push({ name: zone.name, placeId: zone.placeId || null, lat, lng, boundary: zone.boundary });
       }
       restaurant.deliveryZones = cleaned;
     }
@@ -59,8 +61,19 @@ router.put("/", protect, async (req, res) => {
       try {
         const homeBoundary = await getSettlementBoundary(restaurant.address.lat, restaurant.address.lng);
         if (homeBoundary && !restaurant.deliveryZones.some((z) => z.name === homeBoundary.name)) {
+          // Nominatim gives the real boundary shape but no placeId - without one, drivers
+          // (matched by placeId) could never cover the restaurant's own city, so look it
+          // up separately via the same Google-first settlement search used elsewhere.
+          let placeId = null;
+          try {
+            const [match] = await searchSettlements(homeBoundary.name);
+            placeId = match?.placeId || null;
+          } catch (err) {
+            console.error("Failed to resolve a placeId for the home settlement", err.message);
+          }
           restaurant.deliveryZones.push({
             name: homeBoundary.name,
+            placeId,
             lat: restaurant.address.lat,
             lng: restaurant.address.lng,
             boundary: homeBoundary.geojson,
@@ -72,6 +85,7 @@ router.put("/", protect, async (req, res) => {
     }
 
     await restaurant.save();
+
     res.json({ message: "✅ Restaurant updated", restaurant });
   } catch (err) {
     console.error("Error updating restaurant:", err);

@@ -3,10 +3,11 @@ const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
 const Restaurant = require("../models/Restaurant");
+const Driver = require("../models/Driver");
 const { protect } = require("../middleware/authMiddleware");
 const { notifyOwnerSmsForOrder, notifyCustomerEtaSms } = require("../utils/notifications");
 const { broadcastDeliveryToDrivers } = require("../utils/driverNotifications");
-const { computeDeliveryFee } = require("../utils/deliveryPricing");
+const { computeDeliveryFee, findZoneForPoint } = require("../utils/deliveryPricing");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -68,7 +69,46 @@ async function resolveDeliveryPricing(deliveryAddress) {
   if (pricing.outOfRange) {
     return { error: `Sorry, this address is outside our delivery area (${pricing.distanceKm.toFixed(1)}km away)` };
   }
-  return { restaurantId: restaurant._id, deliveryFee: pricing.fee, deliveryDistanceKm: pricing.distanceKm };
+
+  // The zone containing the restaurant itself - a driver must cover both this and the
+  // customer's zone, so they're never offered a pickup far from their own working area.
+  // Resolved per-restaurant so this holds up once multiple restaurants are supported.
+  const restaurantZone = findZoneForPoint(restaurant, restaurant.address.lat, restaurant.address.lng);
+
+  // No online driver works both ends of this trip: the ₪25+/km formula can't be fulfilled
+  // by anyone right now, so leave the fee at ₪0 and flag it - staff will call the customer
+  // once a driver (possibly one not using the app) is arranged, to agree on the real fee.
+  // Drivers pick their own work areas independently (by Google Place ID), so coverage is
+  // matched by placeId rather than by the restaurant's zone name.
+  const zoneCovered = await Driver.exists({
+    restaurant: restaurant._id,
+    online: true,
+    $and: [
+      { zones: { $elemMatch: { placeId: pricing.zonePlaceId, active: true } } },
+      { zones: { $elemMatch: { placeId: restaurantZone?.placeId, active: true } } },
+    ],
+  });
+  if (!zoneCovered) {
+    return {
+      restaurantId: restaurant._id,
+      deliveryFee: 0,
+      deliveryDistanceKm: pricing.distanceKm,
+      zoneName: pricing.zoneName,
+      zonePlaceId: pricing.zonePlaceId,
+      restaurantZonePlaceId: restaurantZone?.placeId || null,
+      feeUndetermined: true,
+    };
+  }
+
+  return {
+    restaurantId: restaurant._id,
+    deliveryFee: pricing.fee,
+    deliveryDistanceKm: pricing.distanceKm,
+    zoneName: pricing.zoneName,
+    zonePlaceId: pricing.zonePlaceId,
+    restaurantZonePlaceId: restaurantZone?.placeId || null,
+    feeUndetermined: false,
+  };
 }
 
 // Validates deliveryAddress for Delivery orders; returns { error } or { deliveryAddress }
@@ -167,6 +207,10 @@ router.post("/create-pre-payment", async (req, res) => {
       deliveryAddress: cleanedAddress,
       deliveryFee: deliveryPricing.deliveryFee,
       deliveryDistanceKm: deliveryPricing.deliveryDistanceKm,
+      deliveryZoneName: deliveryPricing.zoneName || null,
+      deliveryZonePlaceId: deliveryPricing.zonePlaceId || null,
+      restaurantZonePlaceId: deliveryPricing.restaurantZonePlaceId || null,
+      feeUndetermined: !!deliveryPricing.feeUndetermined,
       restaurant: deliveryPricing.restaurantId,
       status: "pending_payment",
       createdAt: new Date(),
@@ -283,6 +327,10 @@ router.post("/", async (req, res) => {
     newOrder.deliveryAddress = cleanedAddress;
     newOrder.deliveryFee = deliveryPricing.deliveryFee;
     newOrder.deliveryDistanceKm = deliveryPricing.deliveryDistanceKm;
+    newOrder.deliveryZoneName = deliveryPricing.zoneName || null;
+    newOrder.deliveryZonePlaceId = deliveryPricing.zonePlaceId || null;
+    newOrder.restaurantZonePlaceId = deliveryPricing.restaurantZonePlaceId || null;
+    newOrder.feeUndetermined = !!deliveryPricing.feeUndetermined;
     newOrder.restaurant = deliveryPricing.restaurantId;
     newOrder.status = normalizedStatus; // ✅ use normalized value (fixes 'pending' enum error)
     if (!reuseOrder) newOrder.createdAt = createdAt || new Date();

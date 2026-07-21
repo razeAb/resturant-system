@@ -1,11 +1,10 @@
 // SideMenu.jsx
-import React from "react";
+import React, { useContext } from "react";
 import PropTypes from "prop-types";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
   Home,
   ListChecks,
-  ClipboardList,
   ChefHat,
   History,
   LayoutGrid,
@@ -18,8 +17,11 @@ import {
   ClipboardSignature,
   Tag,
   Settings,
+  Bike,
+  LogOut,
 } from "lucide-react";
 import { useLang } from "../context/LangContext";
+import { AuthContext } from "../context/AuthContext";
 const navItems = [
   { to: "/admin/dashboard", key: "sideMenu.dashboard", fallback: "לוח בקרה", icon: Home },
   { to: "/admin/products", key: "sideMenu.products", fallback: "מוצרים", icon: LayoutGrid },
@@ -30,14 +32,22 @@ const navItems = [
   { to: "/admin/coupons", key: "sideMenu.coupons", fallback: "קופונים", icon: Tag },
   { to: "/admin/floor", key: "sideMenu.floor", fallback: "מפת שולחנות", icon: MapPinned },
   { to: "/admin/floor-orders", key: "sideMenu.floorOrders", fallback: "הזמנה משולחן", icon: ClipboardSignature },
-  { to: "/admin/collections", key: "sideMenu.collections", fallback: "collections", icon: ClipboardList },
   { to: "/admin/revenue", key: "sideMenu.revenue", fallback: "הכנסות", icon: BarChart3 },
   { to: "/admin/workers", key: "sideMenu.workers", fallback: "עובדים", icon: Users },
+  { to: "/admin/drivers", key: "sideMenu.drivers", fallback: "שליחים", icon: Bike },
   { to: "/admin/restaurant-settings", key: "sideMenu.restaurantSettings", fallback: "הגדרות מסעדה", icon: Settings },
 ];
 
 export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
   const { t } = useLang();
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <aside
       dir="rtl"
@@ -130,6 +140,20 @@ export default function SideMenu({ onClose, logoSrc, brand = "Hungry" }) {
           </span>
           <span className="truncate">{t("sideMenu.backHome", "חזרה לדף הבית")}</span>
         </Link>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="
+            w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+            text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors
+          "
+        >
+          <span className="shrink-0 grid place-items-center">
+            <LogOut size={18} />
+          </span>
+          <span className="truncate">{t("sideMenu.logout", "התנתקות")}</span>
+        </button>
       </nav>
 
       {/* Footer */}

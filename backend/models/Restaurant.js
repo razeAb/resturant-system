@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const restaurantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    phone: { type: String, default: "" },
     address: {
       text: { type: String, default: "" },
       lat: { type: Number, default: null },
@@ -16,6 +17,9 @@ const restaurantSchema = new mongoose.Schema(
     deliveryZones: [
       {
         name: { type: String, required: true },
+        // Google Place ID, when the zone was added via Google Places search - a stable
+        // identity that survives the same village being typed/spelled differently later.
+        placeId: { type: String, default: null },
         lat: { type: Number, required: true },
         lng: { type: Number, required: true },
         boundary: { type: mongoose.Schema.Types.Mixed, required: true },

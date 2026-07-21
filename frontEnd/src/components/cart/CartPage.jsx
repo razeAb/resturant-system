@@ -78,10 +78,22 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
       .catch((err) => console.error("❌ Failed to load restaurant config:", err.response?.data || err.message));
   }, []);
 
+  // Place IDs of zones with at least one online driver right now - lets checkout warn the
+  // customer when their zone has nobody to auto-price the delivery for. Matched by Google
+  // Place ID rather than zone name, since drivers pick their own work areas independently.
+  const [onlineZonePlaceIds, setOnlineZonePlaceIds] = useState([]);
+  useEffect(() => {
+    api
+      .get("/api/drivers/online-zones")
+      .then((res) => setOnlineZonePlaceIds(res.data?.zonePlaceIds || []))
+      .catch((err) => console.error("❌ Failed to load online delivery zones:", err.response?.data || err.message));
+  }, []);
+
   const deliveryPricing =
     deliveryOption === "Delivery" && deliveryAddress && restaurantConfig ? computeDeliveryFee(restaurantConfig, deliveryAddress) : null;
-  const deliveryFee = deliveryPricing?.fee || 0;
   const isDeliveryOutOfRange = !!deliveryPricing?.outOfRange;
+  const isFeeUndetermined = !!(deliveryPricing?.zonePlaceId && !onlineZonePlaceIds.includes(deliveryPricing.zonePlaceId));
+  const deliveryFee = isFeeUndetermined ? 0 : deliveryPricing?.fee || 0;
 
   // Allow creating multiple orders without a page refresh.
   // Once the user starts building a new cart, clear the previous "submitted" lock.
@@ -923,7 +935,15 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
             {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
           </p>
           <DeliveryAddressPicker value={deliveryAddress} onChange={setDeliveryAddress} />
-          {deliveryPricing && !deliveryPricing.outOfRange && !deliveryPricing.unconfigured && (
+          {isFeeUndetermined && (
+            <p style={{ fontSize: "14px", color: "#b45309", marginTop: "8px", fontWeight: "600" }}>
+              {t(
+                "cartPage.feeUndetermined",
+                "אין כרגע שליח זמין באזור שלך. ניתן לשלם במזומן או באשראי - ניצור איתך קשר טלפוני לתיאום דמי המשלוח."
+              )}
+            </p>
+          )}
+          {deliveryPricing && !isFeeUndetermined && !deliveryPricing.outOfRange && !deliveryPricing.unconfigured && (
             <p style={{ fontSize: "14px", color: "#16a34a", marginTop: "8px", fontWeight: "600" }}>
               {t("cartPage.deliveryFeeLabel", "דמי משלוח")}: ₪{deliveryPricing.fee} ({deliveryPricing.distanceKm.toFixed(1)} ק"מ)
             </p>
