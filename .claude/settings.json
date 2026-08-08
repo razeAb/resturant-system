@@ -69,7 +69,8 @@
       "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(12\\).toString\\('base64'\\).replace\\(/[+/=]/g,''\\).slice\\(0,16\\)\\)\")",
       "Bash(node -c migrate-hungry-to-sass.js)",
       "Bash(lsof -iTCP:5001 -sTCP:LISTEN -n -P)",
-      "Bash(lsof -iTCP:5002 -sTCP:LISTEN -n -P)"
+      "Bash(lsof -iTCP:5002 -sTCP:LISTEN -n -P)",
+      "Bash(npx esbuild *)"
     ],
     "additionalDirectories": [
       "/tmp"
