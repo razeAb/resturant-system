@@ -4,6 +4,8 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+const { verifyFirebaseIdToken } = require("../utils/firebaseAdmin");
+const { loginRateLimit } = require("../middleware/loginRateLimit");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID);
 
@@ -13,7 +15,7 @@ const generateToken = (userId) => {
 };
 
 // ✅ Login Route
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -31,14 +33,34 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Firebase (Google) Login
+// ✅ Firebase (Google) Login - the client sends the Firebase ID token it got from a real
+// Google sign-in as a Bearer header; this MUST be verified server-side before trusting any
+// identity field, otherwise anyone who knows an existing user's email can log in as them
+// with no password or token at all by just claiming that email in the request body.
 router.post("/firebase-login", async (req, res) => {
-  const { name, email, photo } = req.body;
-
-  console.log("🔍 Firebase Login Attempt:");
-  console.log("Received User Details:", { name, email, photo });
-
   try {
+    const authHeader = req.headers.authorization || "";
+    const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (!idToken) return res.status(401).json({ message: "❌ Missing Firebase ID token" });
+
+    let decoded;
+    try {
+      decoded = await verifyFirebaseIdToken(idToken);
+    } catch (err) {
+      console.error("❌ Firebase ID token verification failed:", err.message);
+      return res.status(401).json({ message: "❌ Invalid or expired Firebase token" });
+    }
+    if (!decoded.email || !decoded.email_verified) {
+      return res.status(401).json({ message: "❌ Firebase token has no verified email" });
+    }
+
+    // Identity comes from the verified token, never from the request body.
+    const email = decoded.email;
+    const name = decoded.name || req.body?.name;
+    const photo = decoded.picture || req.body?.photo;
+
+    console.log("🔍 Firebase Login (verified):", { name, email });
+
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -144,16 +166,14 @@ router.post("/google-login", async (req, res) => {
 });
 
 // ✅ Register Route
-router.post("/register", async (req, res) => {
+router.post("/register", loginRateLimit, async (req, res) => {
   try {
-    const { name, email, password, phone, adminKey } = req.body;
+    const { name, email, password, phone } = req.body;
 
     if (!name || !email || !password) return res.status(400).json({ message: "❌ All fields are required." });
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "❌ User with this email already exists." });
-
-    const isAdmin = adminKey === process.env.Admin_SECRET_KEY;
 
     const newUser = await User.create({
       name,

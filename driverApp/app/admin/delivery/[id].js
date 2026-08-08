@@ -14,19 +14,10 @@ import {
 import { buildDeliveryMapHtml } from "../../../src/utils/deliveryMapHtml";
 import Text from "../../../src/components/RTLText";
 
-const STATUS_OPTIONS = [
-  "broadcasting",
-  "claimed",
-  "arrived_at_restaurant",
-  "picked_up",
-  "delivered",
-  "customer_unavailable",
-  "returned_to_restaurant",
-  "canceled",
-];
+const STATUS_OPTIONS = ["unassigned", "claimed", "arrived_at_restaurant", "picked_up", "delivered", "customer_unavailable", "canceled"];
 
 const STATUS_KEY = {
-  broadcasting: "statusBroadcasting",
+  unassigned: "statusBroadcasting",
   claimed: "statusClaimed",
   arrived_at_restaurant: "statusArrived",
   picked_up: "statusPickedUp",
@@ -36,7 +27,6 @@ const STATUS_KEY = {
 };
 
 const TIMELINE_FIELDS = [
-  { key: "broadcastAt", label: "Broadcast" },
   { key: "claimedAt", label: "Claimed" },
   { key: "arrivedAt", label: "Arrived" },
   { key: "pickedUpAt", label: "Picked up" },

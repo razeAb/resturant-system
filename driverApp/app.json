@@ -11,12 +11,15 @@
       "expo-router",
       "expo-secure-store",
       "expo-notifications",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hungrysmokedmeat.driver"
     },
     "android": {
+      "package": "com.hungrysmokedmeat.driver",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

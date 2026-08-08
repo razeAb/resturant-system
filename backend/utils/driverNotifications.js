@@ -1,6 +1,8 @@
 const Order = require("../models/Order");
 const Driver = require("../models/Driver");
+const Restaurant = require("../models/Restaurant");
 const { sendExpoPushNotifications } = require("./expoPush");
+const { getDrivingDistance } = require("./googleDistance");
 
 function getIo() {
   // server.js sets module.exports.io before requiring route files, so this
@@ -22,6 +24,18 @@ async function broadcastDeliveryToDrivers(orderId) {
   );
   if (!claimed) return { skipped: true, reason: "already_broadcast_or_not_delivery" };
 
+  // Real driving distance/ETA (vs. the straight-line deliveryDistanceKm used for pricing),
+  // computed once here and cached on the order so drivers polling every few seconds don't
+  // each trigger their own Google API call.
+  const restaurant = await Restaurant.findById(claimed.restaurant).select("address").lean();
+  const driving = await getDrivingDistance(restaurant?.address, claimed.deliveryAddress);
+  if (driving) {
+    await Order.updateOne(
+      { _id: orderId },
+      { $set: { deliveryDrivingDistanceKm: driving.distanceKm, deliveryDrivingDurationMin: driving.durationMin } }
+    );
+  }
+
   // Only drivers who cover BOTH the restaurant's location and the customer's zone should
   // be alerted - a driver near the customer but far from this particular restaurant's
   // pickup area shouldn't be pinged. Drivers pick their own work areas independently, so
@@ -35,7 +49,9 @@ async function broadcastDeliveryToDrivers(orderId) {
     ],
   }).lean();
 
-  getIo()?.emit?.("delivery:new", {
+  // Only the restaurant's own online drivers should ever see this - not every connected
+  // socket (a customer's open browser tab, etc.).
+  getIo()?.to(`drivers:${claimed.restaurant}`)?.emit?.("delivery:new", {
     orderId: String(orderId),
     totalPrice: claimed.totalPrice,
     address: claimed.deliveryAddress,
@@ -63,7 +79,7 @@ async function claimOrderForDriver(orderId, driverId) {
   if (!claimed) return null;
 
   await Driver.updateOne({ _id: driverId }, { $set: { currentOrder: claimed._id } });
-  getIo()?.emit?.("delivery:claimed", { orderId: String(orderId), driverId: String(driverId) });
+  getIo()?.to(`drivers:${claimed.restaurant}`)?.emit?.("delivery:claimed", { orderId: String(orderId), driverId: String(driverId) });
   return claimed;
 }
 

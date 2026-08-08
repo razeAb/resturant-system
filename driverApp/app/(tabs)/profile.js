@@ -22,7 +22,6 @@ export default function ProfileScreen() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const [vehicleType, setVehicleType] = useState(driver?.vehicleType || "");
   const [vehiclePlate, setVehiclePlate] = useState(driver?.vehiclePlate || "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -119,7 +118,7 @@ export default function ProfileScreen() {
     setProfileError("");
     setProfileSaved(false);
     try {
-      const { driver: updated } = await updateMyProfile({ vehicleType, vehiclePlate });
+      const { driver: updated } = await updateMyProfile({ vehiclePlate });
       setDriver(updated);
       setProfileSaved(true);
     } catch (err) {
@@ -146,19 +145,9 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t("profile.vehicleType", "סוג רכב")}</Text>
+        <Text style={styles.sectionTitle}>{t("profile.vehiclePlate", "מספר רישוי")}</Text>
         {profileError ? <Text style={styles.error}>{profileError}</Text> : null}
         {profileSaved ? <Text style={styles.success}>{t("profile.profileSaved", "הפרטים נשמרו")}</Text> : null}
-        <TextInput
-          value={vehicleType}
-          onChangeText={(v) => {
-            setVehicleType(v);
-            setProfileSaved(false);
-          }}
-          placeholder={t("profile.vehicleTypePlaceholder", "לדוגמה: קטנוע, רכב")}
-          style={[styles.input, { textAlign: isRTL ? "right" : "left" }]}
-        />
-        <Text style={styles.label}>{t("profile.vehiclePlate", "מספר רישוי")}</Text>
         <TextInput
           value={vehiclePlate}
           onChangeText={(v) => {

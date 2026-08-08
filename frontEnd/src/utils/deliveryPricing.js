@@ -43,14 +43,18 @@ function pointInGeoJson(lat, lng, geojson) {
 }
 
 // Fixed delivery pricing formula — not restaurant-configurable, applies automatically.
-// Mirrors backend/utils/deliveryPricing.js.
+// Mirrors backend/utils/deliveryPricing.js. Flat BASE_FEE up to FREE_RADIUS_KM; every km
+// beyond that adds PER_KM_FEE. Card payments are charged VAT on the delivery fee; cash isn't.
 const BASE_FEE = 25;
+const FREE_RADIUS_KM = 10;
 const PER_KM_FEE = 2;
+const CARD_VAT_RATE = 0.18;
 
 // Eligibility is whether the address falls inside one of the configured delivery zones'
-// real boundaries; the fee itself is BASE_FEE + PER_KM_FEE * straight-line distance from
-// the restaurant.
-export function computeDeliveryFee(restaurant, deliveryAddress) {
+// real boundaries; the fee itself is a flat BASE_FEE for the first FREE_RADIUS_KM of
+// straight-line distance from the restaurant, plus PER_KM_FEE for each km beyond that -
+// with CARD_VAT_RATE added on top when paying by card.
+export function computeDeliveryFee(restaurant, deliveryAddress, isCard = false) {
   const restaurantLat = restaurant?.address?.lat;
   const restaurantLng = restaurant?.address?.lng;
   if (!Number.isFinite(restaurantLat) || !Number.isFinite(restaurantLng)) {
@@ -68,7 +72,9 @@ export function computeDeliveryFee(restaurant, deliveryAddress) {
   const zone = zones.find((z) => pointInGeoJson(deliveryAddress.lat, deliveryAddress.lng, z.boundary));
   if (!zone) return { outOfRange: true, distanceKm };
 
-  const fee = Math.round(BASE_FEE + PER_KM_FEE * distanceKm);
+  const extraKm = Math.max(0, distanceKm - FREE_RADIUS_KM);
+  const baseFee = BASE_FEE + PER_KM_FEE * extraKm;
+  const fee = Math.round(isCard ? baseFee * (1 + CARD_VAT_RATE) : baseFee);
 
   return { distanceKm, fee, zoneName: zone.name, zonePlaceId: zone.placeId || null };
 }

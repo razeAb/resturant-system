@@ -34,6 +34,7 @@ import Coupons from "./admin/Coupons";
 import WaiterTables from "./pages/WaiterTables";
 import { LangProvider, useLang } from "./context/LangContext";
 import LanguageToggle from "./components/common/LanguageToggle";
+import RequireAdmin from "./components/common/RequireAdmin";
 import api from "./api";
 
 const AppContent = () => {
@@ -100,29 +101,32 @@ const AppContent = () => {
         {/* Cart page with regular CartNavbar */}
         <Route path="/cart" element={<CartPage />} />
         <Route path="/about" element={<About />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/resetPassword" element={<ResetPassword />} />
         <Route path="/order-status" element={<OrderStatus />} />
 
-        <Route path="/admin/products" element={<AdminProducts />} />
-        <Route path="/admin/activeOrders" element={<ActiveOrders />} />
-        <Route path="/admin/orderHistory" element={<OrderHistory />} />
-        <Route path="/admin/revenue" element={<RevenuePage />} />
-        <Route path="/admin/cash-register" element={<CashRegister />} />
-        <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
-        <Route path="/admin/floor" element={<FloorLayout />} />
-        <Route path="/admin/floor-orders" element={<FloorOrders />} />
-        <Route path="/admin/coupons" element={<Coupons />} />
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/activeOrders" element={<ActiveOrders />} />
+          <Route path="/admin/orderHistory" element={<OrderHistory />} />
+          <Route path="/admin/revenue" element={<RevenuePage />} />
+          <Route path="/admin/cash-register" element={<CashRegister />} />
+          <Route path="/admin/menu-options" element={<MenuOptionsAdmin />} />
+          <Route path="/admin/floor" element={<FloorLayout />} />
+          <Route path="/admin/floor-orders" element={<FloorOrders />} />
+          <Route path="/admin/coupons" element={<Coupons />} />
+          <Route path="/admin/manage-shifts" element={<ManageShifts />} />
+          <Route path="/admin/workers" element={<ManageWorkers />} />
+          <Route path="/admin/drivers" element={<ManageDrivers />} />
+          <Route path="/admin/restaurant-settings" element={<RestaurantSettings />} />
+        </Route>
+
         <Route path="/kitchen" element={<KitchenOrders />} />
         <Route path="/worker/dashboard" element={<WorkerDashboard />} />
         <Route path="/worker/tables" element={<WaiterTables />} />
         <Route path="/worker/floor-orders" element={<FloorOrders variant="worker" />} />
-        <Route path="/admin/manage-shifts" element={<ManageShifts />} />
-        <Route path="/admin/workers" element={<ManageWorkers />} />
-        <Route path="/admin/drivers" element={<ManageDrivers />} />
-        <Route path="/admin/restaurant-settings" element={<RestaurantSettings />} />
         <Route path="/worker/login" element={<WorkerLogin />} />
       </Routes>
 

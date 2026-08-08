@@ -8,7 +8,7 @@ import Text from "../../../src/components/RTLText";
 const POLL_INTERVAL_MS = 8000;
 
 const STATUS_KEY = {
-  broadcasting: "statusBroadcasting",
+  unassigned: "statusBroadcasting",
   claimed: "statusClaimed",
   arrived_at_restaurant: "statusArrived",
   picked_up: "statusPickedUp",

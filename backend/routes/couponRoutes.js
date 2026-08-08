@@ -1,12 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Coupon = require("../models/Coupon");
-
-const computeDiscount = (subtotal, coupon) => {
-  if (!coupon || subtotal <= 0) return 0;
-  const raw = coupon.type === "percent" ? (subtotal * coupon.value) / 100 : coupon.value;
-  return Math.min(raw, subtotal);
-};
+const { computeDiscount } = require("../utils/couponPricing");
 
 router.post("/validate", async (req, res) => {
   try {

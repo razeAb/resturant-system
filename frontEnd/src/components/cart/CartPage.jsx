@@ -90,7 +90,9 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
   }, []);
 
   const deliveryPricing =
-    deliveryOption === "Delivery" && deliveryAddress && restaurantConfig ? computeDeliveryFee(restaurantConfig, deliveryAddress) : null;
+    deliveryOption === "Delivery" && deliveryAddress && restaurantConfig
+      ? computeDeliveryFee(restaurantConfig, deliveryAddress, paymentMethod === "Card")
+      : null;
   const isDeliveryOutOfRange = !!deliveryPricing?.outOfRange;
   const isFeeUndetermined = !!(deliveryPricing?.zonePlaceId && !onlineZonePlaceIds.includes(deliveryPricing.zonePlaceId));
   const deliveryFee = isFeeUndetermined ? 0 : deliveryPricing?.fee || 0;
@@ -946,6 +948,7 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           {deliveryPricing && !isFeeUndetermined && !deliveryPricing.outOfRange && !deliveryPricing.unconfigured && (
             <p style={{ fontSize: "14px", color: "#16a34a", marginTop: "8px", fontWeight: "600" }}>
               {t("cartPage.deliveryFeeLabel", "דמי משלוח")}: ₪{deliveryPricing.fee} ({deliveryPricing.distanceKm.toFixed(1)} ק"מ)
+              {paymentMethod === "Card" ? ` ${t("cartPage.deliveryFeeVatNote", '(כולל מע"מ)')}` : ""}
             </p>
           )}
           {isDeliveryOutOfRange && (

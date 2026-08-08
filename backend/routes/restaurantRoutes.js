@@ -3,6 +3,7 @@ const router = express.Router();
 const Restaurant = require("../models/Restaurant");
 const { protect } = require("../middleware/authMiddleware");
 const { resolveLocation, getSettlementBoundary, searchSettlements } = require("../utils/geocode");
+const { geocodeRateLimit } = require("../middleware/geocodeRateLimit");
 
 // Public: used by the checkout flow to estimate delivery fees client-side
 router.get("/", async (req, res) => {
@@ -94,13 +95,16 @@ router.put("/", protect, async (req, res) => {
 });
 
 // Admin: search for a city/village by name, for the "add a delivery area" picker.
+// Only Google-backed results carry a real placeId, which driver-order matching requires -
+// a GovMap/Nominatim fallback result with no placeId would silently become an unmatchable
+// zone, so it's filtered out here exactly like the driver-side search-settlements route.
 router.get("/search-settlements", protect, async (req, res) => {
   if (!req.user.isAdmin) return res.status(403).json({ message: "❌ Unauthorized" });
   try {
     const q = String(req.query.q || "").trim();
     if (!q) return res.json([]);
     const results = await searchSettlements(q);
-    res.json(results);
+    res.json(results.filter((r) => r.placeId));
   } catch (err) {
     console.error("Error searching settlements:", err);
     res.status(500).json({ message: err.message });
@@ -123,6 +127,26 @@ router.post("/resolve-location", protect, async (req, res) => {
     res.json(resolved);
   } catch (err) {
     console.error("Error resolving location:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Public: geocode the address the customer is typing at checkout, so the map pin can follow
+// what they typed instead of relying only on device GPS (which is often inaccurate/denied).
+// Rate-limited since it's unauthenticated and each call costs a Google Places lookup.
+router.post("/geocode-address", geocodeRateLimit, async (req, res) => {
+  try {
+    const { input } = req.body;
+    if (!input || !String(input).trim()) {
+      return res.status(400).json({ message: "❌ input is required" });
+    }
+    const resolved = await resolveLocation(input);
+    if (!resolved) {
+      return res.status(404).json({ message: "❌ Could not find that address" });
+    }
+    res.json(resolved);
+  } catch (err) {
+    console.error("Error geocoding address:", err);
     res.status(500).json({ message: err.message });
   }
 });

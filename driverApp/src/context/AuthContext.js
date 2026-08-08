@@ -3,7 +3,7 @@ import { getToken, setToken, deleteToken } from "../utils/tokenStorage";
 import { setAuthToken } from "../api/client";
 import { loginDriver, fetchMe, registerPushToken } from "../api/driver";
 import { loginAdmin, loginWithGoogleIdToken } from "../api/admin";
-import { connectSocket, disconnectSocket } from "../utils/socket";
+import { connectSocket, disconnectSocket, identifyDriver } from "../utils/socket";
 import { registerForPushNotificationsAsync } from "../utils/pushNotifications";
 
 // Best-effort: a driver who denies permission or is on a simulator should
@@ -122,9 +122,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (role === "driver") connectSocket();
-    else disconnectSocket();
-  }, [role]);
+    if (role !== "driver" || !driver?._id) {
+      disconnectSocket();
+      return;
+    }
+    (async () => {
+      const token = await getToken(TOKEN_KEY);
+      connectSocket(token);
+      identifyDriver(driver._id);
+    })();
+  }, [role, driver?._id]);
 
   return (
     <AuthContext.Provider value={{ driver, adminUser, role, isLoading, login, loginWithGoogle, logout, refreshDriver, setDriver }}>

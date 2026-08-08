@@ -8,6 +8,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -15,6 +16,7 @@ const { Server } = require("socket.io");
 const Order = require("./models/Order");
 const { notifyOwnerSmsForOrder } = require("./utils/notifications");
 const { ensureDefaultRestaurant } = require("./utils/ensureDefaultRestaurant");
+const { socketAuthMiddleware } = require("./utils/socketAuth");
 
 (() => {
   const envFile = process.env.ENV_FILE || (process.env.NODE_ENV === "production" ? ".env.production" : ".env");
@@ -23,15 +25,48 @@ const { ensureDefaultRestaurant } = require("./utils/ensureDefaultRestaurant");
   else dotenv.config();
 })();
 
+// Required after dotenv.config() above, since it reads LOG_LEVEL from the env at
+// construction time.
+const { logger } = require("./utils/logger");
+const pinoHttp = require("pino-http");
+
+// Without these, one uncaught error anywhere crashes the process with no record beyond
+// whatever Node prints to stderr by default - this logs it properly through the same
+// structured logger before exiting, so the host's restart (Render) has something to show.
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "uncaughtException - process exiting");
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  logger.fatal({ err: reason }, "unhandledRejection - process exiting");
+  process.exit(1);
+});
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
+io.use(socketAuthMiddleware);
 module.exports.io = io;
 
 mongoose.set("bufferCommands", false);
 
 // ✅ Middleware
+// crossOriginResourcePolicy disabled: product/upload images under /uploads are meant to be
+// loaded cross-origin by the separately-hosted frontend, which helmet's default would block.
+app.use(helmet({ crossOriginResourcePolicy: false }));
+// A full request/response dump on every successful call is just noise day-to-day - only
+// errors and rate-limit/4xx responses are actually worth seeing in the terminal.
+app.use(
+  pinoHttp({
+    logger,
+    customLogLevel: (req, res, err) => {
+      if (err || res.statusCode >= 500) return "error";
+      if (res.statusCode >= 400) return "warn";
+      return "silent";
+    },
+  })
+);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -78,7 +113,7 @@ app.post("/api/tranzila-webhook", async (req, res) => {
   try {
     // טרנזילה שולחים בדרך כלל application/x-www-form-urlencoded
     const data = req.body;
-    console.log("📩 Webhook received:", data);
+    logger.info({ data }, "📩 Webhook received");
 
     // אימות טוקן (אם יש)
     // Tranzila's notify callback can't send a custom header, but the notify URL
@@ -86,7 +121,7 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     // token travels as ?token=... instead of an x-tranzila-token header.
     const token = req.query.token || req.headers["x-tranzila-token"];
     if (process.env.TRANZILA_WEBHOOK_TOKEN && token !== process.env.TRANZILA_WEBHOOK_TOKEN) {
-      console.warn("⚠️ Invalid token");
+      logger.warn("⚠️ Invalid webhook token");
       return res.status(403).send("Forbidden");
     }
 
@@ -94,21 +129,21 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     const isSuccess = data.processor_response_code === "000" || data.Response === "000" || data.response === "000";
 
     if (!isSuccess) {
-      console.warn("❌ Payment failed payload:", data);
+      logger.warn({ data }, "❌ Payment failed payload");
       return res.status(200).send("received"); // להימנע מריצוד/רטראי
     }
 
     // ✅ שלוף את מזהה ההזמנה שלך שחזר מהחיוב (מאוד חשוב ששלחת אותו כ-ud1)
     const clientOrderId = data.ud1 || data.orderId || data.clientOrderId || req.query.orderId;
     if (!clientOrderId) {
-      console.error("✅ Success but missing clientOrderId (ud1). Payload:", data);
+      logger.error({ data }, "Success but missing clientOrderId (ud1)");
       return res.status(200).send("received");
     }
 
     // ✅ מצא את ההזמנה שנוצרה לפני התשלום
     const order = await Order.findOne({ clientOrderId });
     if (!order) {
-      console.error("❌ Order not found for clientOrderId:", clientOrderId);
+      logger.error({ clientOrderId }, "❌ Order not found for clientOrderId");
       return res.status(200).send("received");
     }
 
@@ -129,14 +164,14 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     };
 
     await order.save();
-    console.log("✅ Order updated as paid:", order._id);
+    logger.info({ orderId: order._id }, "✅ Order updated as paid");
     notifyOwnerSmsForOrder(order._id).catch((err) => {
-      console.error("❌ Owner SMS alert failed:", err?.response?.data || err?.message || err);
+      logger.error({ err: err?.response?.data || err?.message || err }, "❌ Owner SMS alert failed");
     });
 
-    // 🔔 notify admin dashboard in real-time
+    // 🔔 notify admin dashboard in real-time - staff room only, not every connected socket
     if (io && io.emit) {
-      io.emit("order_paid", {
+      io.to("staff").emit("order_paid", {
         _id: order._id,
         clientOrderId: order.clientOrderId,
         items: order.items,
@@ -151,7 +186,7 @@ app.post("/api/tranzila-webhook", async (req, res) => {
     }
     return res.status(200).send("ok");
   } catch (err) {
-    console.error("❌ Webhook error:", err);
+    logger.error({ err }, "❌ Webhook error");
     // מחזירים 200 כדי לא לגרום לריטריים אינסופיים
     return res.status(200).send("received");
   }
@@ -165,11 +200,11 @@ async function startServer() {
     await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
     });
-    console.log("✅ MongoDB Connected");
+    logger.info("✅ MongoDB Connected");
     await ensureDefaultRestaurant();
-    server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+    server.listen(PORT, () => logger.info(`🚀 Server on port ${PORT}`));
   } catch (err) {
-    console.error("❌ MongoDB Error:", err);
+    logger.fatal({ err }, "❌ MongoDB Error");
     process.exit(1);
   }
 }

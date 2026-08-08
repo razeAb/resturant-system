@@ -110,7 +110,17 @@ const OrderSchema = new mongoose.Schema({
     notes: { type: String, default: "" },
   },
   deliveryFee: { type: Number, default: 0 },
+  // Pre-VAT delivery fee - equal to deliveryFee for cash orders, but lower than it for card
+  // orders (which have VAT added on top). This is what the restaurant owes the driver; the
+  // VAT difference on card orders is the restaurant's, not part of the driver's payout.
+  deliveryFeeBeforeVat: { type: Number, default: 0 },
   deliveryDistanceKm: { type: Number, default: null },
+  // Real driving distance/ETA from the restaurant to the customer, fetched once from
+  // Google's Distance Matrix API when the delivery is broadcast to drivers. Kept separate
+  // from deliveryDistanceKm (a straight-line estimate used for fee pricing) so a slow/failed
+  // Google call never blocks pricing or the broadcast itself.
+  deliveryDrivingDistanceKm: { type: Number, default: null },
+  deliveryDrivingDurationMin: { type: Number, default: null },
   deliveryZoneName: { type: String, default: null },
   // Google Place ID of the resolved zone - used to match drivers by placeId instead of
   // by name, since a driver's own zone list is independent of the restaurant's zone names.

@@ -1,10 +1,14 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, GeoJSON, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { useLang } from "../../context/LangContext";
+import api from "../../api";
+
+const GEOCODE_DEBOUNCE_MS = 800;
+const MIN_GEOCODE_LENGTH = 5;
 
 // Leaflet's Icon.Default prepends an auto-detected imagePath to whatever URL is in
 // options, which mangles Vite's bundled asset URLs. Deleting the override falls back
@@ -53,6 +57,10 @@ const DeliveryAddressPicker = ({
   const [notes, setNotes] = useState(value?.notes || "");
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState("");
+  const userEditedTextRef = useRef(false);
+  const debounceRef = useRef(null);
 
   // Syncs the pin when `value` is updated from outside (e.g. the admin "resolve
   // Google Maps link" flow), not just from user interaction with this component.
@@ -79,9 +87,44 @@ const DeliveryAddressPicker = ({
   };
 
   const handleTextChange = (e) => {
+    userEditedTextRef.current = true;
     setText(e.target.value);
     emit(position, e.target.value, notes);
   };
+
+  // GPS is often inaccurate or denied, so as the customer types their address, geocode it
+  // via Google (with GovMap/Nominatim fallbacks, same as the admin's address resolver) and
+  // move the pin to match - debounced so it only fires once typing pauses. Skipped on the
+  // initial mount/external sync so re-opening a cart with an already-resolved address
+  // doesn't immediately re-geocode and potentially nudge a manually-placed pin.
+  useEffect(() => {
+    if (!userEditedTextRef.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = text.trim();
+    setGeocodeError("");
+    if (trimmed.length < MIN_GEOCODE_LENGTH) return;
+
+    debounceRef.current = setTimeout(async () => {
+      setGeocoding(true);
+      try {
+        const res = await api.post("/api/restaurant/geocode-address", { input: trimmed });
+        const { lat, lng } = res.data || {};
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          const newPosition = [lat, lng];
+          setPosition(newPosition);
+          emit(newPosition, text, notes);
+        }
+      } catch {
+        setGeocodeError(t("cartPage.addressNotFound", "לא נמצאה כתובת מתאימה - ניתן לסמן ידנית על המפה"));
+      } finally {
+        setGeocoding(false);
+      }
+    }, GEOCODE_DEBOUNCE_MS);
+
+    return () => clearTimeout(debounceRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
 
   const handleNotesChange = (e) => {
     setNotes(e.target.value);
@@ -172,6 +215,11 @@ const DeliveryAddressPicker = ({
             placeholder={t("cartPage.addressPlaceholder", "כתובת (רחוב, מספר בית, עיר)")}
             style={{ width: "100%", padding: "10px", marginTop: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
           />
+          {geocoding ? (
+            <p style={{ fontSize: "12px", color: "#777", marginTop: "4px" }}>{t("cartPage.locatingAddress", "מאתר את הכתובת על המפה...")}</p>
+          ) : geocodeError ? (
+            <p style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px" }}>{geocodeError}</p>
+          ) : null}
           <input
             type="text"
             value={notes}

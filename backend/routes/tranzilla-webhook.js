@@ -82,9 +82,9 @@ router.post("/tranzila-webhook", express.text({ type: "*/*" }), async (req, res)
       });
     }
 
-    // 🔔 push to admin UI in real-time
+    // 🔔 push to admin UI in real-time - staff room only, not every connected socket
     if (isSuccess && io?.emit) {
-      io.emit("order_paid", {
+      io.to("staff").emit("order_paid", {
         _id: order._id,
         clientOrderId: order.clientOrderId,
         items: order.items,

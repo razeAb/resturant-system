@@ -4,6 +4,7 @@ const Worker = require("../models/Worker");
 const Shift = require("../models/Shift");
 const { protect } = require("../middleware/authMiddleware");
 const { workerProtect } = require("../middleware/workerAuthMiddleware");
+const { loginRateLimit } = require("../middleware/loginRateLimit");
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => jwt.sign({ workerId: id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -53,7 +54,7 @@ router.delete("/:id", protect, async (req, res) => {
 });
 
 // Worker login -> start shift
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   try {
     const { username, password } = req.body;
     const worker = await Worker.findOne({ username });

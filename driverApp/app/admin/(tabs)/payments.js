@@ -60,7 +60,7 @@ export default function AdminPaymentsScreen() {
       ? t("admin.payments.paidSelf", "נגבה על ידי השליח")
       : status === "owed"
         ? t("admin.payments.paidOwed", "המסעדה חייבת")
-        : status === "paid"
+        : status === "paid_out"
           ? t("admin.payments.paidDone", "שולם")
           : "";
 

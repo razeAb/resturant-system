@@ -15,11 +15,15 @@ const SOCKET_URL = (
   "http://localhost:5001"
 ).replace(/\/$/, "");
 
+// The token is required for the backend to place this socket into the "staff" room -
+// without it, the connection joins no room and silently receives no order/delivery events
+// (see backend/utils/socketAuth.js).
 const socket = io(SOCKET_URL, {
   transports: ["websocket", "polling"],
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,
+  auth: { token: localStorage.getItem("token") },
 });
 
 /* ----------------- helpers ----------------- */

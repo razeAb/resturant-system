@@ -7,6 +7,7 @@ const { searchSettlements, getSettlementBoundary } = require("../utils/geocode")
 const { protect, ensureAnyAdmin } = require("../middleware/authMiddleware");
 const { driverProtect } = require("../middleware/driverAuthMiddleware");
 const { claimOrderForDriver, getIo } = require("../utils/driverNotifications");
+const { loginRateLimit } = require("../middleware/loginRateLimit");
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => jwt.sign({ driverId: id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -77,7 +78,7 @@ router.delete("/:id", protect, async (req, res) => {
 });
 
 // Driver login
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   try {
     const { username, password } = req.body;
     const driver = await Driver.findOne({ username });
@@ -277,7 +278,7 @@ router.post("/orders/:id/arrived", driverProtect, async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ message: "❌ Order not found or not yours" });
-    getIo()?.emit?.("delivery:arrived", { orderId: String(order._id) });
+    getIo()?.to("staff")?.emit?.("delivery:arrived", { orderId: String(order._id) });
     res.json({ order });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -331,7 +332,10 @@ router.post("/orders/:id/delivered", driverProtect, async (req, res) => {
     order.delivery.deliveredAt = new Date();
     order.delivery.cashCollected = isCash ? true : false;
     order.delivery.cashCollectedAt = isCash ? new Date() : null;
-    order.delivery.driverEarning = order.deliveryFee;
+    // Pre-VAT amount - falls back to deliveryFee for orders placed before this field
+    // existed. The restaurant keeps the VAT charged on card orders; the driver is only
+    // ever owed the base delivery fee.
+    order.delivery.driverEarning = order.deliveryFeeBeforeVat || order.deliveryFee;
     order.delivery.driverPayoutStatus = isCash ? "self_collected" : "owed";
     order.status = "done";
     await order.save();
@@ -344,40 +348,86 @@ router.post("/orders/:id/delivered", driverProtect, async (req, res) => {
   }
 });
 
-// Driver: today/week/month earnings totals + per-delivery breakdown.
-// There's only one restaurant in this system, so a single findOne() covers every row's name.
+// Terminal delivery outcomes - this used to be the separate History screen's own query
+// (now merged into Earnings, since a driver shouldn't have to check two different lists to
+// see what happened to a past delivery).
+const TERMINAL_DELIVERY_STATUSES = ["delivered", "customer_unavailable", "returned_to_restaurant", "canceled"];
+
+// Driver: today/week/month earnings totals (each with count + % change vs the equivalent
+// previous period, computed from delivered orders only) + a per-delivery breakdown that also
+// includes failed/cancelled deliveries, so this list doubles as full delivery history. There's
+// only one restaurant in this system, so a single findOne() covers every row's name.
 router.get("/orders/earnings", driverProtect, async (req, res) => {
   try {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - 7);
+    const startOfPrevWeek = new Date(startOfWeek);
+    startOfPrevWeek.setDate(startOfPrevWeek.getDate() - 7);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const [delivered, restaurant] = await Promise.all([
-      Order.find({ "delivery.driver": req.user._id, "delivery.status": "delivered" }).sort({ "delivery.deliveredAt": -1 }),
+    const [allTerminal, restaurant] = await Promise.all([
+      Order.find({ "delivery.driver": req.user._id, "delivery.status": { $in: TERMINAL_DELIVERY_STATUSES } }).sort({
+        "delivery.deliveredAt": -1,
+        createdAt: -1,
+      }),
       Restaurant.findOne(),
     ]);
+    const delivered = allTerminal.filter((o) => o.delivery.status === "delivered");
 
-    const sumSince = (since) =>
-      delivered
-        .filter((o) => o.delivery.deliveredAt && o.delivery.deliveredAt >= since)
-        .reduce((sum, o) => sum + (o.delivery.driverEarning || 0), 0);
+    const inRange = (o, since, until) => o.delivery.deliveredAt && o.delivery.deliveredAt >= since && (!until || o.delivery.deliveredAt < until);
+    const sumRange = (since, until) =>
+      delivered.filter((o) => inRange(o, since, until)).reduce((sum, o) => sum + (o.delivery.driverEarning || 0), 0);
+    const countRange = (since, until) => delivered.filter((o) => inRange(o, since, until)).length;
+    // null (not 0%) when there's nothing to compare against - a brand-new driver's first day
+    // shouldn't show a misleading "+100%" or "0%".
+    const changePct = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
-    const deliveries = delivered.map((o) => ({
+    const buildPeriod = (since, prevSince, prevUntil) => {
+      const total = sumRange(since);
+      const prevTotal = sumRange(prevSince, prevUntil);
+      return { total, count: countRange(since), changePct: changePct(total, prevTotal) };
+    };
+
+    const deliveries = allTerminal.map((o) => ({
       orderId: o._id,
+      orderNumber: String(o._id).slice(-6).toUpperCase(),
       restaurantName: restaurant?.name || "",
+      zoneName: o.deliveryZoneName || o.deliveryAddress?.text || "",
       amount: o.delivery.driverEarning || 0,
-      deliveredAt: o.delivery.deliveredAt,
+      // Failed/cancelled orders never got a deliveredAt - createdAt is the best available
+      // timestamp for those (there's no dedicated "failedAt" field on the order).
+      timestamp: o.delivery.deliveredAt || o.createdAt,
       paymentMethod: o.paymentDetails?.method || null,
       payoutStatus: o.delivery.driverPayoutStatus,
+      status: o.delivery.status === "delivered" ? "delivered" : "cancelled",
+      deliveryStatus: o.delivery.status,
+      // Everything below is only for the expandable "order details" view on the earnings
+      // card - already loaded on this same Order document, so no extra query is needed.
+      totalPrice: o.totalPrice,
+      customerName: o.customerName || "",
+      phone: o.phone || "",
+      deliveryAddress: o.deliveryAddress || null,
+      items: (o.items || []).map((it) => ({
+        title: it.title,
+        price: it.price,
+        quantity: it.quantity,
+        isWeighted: it.isWeighted,
+        additions: it.additions || [],
+        vegetables: it.vegetables || [],
+        sauces: it.sauces || [],
+        comment: it.comment || "",
+      })),
     }));
 
     res.json({
-      today: sumSince(startOfToday),
-      week: sumSince(startOfWeek),
-      month: sumSince(startOfMonth),
-      completedToday: delivered.filter((o) => o.delivery.deliveredAt && o.delivery.deliveredAt >= startOfToday).length,
+      today: buildPeriod(startOfToday, startOfYesterday, startOfToday),
+      week: buildPeriod(startOfWeek, startOfPrevWeek, startOfWeek),
+      month: buildPeriod(startOfMonth, startOfPrevMonth, startOfMonth),
       deliveries,
     });
   } catch (err) {

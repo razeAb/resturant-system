@@ -1,4 +1,5 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 const Order = require("../models/Order");
 const User = require("../models/User");
@@ -8,6 +9,7 @@ const { protect } = require("../middleware/authMiddleware");
 const { notifyOwnerSmsForOrder, notifyCustomerEtaSms } = require("../utils/notifications");
 const { broadcastDeliveryToDrivers } = require("../utils/driverNotifications");
 const { computeDeliveryFee, findZoneForPoint } = require("../utils/deliveryPricing");
+const { guardOrderPricing, TOTAL_TOLERANCE } = require("../utils/orderPricingGuard");
 
 /* ---------------- helpers / constants ---------------- */
 const ALLOWED_DELIVERY = new Set(["Pickup", "Delivery", "EatIn"]);
@@ -15,6 +17,20 @@ const ALLOWED_METHODS = new Set(["Card", "Cash", "Bit"]);
 const ALLOWED_STATUSES = new Set(["pending_payment", "preparing", "delivering", "done", "paid", "failed", "canceled"]);
 
 const isObjectIdStr = (s) => typeof s === "string" && /^[a-f\d]{24}$/i.test(s);
+
+// Coupon codes and loyalty rewards must be tied to a real logged-in session - otherwise
+// anyone could claim any user's reward/discount just by putting that user's id in the body.
+// Regular guest checkout (no coupon/reward) is untouched and still requires no login.
+function getVerifiedUserId(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return null;
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET).userId || null;
+  } catch {
+    return null;
+  }
+}
 
 function cleanItems(items) {
   const invalid = [];
@@ -58,13 +74,13 @@ function normalizeStatus({ method, rawStatus }) {
 // and blocks the order (error) if the address is outside the configured delivery area.
 // If the restaurant hasn't set its own address yet, delivery is allowed through with
 // a ₪0 fee rather than blocking every order (backward-compatible until admin configures it).
-async function resolveDeliveryPricing(deliveryAddress) {
+async function resolveDeliveryPricing(deliveryAddress, isCard = false) {
   const restaurant = await Restaurant.findOne();
   if (!restaurant) return { error: "No restaurant configured" };
 
-  const pricing = computeDeliveryFee(restaurant, deliveryAddress);
+  const pricing = computeDeliveryFee(restaurant, deliveryAddress, isCard);
   if (pricing.unconfigured) {
-    return { restaurantId: restaurant._id, deliveryFee: 0, deliveryDistanceKm: null };
+    return { restaurantId: restaurant._id, deliveryFee: 0, deliveryFeeBeforeVat: 0, deliveryDistanceKm: null };
   }
   if (pricing.outOfRange) {
     return { error: `Sorry, this address is outside our delivery area (${pricing.distanceKm.toFixed(1)}km away)` };
@@ -92,6 +108,7 @@ async function resolveDeliveryPricing(deliveryAddress) {
     return {
       restaurantId: restaurant._id,
       deliveryFee: 0,
+      deliveryFeeBeforeVat: 0,
       deliveryDistanceKm: pricing.distanceKm,
       zoneName: pricing.zoneName,
       zonePlaceId: pricing.zonePlaceId,
@@ -103,6 +120,9 @@ async function resolveDeliveryPricing(deliveryAddress) {
   return {
     restaurantId: restaurant._id,
     deliveryFee: pricing.fee,
+    // The pre-VAT amount - this is what the restaurant owes the driver, since the VAT on
+    // top (when paying by card) is the restaurant's, not part of the driver's payout.
+    deliveryFeeBeforeVat: pricing.baseFee,
     deliveryDistanceKm: pricing.distanceKm,
     zoneName: pricing.zoneName,
     zonePlaceId: pricing.zonePlaceId,
@@ -179,16 +199,38 @@ router.post("/create-pre-payment", async (req, res) => {
       return res.status(400).json({ message: addressError });
     }
 
-    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryDistanceKm: null };
+    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryFeeBeforeVat: 0, deliveryDistanceKm: null };
     if (deliveryOption === "Delivery") {
-      deliveryPricing = await resolveDeliveryPricing(cleanedAddress);
+      deliveryPricing = await resolveDeliveryPricing(cleanedAddress, paymentDetails?.method === "Card");
       if (deliveryPricing.error) {
         return res.status(400).json({ message: deliveryPricing.error });
       }
     }
 
+    let verifiedUserId = user;
+    if (couponCode || couponUsed) {
+      verifiedUserId = getVerifiedUserId(req);
+      if (!verifiedUserId) {
+        return res.status(401).json({ message: "❌ Please log in to use a coupon or reward" });
+      }
+    }
+
+    const pricingGuard = await guardOrderPricing({
+      items: cleaned,
+      userId: verifiedUserId,
+      couponUsed,
+      couponCode,
+      deliveryFee: deliveryPricing.deliveryFee,
+    });
+    if (pricingGuard.error) {
+      return res.status(400).json({ message: pricingGuard.error });
+    }
+    if (priceNumber + TOTAL_TOLERANCE < pricingGuard.minTotal) {
+      return res.status(400).json({ message: "Total price doesn't match the menu - please refresh your cart and try again" });
+    }
+
     const order = new Order({
-      user: user || undefined,
+      user: verifiedUserId || undefined,
       phone: phone || undefined,
       customerName: customerName || undefined,
       comment: comment || undefined,
@@ -206,6 +248,7 @@ router.post("/create-pre-payment", async (req, res) => {
       deliveryOption,
       deliveryAddress: cleanedAddress,
       deliveryFee: deliveryPricing.deliveryFee,
+      deliveryFeeBeforeVat: deliveryPricing.deliveryFeeBeforeVat,
       deliveryDistanceKm: deliveryPricing.deliveryDistanceKm,
       deliveryZoneName: deliveryPricing.zoneName || null,
       deliveryZonePlaceId: deliveryPricing.zonePlaceId || null,
@@ -294,12 +337,34 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: addressError });
     }
 
-    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryDistanceKm: null };
+    let deliveryPricing = { restaurantId: undefined, deliveryFee: 0, deliveryFeeBeforeVat: 0, deliveryDistanceKm: null };
     if (deliveryOption === "Delivery") {
-      deliveryPricing = await resolveDeliveryPricing(cleanedAddress);
+      deliveryPricing = await resolveDeliveryPricing(cleanedAddress, paymentDetails?.method === "Card");
       if (deliveryPricing.error) {
         return res.status(400).json({ message: deliveryPricing.error });
       }
+    }
+
+    let verifiedUserId = user;
+    if (couponCode || couponUsed) {
+      verifiedUserId = getVerifiedUserId(req);
+      if (!verifiedUserId) {
+        return res.status(401).json({ message: "❌ Please log in to use a coupon or reward" });
+      }
+    }
+
+    const pricingGuard = await guardOrderPricing({
+      items: cleaned,
+      userId: verifiedUserId,
+      couponUsed,
+      couponCode,
+      deliveryFee: deliveryPricing.deliveryFee,
+    });
+    if (pricingGuard.error) {
+      return res.status(400).json({ message: pricingGuard.error });
+    }
+    if (priceNumber + TOTAL_TOLERANCE < pricingGuard.minTotal) {
+      return res.status(400).json({ message: "Total price doesn't match the menu - please refresh your cart and try again" });
     }
 
     // ---- normalize method & status ----
@@ -310,7 +375,7 @@ router.post("/", async (req, res) => {
 
     // ---- create (or reuse an abandoned pending_payment placeholder) ----
     const newOrder = reuseOrder || new Order({ idempotencyKey: idempotencyKey || undefined });
-    newOrder.user = user || undefined;
+    newOrder.user = verifiedUserId || undefined;
     newOrder.phone = phone || undefined;
     newOrder.customerName = customerName || undefined;
     newOrder.comment = comment || undefined;
@@ -326,6 +391,7 @@ router.post("/", async (req, res) => {
     newOrder.deliveryOption = deliveryOption;
     newOrder.deliveryAddress = cleanedAddress;
     newOrder.deliveryFee = deliveryPricing.deliveryFee;
+    newOrder.deliveryFeeBeforeVat = deliveryPricing.deliveryFeeBeforeVat;
     newOrder.deliveryDistanceKm = deliveryPricing.deliveryDistanceKm;
     newOrder.deliveryZoneName = deliveryPricing.zoneName || null;
     newOrder.deliveryZonePlaceId = deliveryPricing.zonePlaceId || null;
