@@ -31,7 +31,7 @@ router.get("/:id", async (req, res) => {
 // ✅ Add a Single Product
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions, isFixedItem } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ message: "❌ Name, price, and stock are required." });
@@ -57,6 +57,7 @@ router.post("/", protect, async (req, res) => {
       isWeighted,
       fullSandwichPrice,
       extraPattyPrice,
+      isFixedItem,
       portionOptions: sanitizedPortionOptions,
     });
     await newProduct.save();
@@ -119,7 +120,7 @@ router.post("/add-products", protect, async (req, res) => {
 // ✅ Edit/Update Product by ID
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions } = req.body;
+    const { name, price, stock, description, image, category, isWeighted, fullSandwichPrice, extraPattyPrice, portionOptions, isFixedItem } = req.body;
     const productId = req.params.id;
 
     const sanitizedPortionOptions = Array.isArray(portionOptions)
@@ -144,6 +145,7 @@ router.put("/:id", protect, async (req, res) => {
         isWeighted,
         fullSandwichPrice,
         extraPattyPrice,
+        isFixedItem,
         ...(sanitizedPortionOptions !== undefined ? { portionOptions: sanitizedPortionOptions } : {}),
       },
       { new: true, runValidators: true }

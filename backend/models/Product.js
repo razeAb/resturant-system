@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true }, // ✅ Added required category
   fullSandwichPrice: { type: Number, default: 0 },
   extraPattyPrice: { type: Number, default: 0 },
+  isFixedItem: { type: Boolean, default: false },
   portionOptions: [
     {
       label_he: { type: String, default: "" },

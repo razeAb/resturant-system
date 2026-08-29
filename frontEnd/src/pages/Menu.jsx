@@ -67,6 +67,7 @@ const Menu = () => {
               description_he={item.description_he}
               category={item.category}
               isWeighted={item.isWeighted}
+              isFixedItem={item.isFixedItem}
               isActive={item.isActive}
               isOrder={item.isOrder}
               recommendations={recommendationProducts.filter((product) => product._id !== item._id)}

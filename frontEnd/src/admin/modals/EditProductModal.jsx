@@ -23,6 +23,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
         }))
       : [],
     isActive: product?.isActive ?? true,
+    isFixedItem: product?.isFixedItem ?? false,
   };
 
   const [form, setForm] = useState(initial);
@@ -148,8 +149,21 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
           extraPattyPrice: form.category === "Sandwiches" ? toNumberOrUndefined(form.extraPattyPrice) : undefined,
           portionOptions: canEditPortions ? sanitizePortionOptions(form.portionOptions) : undefined,
           isActive: !!form.isActive,
+          isFixedItem: !!form.isFixedItem,
         },
-        ["name", "title", "price", "stock", "image", "category", "description", "fullSandwichPrice", "extraPattyPrice", "isActive"]
+        [
+          "name",
+          "title",
+          "price",
+          "stock",
+          "image",
+          "category",
+          "description",
+          "fullSandwichPrice",
+          "extraPattyPrice",
+          "isActive",
+          "isFixedItem",
+        ]
       );
 
       if (canEditPortions) {
@@ -354,6 +368,11 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
               ))}
             </div>
           )}
+
+          <label className="flex items-center gap-2 pt-1">
+            <input type="checkbox" name="isFixedItem" checked={!!form.isFixedItem} onChange={handleChange} className="accent-green-500" />
+            פריט קבוע (בלי התאמה אישית – רק בחירת כמות)
+          </label>
 
           <label className="flex items-center gap-2 pt-1">
             <input type="checkbox" name="isActive" checked={!!form.isActive} onChange={handleChange} className="accent-green-500" />

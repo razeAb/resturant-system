@@ -12,6 +12,7 @@ const AddProductModal = ({ onClose, onAdd }) => {
     extraPattyPrice: "",
     portionOptions: [],
     isActive: true,
+    isFixedItem: false,
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -277,6 +278,11 @@ const AddProductModal = ({ onClose, onAdd }) => {
             ))}
           </div>
         )}
+
+        <label className="flex items-center gap-2 mt-2 mb-2">
+          <input type="checkbox" name="isFixedItem" checked={form.isFixedItem} onChange={handleChange} />
+          <span className="text-sm">פריט קבוע (בלי התאמה אישית – רק בחירת כמות)</span>
+        </label>
 
         <label className="flex items-center gap-2 mt-2 mb-4">
           <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />

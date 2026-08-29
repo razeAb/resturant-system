@@ -4,6 +4,7 @@ import Modal from "../components/common/Modal";
 import WeightedModal from "../components/modals/WeightModal";
 import CommentModal from "../components/modals/CommentModal";
 import PortionSizeModal from "../components/modals/PortionSizeModal";
+import FixedItemModal from "../components/modals/FixedItemModal";
 import AlertModal from "../components/common/AlertModal"; // Import AlertModal
 import "./DishesCard.css"; // Import the CSS file
 import CartContext from "../context/CartContext"; // Import CartContext
@@ -50,6 +51,8 @@ const DishesCard = (props) => {
     console.log("isOrder:", props.isOrder);
     if (props.isOrder === true || props.isOrder === "true") {
       setIsAlertOpen(true); // Show AlertModal
+    } else if (props.isFixedItem) {
+      setIsModalOpen(true); // Fixed item: quantity-only modal
     } else if (isWingsMeal) {
       setIsModalOpen(true); // Wings/comment modal
     } else if (isWeightedCategory) {
@@ -130,9 +133,22 @@ const DishesCard = (props) => {
         </div>
       </div>
       {/* Conditionally render the modal based on props.modalType */}
-      {(props.isWeighted || props.category === "Sandwiches" || isWeightedCategory || props.category === "Starters" || isWingsMeal || hasSidePortions) && (
+      {(props.isFixedItem || props.isWeighted || props.category === "Sandwiches" || isWeightedCategory || props.category === "Starters" || isWingsMeal || hasSidePortions) && (
         <>
-          {isWingsMeal ? (
+          {props.isFixedItem ? (
+            <FixedItemModal
+              _id={props.id}
+              img={props.img}
+              title={props.title}
+              name_en={props.name_en}
+              name_he={props.name_he}
+              price={props.price}
+              description={props.description}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+              onAddToCart={handleAddToCart}
+            />
+          ) : isWingsMeal ? (
             <CommentModal
               _id={props.id}
               img={props.img}
