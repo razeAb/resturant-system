@@ -3,14 +3,45 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
+// This runs as its own standalone process at the restaurant's physical location (next to
+// its printer), not as part of the main backend/server.js deploy - so it needs its own
+// local config file rather than sharing backend/.env. Copy printer.env.example ->
+// printer.env on that machine and fill in the values, e.g. to switch the physical printer
+// from USB to a WiFi/network one. With no printer.env at all, defaults below reproduce the
+// original hardcoded USB setup unchanged, so existing installs keep working either way.
+require("dotenv").config({ path: path.join(__dirname, "printer.env") });
+
 const { Printer, Image } = require("@node-escpos/core");
 const UsbAdapterPkg = require("@node-escpos/usb-adapter");
 const USB = UsbAdapterPkg.default || UsbAdapterPkg;
+const NetworkAdapterPkg = require("@node-escpos/network-adapter");
+const Network = NetworkAdapterPkg.default || NetworkAdapterPkg;
 const sharp = require("sharp");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Per-location config - defaults reproduce the original hardcoded USB setup unchanged, so
+// existing installs keep working with no printer.env at all.
+const SERVICE_PORT = Number(process.env.PRINTER_SERVICE_PORT) || 9100;
+const PRINTER_MODE = (process.env.PRINTER_MODE || "usb").toLowerCase(); // "usb" | "network"
+const USB_VENDOR_ID = Number(process.env.PRINTER_USB_VENDOR_ID) || 0x1504;
+const USB_PRODUCT_ID = Number(process.env.PRINTER_USB_PRODUCT_ID) || 0x011c;
+const NETWORK_HOST = process.env.PRINTER_NETWORK_HOST || ""; // e.g. the WiFi printer's LAN IP
+const NETWORK_PORT = Number(process.env.PRINTER_NETWORK_PORT) || 9100;
+
+// Returns a fresh escpos adapter for this print job (usb-adapter devices can't be reused
+// across opens once closed, matching the original per-request `new USB(...)` pattern).
+function createDevice() {
+  if (PRINTER_MODE === "network") {
+    if (!NETWORK_HOST) {
+      throw new Error("PRINTER_MODE=network but PRINTER_NETWORK_HOST is not set in printer.env");
+    }
+    return new Network(NETWORK_HOST, NETWORK_PORT);
+  }
+  return new USB(USB_VENDOR_ID, USB_PRODUCT_ID);
+}
 
 const RECEIPT_WIDTH = 576; // 80mm printers (SVG canvas)
 const PRINTER_DOTS = 512; // try 512 first; if clipped, try 576
@@ -89,19 +120,7 @@ const rtlText = (s) => String(s ?? "");
 const formatPrice = (n) => {
   if (n == null || n === "") return "";
   const val = typeof n === "number" ? n : Number(n || 0);
-  return `₪${val.toFixed(2)}`;
-};
-
-const formatTime = (timestamp) => {
-  if (!timestamp) return "";
-  const date = new Date(new Date(timestamp).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMinutes = Math.floor(diffMs / 60000);
-  if (diffMinutes < 1) return "רגע עכשיו";
-  if (diffMinutes < 60) return `${diffMinutes} דקות`;
-  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} שעות`;
-  return date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+  return `₪ ${val.toFixed(2)}`;
 };
 
 const translateDeliveryOption = (option) => {
@@ -218,14 +237,14 @@ const wrapText = (text, maxChars) => {
   return lines.length ? lines : [str];
 };
 
-const buildReceiptSvg = (order, dailyNumber) => {
-  const centerX = RECEIPT_WIDTH / 2;
-  const rightX = RECEIPT_WIDTH - MARGIN;
-  const leftX = MARGIN + LEFT_TEXT_OFFSET;
+// One receipt is printed as two separate physical print jobs, cut apart between them: the
+// header/customer-info part (handed to the customer / posted at pickup) and the order-items
+// part (goes to the kitchen). Each part is its own independent canvas - own elements array,
+// own y cursor starting fresh from the top - so createCanvas is a factory called once per
+// part rather than a single shared canvas for the whole receipt.
+const createCanvas = (startY, { centerX, rightX, leftX }) => {
   const elements = [];
-  let y = 60;
-  const bodyAlign = "left";
-  const bodyRtl = false;
+  let y = startY;
 
   const addText = (text, opts = {}) => {
     const size = Math.round((opts.size ?? 28) * SIZE_SCALE);
@@ -249,7 +268,10 @@ const buildReceiptSvg = (order, dailyNumber) => {
     elements.push(
       `<line x1="${MARGIN}" x2="${RECEIPT_WIDTH - MARGIN}" y1="${y}" y2="${y}" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />`,
     );
-    y += 28;
+    // Scaled like every other spacing constant below - left unscaled, this gap stayed a
+    // flat 28px while text grew to SIZE_SCALE, so the line ended up sitting almost on top
+    // of (visually striking through) whatever text followed it.
+    y += Math.round(28 * SIZE_SCALE);
   };
 
   const addBadge = (text, size = 32, rtl = false, padYOverride) => {
@@ -341,18 +363,21 @@ const buildReceiptSvg = (order, dailyNumber) => {
 
   const addItemRow = (nameText, qtyText, size = 24) => {
     const scaledSize = Math.round(size * SIZE_SCALE);
-    const nameX = leftX;
+    // Item names are Hebrew, like the rest of the receipt - anchored at the right margin
+    // (reading start for RTL) with quantity trailing to the left, matching every other
+    // label/value row instead of the LTR-style name-on-the-left layout this used to have.
+    const nameX = rightX;
     const nameLines = wrapText(nameText, 18);
     nameLines.forEach((line, idx) => {
       if (idx === 0) {
         elements.push(
-          `<text x="${rightX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(
+          `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
             qtyText,
           )}</text>`,
         );
       }
       elements.push(
-        `<text x="${nameX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
+        `<text x="${nameX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(
           line,
         )}</text>`,
       );
@@ -360,128 +385,10 @@ const buildReceiptSvg = (order, dailyNumber) => {
     });
   };
 
-  // Build receipt content
-  addText("HUNGRY", { align: "center", size: 48, weight: "bold" });
-  addText("הזמנה חדשה", { align: "center", size: 22 });
-  y += 14;
-
-  addBadge(String(dailyNumber), 40);
-
-  const paymentMethod = translatePaymentMethod(order?.paymentDetails?.method);
-  if (paymentMethod) addBadge(label(`תשלום ב${paymentMethod}`, `Payment: ${paymentMethod}`), 30, bodyRtl, 24);
-
-  const totalLabel = formatPrice(order?.totalPrice ?? order?.total ?? "");
-  if (totalLabel) addText(totalLabel, { align: "center", size: 36, weight: "bold" });
-
-  addDivider();
-
-  const deliveryType = translateDeliveryOption(order?.deliveryOption);
-  if (deliveryType) addText(deliveryType, { align: bodyAlign, size: 35, weight: "bold", rtl: bodyRtl });
-
-  const address = order?.address?.full || order?.address?.street || order?.deliveryAddress || order?.shippingAddress?.address || "";
-  if (address) {
-    wrapText(label(`כתובת: ${address}`, `Address: ${address}`), 32).forEach((line) =>
-      addText(line, { align: bodyAlign, size: 22, rtl: bodyRtl }),
-    );
-  }
-
-  const customerName = order?.user?.name || order?.customerName || "אורח";
-  const customerPhone = order?.user?.phone || order?.phone || "";
-  addText(label(`${customerName} :שם לקוח`, `${customerName} :Customer`), { align: bodyAlign, size: 22, rtl: bodyRtl });
-  if (customerPhone) addText(label(`${customerPhone} :טלפון`, `${customerPhone} :Phone`), { align: bodyAlign, size: 22, rtl: bodyRtl });
-
-  const statusLabel = USE_ENGLISH
-    ? order?.status === "PREPARING"
-      ? "Preparing"
-      : order?.status === "DELIVERING"
-        ? "Delivering"
-        : order?.status === "DONE"
-          ? "Done"
-          : "Pending"
-    : order?.status === "PREPARING"
-      ? "בהכנה"
-      : order?.status === "DELIVERING"
-        ? "במשלוח"
-        : order?.status === "DONE"
-          ? "הושלם"
-          : "ממתין";
-  addText(label(`סטטוס: ${statusLabel}`, `Status: ${statusLabel}`), { align: bodyAlign, size: 22, rtl: bodyRtl });
-
-  if (order?.createdAt)
-    addText(label(`נוצר: ${formatTime(order.createdAt)}`, `Created: ${formatTime(order.createdAt)}`), {
-      align: bodyAlign,
-      size: 22,
-      rtl: bodyRtl,
-    });
-
-  addDivider();
-
-  const customerNotes = [];
-  if (order?.comment) customerNotes.push(String(order.comment));
-  addBox(label("הערות לקוח", "Customer Notes"), customerNotes.length ? customerNotes : ["-"]);
-
-  addText(label("פרטי הזמנה", "Order Items"), { align: bodyAlign, size: 28, weight: "bold", rtl: bodyRtl });
-  y += 8;
-
-  (order?.items ?? []).forEach((it) => {
-    const qtyLabel = getQtyLabel(it);
-    const lineTotal = getLineTotal(it);
-    addItemRow(getItemName(it), `x ${qtyLabel}`, 24);
-
-    if (shouldShowBasePrice(it)) {
-      const basePrice = getItemBasePrice(it);
-      addRow(label("מחיר בסיס", "Base Price"), formatPrice(basePrice), 20);
-    }
-
-    if (Array.isArray(it.vegetables) && it.vegetables.length) {
-      wrapText(label(`ירקות: ${it.vegetables.join(", ")}`, `Vegetables: ${it.vegetables.join(", ")}`), 32).forEach((line) =>
-        addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
-      );
-    }
-
-    if (it?.doneness) {
-      wrapText(label(`מידת עשייה: ${it.doneness}`, `Doneness: ${it.doneness}`), 32).forEach((line) =>
-        addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
-      );
-    }
-
-    if (Array.isArray(it.additions) && it.additions.length) {
-      it.additions.forEach((a) => {
-        const addName = a?.addition || a?.name || "תוספת";
-        const addPrice = a?.price != null ? num(a.price) : a?.grams && a?.pricePer100g ? (num(a.grams) / 100) * num(a.pricePer100g) : 0;
-        addRow(`+ ${addName}`, formatPrice(addPrice), 20);
-      });
-      addRow(label("סה״כ תוספות", "Add-ons Total"), formatPrice(getAdditionsTotal(it)), 20);
-    }
-
-    if (it?.comment)
-      wrapText(label(`${it.comment} :הערה`, `${it.comment} :Note`), 32).forEach((line) =>
-        addText(line, { align: bodyAlign, size: 30, weight: "bold", rtl: bodyRtl }),
-      );
-
-    addRow(label("סה״כ פריט", "Item Total"), formatPrice(lineTotal), 22);
-
-    y += Math.round(28 * SIZE_SCALE);
-  });
-
-  addDivider();
-
-  if (order?.deliveryFee != null) addRow(label("דמי משלוח", "Delivery Fee"), formatPrice(order.deliveryFee), 22);
-  if (order?.discount != null) addRow(label("הנחה", "Discount"), formatPrice(order.discount), 22);
-  if (order?.subtotal != null) addRow(label("סכום ביניים", "Subtotal"), formatPrice(order.subtotal), 22);
-  if (totalLabel) {
-    y += 6;
-    addRow(label("סה״כ", "Total"), totalLabel, 28);
-  }
-
-  y += 12;
-  addDivider();
-  addText(new Date().toLocaleString("he-IL"), { align: "center", size: 20 });
-
-  const height = Math.max(600, y + 100);
-
-  const fontCss = getEmbeddedFontCss();
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+  const render = () => {
+    const height = Math.max(300, y + 100);
+    const fontCss = getEmbeddedFontCss();
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${RECEIPT_WIDTH}" height="${height}" viewBox="0 0 ${RECEIPT_WIDTH} ${height}">
   <defs>
     <style type="text/css">
@@ -494,60 +401,222 @@ const buildReceiptSvg = (order, dailyNumber) => {
   <rect width="100%" height="100%" fill="#fff"/>
   ${elements.join("\n  ")}
 </svg>`;
+    return { svg, height };
+  };
 
-  return { svg, height };
+  const addSpacer = (amount) => {
+    y += amount;
+  };
+
+  return { addText, addDivider, addBadge, addBox, addRow, addItemRow, addSpacer, render };
 };
 
-app.get("/ping", (req, res) => res.json({ ok: true }));
+const buildReceiptSvg = (order, dailyNumber) => {
+  const centerX = RECEIPT_WIDTH / 2;
+  const rightX = RECEIPT_WIDTH - MARGIN;
+  const leftX = MARGIN + LEFT_TEXT_OFFSET;
+  const canvasGeometry = { centerX, rightX, leftX };
+  // Every line in this section (delivery type, customer info, item vegetables/sauces/
+  // doneness/comment) is Hebrew - "right" anchors it at the right margin, matching how
+  // Hebrew is actually read, instead of the left-anchored default meant for LTR content.
+  const bodyAlign = "right";
+  const bodyRtl = false;
+
+  // --- Part 1: header through customer notes - its own print job, cut separately from the
+  // items below so it can be handed to the customer / posted at pickup on its own.
+  // Starts below the top edge with room for the title's ascenders (its font-size is ~86px
+  // at the default SIZE_SCALE, and text y is the baseline, not the top) - too small a value
+  // here clips the top of "HUNGRY".
+  const c1 = createCanvas(95, canvasGeometry);
+  c1.addText("HUNGRY", { align: "center", size: 48, weight: "bold" });
+  c1.addText("הזמנה חדשה", { align: "center", size: 22 });
+  c1.addSpacer(14);
+
+  c1.addBadge(String(dailyNumber), 40);
+
+  const paymentMethod = translatePaymentMethod(order?.paymentDetails?.method);
+  if (paymentMethod) c1.addBadge(label(`תשלום ב${paymentMethod}`, `Payment: ${paymentMethod}`), 30, bodyRtl, 24);
+
+  // Total price is shown once, at the bottom of the receipt (see the totals section further
+  // down) - not repeated up here too.
+  const totalLabel = formatPrice(order?.totalPrice ?? order?.total ?? "");
+
+  c1.addDivider();
+
+  const deliveryType = translateDeliveryOption(order?.deliveryOption);
+  if (deliveryType) c1.addText(deliveryType, { align: bodyAlign, size: 35, weight: "bold", rtl: bodyRtl });
+
+  const address = order?.address?.full || order?.address?.street || order?.deliveryAddress || order?.shippingAddress?.address || "";
+  if (address) {
+    wrapText(label(`כתובת: ${address}`, `Address: ${address}`), 32).forEach((line) =>
+      c1.addText(line, { align: bodyAlign, size: 22, rtl: bodyRtl }),
+    );
+  }
+
+  // Label + value as two separately-anchored cells (matching every other row on the
+  // receipt - base price, item total, etc.) instead of one bidi-ambiguous concatenated
+  // string, which is what made the label and value look flipped/out of order.
+  const customerName = order?.user?.name || order?.customerName || "אורח";
+  const customerPhone = order?.user?.phone || order?.phone || "";
+  c1.addRow(label("שם לקוח", "Customer"), customerName, 22);
+  if (customerPhone) c1.addRow(label("טלפון", "Phone"), customerPhone, 22);
+
+  // Order status and "created at" are intentionally not printed on the kitchen ticket -
+  // status is a live dashboard concept that's stale the moment it's printed, and the
+  // receipt already has a print timestamp at the very bottom.
+
+  c1.addDivider();
+
+  const customerNotes = [];
+  if (order?.comment) customerNotes.push(String(order.comment));
+  c1.addBox(label("הערות לקוח", "Customer Notes"), customerNotes.length ? customerNotes : ["-"]);
+
+  const part1 = c1.render();
+
+  // --- Part 2: order items through the footer timestamp - its own print job/cut, so it
+  // reads as the kitchen's ticket independent of the customer-facing part above.
+  const c2 = createCanvas(60, canvasGeometry);
+
+  c2.addText(label("פרטי הזמנה", "Order Items"), { align: bodyAlign, size: 28, weight: "bold", rtl: bodyRtl });
+  c2.addSpacer(8);
+
+  (order?.items ?? []).forEach((it) => {
+    const qtyLabel = getQtyLabel(it);
+    const lineTotal = getLineTotal(it);
+    c2.addItemRow(getItemName(it), `x ${qtyLabel}`, 24);
+
+    if (shouldShowBasePrice(it)) {
+      const basePrice = getItemBasePrice(it);
+      c2.addRow(label("מחיר בסיס", "Base Price"), formatPrice(basePrice), 20);
+    }
+
+    if (Array.isArray(it.vegetables) && it.vegetables.length) {
+      wrapText(label(`ירקות: ${it.vegetables.join(", ")}`, `Vegetables: ${it.vegetables.join(", ")}`), 32).forEach((line) =>
+        c2.addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+      );
+    }
+
+    if (Array.isArray(it.sauces) && it.sauces.length) {
+      wrapText(label(`רטבים: ${it.sauces.join(", ")}`, `Sauces: ${it.sauces.join(", ")}`), 32).forEach((line) =>
+        c2.addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+      );
+    }
+
+    if (it?.doneness) {
+      wrapText(label(`מידת עשייה: ${it.doneness}`, `Doneness: ${it.doneness}`), 32).forEach((line) =>
+        c2.addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+      );
+    }
+
+    // Each addition on its own line (plain wrapped text, not the addRow name+price split -
+    // that split is what caused a long addition name to wrap onto its own 2 lines and then
+    // print its price on a 3rd line). Price is only shown for additions that actually cost
+    // something - a free selection just needs its name.
+    if (Array.isArray(it.additions) && it.additions.length) {
+      it.additions.forEach((a) => {
+        // Some menu additions already have their price baked into the name itself (e.g.
+        // "אילי חריף (+₪2)") - strip any trailing "(...)" that contains a digit before
+        // appending our own formatted price, or paid additions would show the price twice.
+        const rawAddName = a?.addition || a?.name || "תוספת";
+        const addName = rawAddName.replace(/\s*\([^)]*\d[^)]*\)\s*$/, "").trim();
+        const addPrice = a?.price != null ? num(a.price) : a?.grams && a?.pricePer100g ? (num(a.grams) / 100) * num(a.pricePer100g) : 0;
+        const line = addPrice > 0 ? `+ ${addName} (${formatPrice(addPrice)})` : `+ ${addName}`;
+        wrapText(line, 32).forEach((l) => c2.addText(l, { align: bodyAlign, size: 20, rtl: bodyRtl }));
+      });
+    }
+
+    if (it?.comment)
+      wrapText(label(`${it.comment} :הערה`, `${it.comment} :Note`), 32).forEach((line) =>
+        c2.addText(line, { align: bodyAlign, size: 30, weight: "bold", rtl: bodyRtl }),
+      );
+
+    c2.addRow(label("סה״כ פריט", "Item Total"), formatPrice(lineTotal), 22);
+
+    // Smaller gap between items than a full divider would need - just enough to separate
+    // one item from the next without the large blank stretch this used to leave.
+    c2.addSpacer(Math.round(10 * SIZE_SCALE));
+  });
+
+  c2.addDivider();
+
+  if (order?.deliveryFee != null) c2.addRow(label("דמי משלוח", "Delivery Fee"), formatPrice(order.deliveryFee), 22);
+  if (order?.discount != null) c2.addRow(label("הנחה", "Discount"), formatPrice(order.discount), 22);
+  if (order?.subtotal != null) c2.addRow(label("סכום ביניים", "Subtotal"), formatPrice(order.subtotal), 22);
+  if (totalLabel) {
+    c2.addSpacer(6);
+    c2.addRow(label("סה״כ", "Total"), totalLabel, 28);
+  }
+
+  c2.addSpacer(12);
+  c2.addDivider();
+  c2.addText(new Date().toLocaleString("he-IL"), { align: "center", size: 20 });
+
+  const part2 = c2.render();
+  return { part1, part2 };
+};
+
+app.get("/ping", (req, res) => res.json({ ok: true, mode: PRINTER_MODE }));
 
 app.post("/print", (req, res) => {
   const order = req.body?.order;
 
-  const device = new USB(0x1504, 0x011c);
+  let device;
+  try {
+    device = createDevice();
+  } catch (err) {
+    console.error("Printer config error:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
 
   device.open(async (err) => {
     if (err) {
-      console.error("USB open error:", err);
+      console.error(`${PRINTER_MODE} printer open error:`, err);
       return res.status(500).json({ success: false, error: String(err) });
     }
 
     try {
       const printer = new Printer(device, { encoding: "CP862" });
       const dailyNumber = nextDailyOrderNumber();
-      const { svg } = buildReceiptSvg(order, dailyNumber);
+      const { part1, part2 } = buildReceiptSvg(order, dailyNumber);
 
-      // Save SVG for debugging
-      try {
-        fs.writeFileSync(path.join(__dirname, "last-receipt.svg"), svg);
-        console.log("Saved SVG to last-receipt.svg for inspection");
-      } catch (e) {
-        console.log("Could not save SVG:", e.message);
-      }
+      // Renders one part to PNG (saving both stages for debugging, like the original
+      // single-part version did) and returns a loaded escpos Image ready to raster.
+      const preparePart = async (part, name) => {
+        try {
+          fs.writeFileSync(path.join(__dirname, `last-receipt-${name}.svg`), part.svg);
+        } catch (e) {
+          console.log(`Could not save ${name} SVG:`, e.message);
+        }
 
-      // Convert SVG to PNG with optimal settings
-      const pngBuffer = await sharp(Buffer.from(svg))
-        .resize({ width: PRINTER_DOTS, fit: "contain", background: "#ffffff" })
-        .grayscale()
-        .threshold(160)
-        .png({
-          compressionLevel: 0,
-          quality: 100,
-        })
-        .toBuffer();
+        const pngBuffer = await sharp(Buffer.from(part.svg))
+          .resize({ width: PRINTER_DOTS, fit: "contain", background: "#ffffff" })
+          .grayscale()
+          .threshold(160)
+          .png({
+            compressionLevel: 0,
+            quality: 100,
+          })
+          .toBuffer();
 
-      // Save PNG for debugging
-      try {
-        fs.writeFileSync(path.join(__dirname, "last-receipt.png"), pngBuffer);
-        console.log("Saved PNG to last-receipt.png for inspection");
-      } catch (e) {
-        console.log("Could not save PNG:", e.message);
-      }
+        try {
+          fs.writeFileSync(path.join(__dirname, `last-receipt-${name}.png`), pngBuffer);
+        } catch (e) {
+          console.log(`Could not save ${name} PNG:`, e.message);
+        }
 
-      const image = await Image.load(pngBuffer, "image/png");
+        return Image.load(pngBuffer, "image/png");
+      };
 
-      // Raster mode is more reliable on some Epson models
-      printer.raster(image);
+      // Printed and cut as two separate jobs - part 1 (header/customer info) can be handed
+      // to the customer or posted at pickup, part 2 (order items) goes to the kitchen.
+      const image1 = await preparePart(part1, "part1");
+      printer.raster(image1);
+      printer.feed(3).cut();
+
+      const image2 = await preparePart(part2, "part2");
+      printer.raster(image2);
       printer.feed(5).cut();
+
       await printer.flush();
       await printer.close();
 
@@ -559,4 +628,7 @@ app.post("/print", (req, res) => {
   });
 });
 
-app.listen(9100, () => console.log("Printer service running on http://localhost:9100"));
+app.listen(SERVICE_PORT, () => {
+  console.log(`Printer service running on http://localhost:${SERVICE_PORT}`);
+  console.log(`  mode: ${PRINTER_MODE}${PRINTER_MODE === "network" ? ` (${NETWORK_HOST}:${NETWORK_PORT})` : ` (USB ${USB_VENDOR_ID.toString(16)}:${USB_PRODUCT_ID.toString(16)})`}`);
+});

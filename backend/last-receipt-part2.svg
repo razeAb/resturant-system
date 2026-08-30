@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="576" height="1194" viewBox="0 0 576 1194">
+  <defs>
+    <style type="text/css">
+      
+      text {
+        font-family: DavidEmbedded, David, Arial, sans-serif;
+      }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#fff"/>
+  <text x="546" y="60" font-size="50" font-weight="bold" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >פרטי הזמנה</text>
+  <text x="110" y="141" font-size="43" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">x 1</text>
+  <text x="546" y="141" font-size="43" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">כריך בשר</text>
+  <text x="546" y="208" font-size="36" font-weight="normal" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >ירקות: סלט קרוב, צימצורי</text>
+  <text x="546" y="260" font-size="36" font-weight="normal" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >רטבים: איולי סומק</text>
+  <text x="546" y="312" font-size="36" font-weight="normal" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >+ גבינת אמנטל (₪ 7.00)</text>
+  <text x="546" y="364" font-size="36" font-weight="normal" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif" >+ בצל חרוך</text>
+  <text x="546" y="416" font-size="36" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ תוספות</text>
+  <text x="110" y="416" font-size="36" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪ 7.00</text>
+  <text x="546" y="472" font-size="40" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ פריט</text>
+  <text x="110" y="472" font-size="40" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪ 54.00</text>
+  <text x="110" y="552" font-size="43" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">x 2</text>
+  <text x="546" y="552" font-size="43" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">חצי גבטה פרוסות</text>
+  <text x="546" y="619" font-size="40" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ פריט</text>
+  <text x="110" y="619" font-size="40" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪ 12.00</text>
+  <text x="110" y="699" font-size="43" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">x 1</text>
+  <text x="546" y="699" font-size="43" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">קולה גדול</text>
+  <text x="546" y="766" font-size="40" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ פריט</text>
+  <text x="110" y="766" font-size="40" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪ 15.00</text>
+  <line x1="30" x2="546" y1="846" y2="846" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
+  <text x="546" y="902" font-size="50" text-anchor="end" font-family="DavidEmbedded, David, Arial, sans-serif">סה״כ</text>
+  <text x="110" y="902" font-size="50" text-anchor="start" font-family="DavidEmbedded, David, Arial, sans-serif">₪ 62.50</text>
+  <line x1="30" x2="546" y1="992" y2="992" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />
+  <text x="288" y="1042" font-size="36" font-weight="normal" text-anchor="middle" font-family="DavidEmbedded, David, Arial, sans-serif" >30.8.2026, 23:34:17</text>
+</svg>
