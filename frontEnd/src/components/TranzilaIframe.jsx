@@ -7,14 +7,6 @@ const TranzilaIframe = ({ amount, orderId }) => {
   const terminal = "hungryvisatok";
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`;
-    script.async = true;
-    document.body.appendChild(script);
-    console.log("✅ Tranzila Apple Pay script loaded");
-  }, []);
-
-  useEffect(() => {
     if (orderId && formRef.current) {
       console.log("📤 Submitting Tranzila payment form...");
       formRef.current.submit();
