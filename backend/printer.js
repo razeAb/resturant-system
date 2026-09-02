@@ -3,12 +3,11 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
-// This runs as its own standalone process at the restaurant's physical location (next to
-// its printer), not as part of the main backend/server.js deploy - so it needs its own
-// local config file rather than sharing backend/.env. Copy printer.env.example ->
-// printer.env on that machine and fill in the values, e.g. to switch the physical printer
-// from USB to a WiFi/network one. With no printer.env at all, defaults below reproduce the
-// original hardcoded USB setup unchanged, so existing installs keep working either way.
+// This runs as its own standalone process at each restaurant's physical location (next
+// to its printer), not as part of the main backend/server.js deploy - so it needs its own
+// local config file rather than sharing backend/.env (which holds unrelated DB/JWT/payment
+// secrets that a kitchen PC has no business having). Copy printer.env.example -> printer.env
+// on that machine and fill in the values for that specific restaurant/printer.
 require("dotenv").config({ path: path.join(__dirname, "printer.env") });
 
 const { Printer, Image } = require("@node-escpos/core");
@@ -17,19 +16,35 @@ const USB = UsbAdapterPkg.default || UsbAdapterPkg;
 const NetworkAdapterPkg = require("@node-escpos/network-adapter");
 const Network = NetworkAdapterPkg.default || NetworkAdapterPkg;
 const sharp = require("sharp");
+const QRCode = require("qrcode");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Per-location config - defaults reproduce the original hardcoded USB setup unchanged, so
-// existing installs keep working with no printer.env at all.
+const RECEIPT_WIDTH = 576; // 80mm printers (SVG canvas)
+const PRINTER_DOTS = 512; // try 512 first; if clipped, try 576
+const USE_ENGLISH = false;
+const MARGIN = 30;
+const LEFT_TEXT_OFFSET = 80; // push LTR text further right
+const SIZE_SCALE = 1.8; // increase text sizes globally
+const FONT_PATH = process.env.PRINTER_FONT_PATH || "C:\\Windows\\Fonts\\DAVID.TTF";
+const FONT_FAMILY = "DavidEmbedded, David, Arial, sans-serif";
+
+// ✅ Per-location config - defaults reproduce Hungry's original hardcoded USB setup
+// unchanged, so existing installs keep working with no printer.env at all.
 const SERVICE_PORT = Number(process.env.PRINTER_SERVICE_PORT) || 9100;
 const PRINTER_MODE = (process.env.PRINTER_MODE || "usb").toLowerCase(); // "usb" | "network"
 const USB_VENDOR_ID = Number(process.env.PRINTER_USB_VENDOR_ID) || 0x1504;
 const USB_PRODUCT_ID = Number(process.env.PRINTER_USB_PRODUCT_ID) || 0x011c;
 const NETWORK_HOST = process.env.PRINTER_NETWORK_HOST || ""; // e.g. the WiFi printer's LAN IP
 const NETWORK_PORT = Number(process.env.PRINTER_NETWORK_PORT) || 9100;
+// Which restaurant this specific agent/printer belongs to. Optional - when unset, any
+// order is accepted (back-compat with the original single-restaurant Hungry setup).
+// When set, guards against a misconfigured printerUrl on another restaurant's dashboard
+// printing to the wrong location.
+const RESTAURANT_ID = process.env.RESTAURANT_ID || "";
+const DEFAULT_RESTAURANT_NAME = process.env.RESTAURANT_NAME || "HUNGRY";
 
 // Returns a fresh escpos adapter for this print job (usb-adapter devices can't be reused
 // across opens once closed, matching the original per-request `new USB(...)` pattern).
@@ -42,15 +57,6 @@ function createDevice() {
   }
   return new USB(USB_VENDOR_ID, USB_PRODUCT_ID);
 }
-
-const RECEIPT_WIDTH = 576; // 80mm printers (SVG canvas)
-const PRINTER_DOTS = 512; // try 512 first; if clipped, try 576
-const USE_ENGLISH = false;
-const MARGIN = 30;
-const LEFT_TEXT_OFFSET = 80; // push LTR text further right
-const SIZE_SCALE = 1.8; // increase text sizes globally
-const FONT_PATH = "C:\\Windows\\Fonts\\DAVID.TTF";
-const FONT_FAMILY = "DavidEmbedded, David, Arial, sans-serif";
 
 const COUNTER_FILE = path.join(__dirname, "daily-counter.json");
 let cachedFontCss = "";
@@ -157,7 +163,7 @@ const translatePaymentMethod = (method) => {
             : method || "";
 };
 
-const getItemName = (it) => it?.name || it?.title || it?.name_he || it?.product?.name || it?.product?.name_he || "פריט";
+const getItemName = (it) => it?.name_he || it?.title || it?.name || it?.product?.name_he || it?.product?.name || "פריט";
 
 const getQtyLabel = (it) => {
   if (it?.isWeighted) {
@@ -331,33 +337,49 @@ const createCanvas = (startY, { centerX, rightX, leftX }) => {
     y = boxY + boxH + Math.round(24 * SIZE_SCALE);
   };
 
+  // Only share one row when both sides can provably fit side by side (same width
+  // estimate the title-fit logic above uses) - otherwise stack each side as its own
+  // full-width wrapped block instead of squeezing two fixed 18-char budgets onto one row,
+  // which is what let a long leftText (e.g. a long customer name) overlap the label.
   const addRow = (rightText, leftText, size = 22) => {
     const scaledSize = Math.round(size * SIZE_SCALE);
-    const maxChars = 18;
-    const lines = wrapText(rightText, maxChars);
-    lines.forEach((line, idx) => {
-      const lineRightX = idx === 0 ? rightX : rightX - 18;
-      elements.push(
-        `<text x="${lineRightX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(
-          line,
-        )}</text>`,
-      );
-      if (idx === 0 && lines.length === 1) {
+    const availWidth = rightX - leftX;
+    const estWidth = (s) => String(s ?? "").length * 0.6 * scaledSize;
+    const rightStr = String(rightText ?? "");
+    const leftStr = String(leftText ?? "");
+
+    if (estWidth(rightStr) + estWidth(leftStr) <= availWidth) {
+      if (rightStr) {
         elements.push(
-          `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
-            leftText,
-          )}</text>`,
+          `<text x="${rightX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(rightStr)}</text>`,
+        );
+      }
+      if (leftStr) {
+        elements.push(
+          `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(leftStr)}</text>`,
         );
       }
       y += Math.round(scaledSize * 1.55);
-    });
-    if (lines.length > 1) {
-      elements.push(
-        `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(
-          leftText,
-        )}</text>`,
-      );
-      y += Math.round(scaledSize * 1.55);
+      return;
+    }
+
+    const maxCharsFull = Math.max(4, Math.floor(availWidth / (0.6 * scaledSize)));
+    if (rightStr) {
+      wrapText(rightStr, maxCharsFull).forEach((line, idx) => {
+        const lineRightX = idx === 0 ? rightX : rightX - 18;
+        elements.push(
+          `<text x="${lineRightX}" y="${y}" font-size="${scaledSize}" text-anchor="end" font-family="${FONT_FAMILY}">${escapeXml(line)}</text>`,
+        );
+        y += Math.round(scaledSize * 1.55);
+      });
+    }
+    if (leftStr) {
+      wrapText(leftStr, maxCharsFull).forEach((line) => {
+        elements.push(
+          `<text x="${leftX}" y="${y}" font-size="${scaledSize}" text-anchor="start" font-family="${FONT_FAMILY}">${escapeXml(line)}</text>`,
+        );
+        y += Math.round(scaledSize * 1.55);
+      });
     }
   };
 
@@ -385,6 +407,20 @@ const createCanvas = (startY, { centerX, rightX, leftX }) => {
     });
   };
 
+  const addSpacer = (amount) => {
+    y += amount;
+  };
+
+  // qrSvg is a pre-rendered standalone `<svg>...</svg>` string (from QRCode.toString,
+  // type "svg") at `size`x`size` px - nested SVGs are valid and render fine through
+  // sharp/librsvg, so it's embedded as-is inside a positioning <g>, centered horizontally.
+  const addQr = (qrSvg, size) => {
+    if (!qrSvg) return;
+    const x = centerX - size / 2;
+    elements.push(`<g transform="translate(${x},${y})">${qrSvg}</g>`);
+    y += size + Math.round(16 * SIZE_SCALE);
+  };
+
   const render = () => {
     const height = Math.max(300, y + 100);
     const fontCss = getEmbeddedFontCss();
@@ -404,14 +440,10 @@ const createCanvas = (startY, { centerX, rightX, leftX }) => {
     return { svg, height };
   };
 
-  const addSpacer = (amount) => {
-    y += amount;
-  };
-
-  return { addText, addDivider, addBadge, addBox, addRow, addItemRow, addSpacer, render };
+  return { addText, addDivider, addBadge, addBox, addRow, addItemRow, addSpacer, addQr, render };
 };
 
-const buildReceiptSvg = (order, dailyNumber) => {
+const buildReceiptSvg = async (order, dailyNumber, restaurantName) => {
   const centerX = RECEIPT_WIDTH / 2;
   const rightX = RECEIPT_WIDTH - MARGIN;
   const leftX = MARGIN + LEFT_TEXT_OFFSET;
@@ -422,17 +454,56 @@ const buildReceiptSvg = (order, dailyNumber) => {
   const bodyAlign = "right";
   const bodyRtl = false;
 
+  // Delivery orders get a Waze deep-link QR code so the driver can scan straight into
+  // navigation instead of retyping the address (see orderRoutes.js/deliveryQuote.js -
+  // order.deliveryAddress.{lat,lng} is the server-resolved, validated point, not
+  // whatever text the customer typed). Generated once up front since QR rendering is
+  // async but the rest of this function pushes synchronously to each canvas's elements.
+  let wazeQrSvg = "";
+  const deliveryLat = order?.deliveryAddress?.lat;
+  const deliveryLng = order?.deliveryAddress?.lng;
+  if (order?.deliveryOption === "Delivery" && typeof deliveryLat === "number" && typeof deliveryLng === "number") {
+    try {
+      const wazeUrl = `https://waze.com/ul?ll=${deliveryLat},${deliveryLng}&navigate=yes`;
+      wazeQrSvg = await QRCode.toString(wazeUrl, { type: "svg", margin: 1, width: 220 });
+    } catch (err) {
+      console.warn("Could not generate Waze QR code:", err.message);
+    }
+  }
+
   // --- Part 1: header through customer notes - its own print job, cut separately from the
   // items below so it can be handed to the customer / posted at pickup on its own.
   // Starts below the top edge with room for the title's ascenders (its font-size is ~86px
   // at the default SIZE_SCALE, and text y is the baseline, not the top) - too small a value
-  // here clips the top of "HUNGRY".
+  // here clips the top of the restaurant name.
   const c1 = createCanvas(95, canvasGeometry);
-  c1.addText("HUNGRY", { align: "center", size: 48, weight: "bold" });
+  const titleText = restaurantName || DEFAULT_RESTAURANT_NAME;
+  const titleBaseSize = 48;
+  const titleMinSize = 20; // below this, text reads as unreadably small on an 80mm receipt
+  const titleMaxWidth = RECEIPT_WIDTH - MARGIN * 2;
+  // Bold sans-serif glyphs average ~0.6em wide - shrink (never enlarge) the title so a
+  // long restaurant name fits the receipt's fixed width instead of overflowing off both
+  // edges the way "Hungry Smoked Meat" did at the fixed size "HUNGRY" was tuned for.
+  const titleFit = titleMaxWidth / (titleText.length * 0.6 * SIZE_SCALE);
+  const titleSize = Math.max(titleMinSize, Math.min(titleBaseSize, Math.floor(titleFit)));
+  if (titleFit >= titleMinSize) {
+    c1.addText(titleText, { align: "center", size: titleSize, weight: "bold" });
+  } else {
+    // Even at the minimum readable size the name doesn't fit one line (e.g. a formal
+    // "... בע״מ" business name) - wrap across lines at that size instead of clipping it
+    // off both edges, which is what a flat single-line render used to do here.
+    const maxCharsAtMinSize = Math.max(4, Math.floor(titleMaxWidth / (titleMinSize * 0.6 * SIZE_SCALE)));
+    wrapText(titleText, maxCharsAtMinSize).forEach((line) => c1.addText(line, { align: "center", size: titleMinSize, weight: "bold" }));
+  }
   c1.addText("הזמנה חדשה", { align: "center", size: 22 });
   c1.addSpacer(14);
 
   c1.addBadge(String(dailyNumber), 40);
+
+  // Table QR orders (see frontEnd/src/components/cart/CartPage.jsx) carry a table number -
+  // printed as its own badge, as prominent as the daily order number, since it's the one
+  // piece of info staff need to route a dine-in order back to the right table.
+  if (order?.tableNumber) c1.addBadge(label(`שולחן ${order.tableNumber}`, `Table ${order.tableNumber}`), 34, bodyRtl, 20);
 
   const paymentMethod = translatePaymentMethod(order?.paymentDetails?.method);
   if (paymentMethod) c1.addBadge(label(`תשלום ב${paymentMethod}`, `Payment: ${paymentMethod}`), 30, bodyRtl, 24);
@@ -446,11 +517,22 @@ const buildReceiptSvg = (order, dailyNumber) => {
   const deliveryType = translateDeliveryOption(order?.deliveryOption);
   if (deliveryType) c1.addText(deliveryType, { align: bodyAlign, size: 35, weight: "bold", rtl: bodyRtl });
 
-  const address = order?.address?.full || order?.address?.street || order?.deliveryAddress || order?.shippingAddress?.address || "";
+  // order.deliveryAddress is the {text,lat,lng,notes} object resolveDeliveryFields()
+  // writes at checkout (see backend/utils/deliveryQuote.js), not a plain string - reading
+  // it directly here used to stringify the whole object into the printed line
+  // ("כתובת: [object Object]") on every single delivery order.
+  const address =
+    order?.deliveryAddress?.text || order?.address?.full || order?.address?.street || order?.shippingAddress?.address || "";
   if (address) {
     wrapText(label(`כתובת: ${address}`, `Address: ${address}`), 32).forEach((line) =>
       c1.addText(line, { align: bodyAlign, size: 22, rtl: bodyRtl }),
     );
+  }
+
+  if (wazeQrSvg) {
+    c1.addSpacer(8);
+    c1.addText(label("נווט לכתובת עם Waze", "Navigate with Waze"), { align: "center", size: 20, weight: "bold" });
+    c1.addQr(wazeQrSvg, 220);
   }
 
   // Label + value as two separately-anchored cells (matching every other row on the
@@ -478,6 +560,11 @@ const buildReceiptSvg = (order, dailyNumber) => {
   const c2 = createCanvas(60, canvasGeometry);
 
   c2.addText(label("פרטי הזמנה", "Order Items"), { align: bodyAlign, size: 28, weight: "bold", rtl: bodyRtl });
+  // Repeated here (not just on part1) because this is the half that physically goes to
+  // the kitchen - staff running food need the table number without hunting for part1.
+  if (order?.tableNumber) {
+    c2.addText(label(`שולחן ${order.tableNumber}`, `Table ${order.tableNumber}`), { align: bodyAlign, size: 26, weight: "bold", rtl: bodyRtl });
+  }
   c2.addSpacer(8);
 
   (order?.items ?? []).forEach((it) => {
@@ -506,6 +593,29 @@ const buildReceiptSvg = (order, dailyNumber) => {
       wrapText(label(`מידת עשייה: ${it.doneness}`, `Doneness: ${it.doneness}`), 32).forEach((line) =>
         c2.addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
       );
+    }
+
+    // Pizza Builder selections (only present for pizza-cuisine restaurants - see
+    // backend/models/Order.js's items[].pizza) - shown as its own clearly-labeled block so
+    // the kitchen doesn't have to hunt for size/crust/sauce/toppings among generic additions.
+    if (it?.pizza) {
+      const basics = [it.pizza.size?.label, it.pizza.crust?.label, it.pizza.sauce?.label, it.pizza.cheese?.label].filter(Boolean);
+      if (basics.length) {
+        wrapText(label(`פיצה: ${basics.join(", ")}`, `Pizza: ${basics.join(", ")}`), 32).forEach((line) =>
+          c2.addText(line, { align: bodyAlign, size: 22, weight: "bold", rtl: bodyRtl }),
+        );
+      }
+      if (Array.isArray(it.pizza.toppings) && it.pizza.toppings.length) {
+        it.pizza.toppings.forEach((t) => {
+          const marker = t.removed ? label("ללא", "No") : "+";
+          c2.addRow(`${marker} ${t.label}`, t.removed ? "" : formatPrice(t.price), 20);
+        });
+      }
+      if (it.pizza.halfAndHalf?.otherTitle) {
+        wrapText(label(`חצי-חצי עם: ${it.pizza.halfAndHalf.otherTitle}`, `Half-and-half with: ${it.pizza.halfAndHalf.otherTitle}`), 32).forEach(
+          (line) => c2.addText(line, { align: bodyAlign, size: 20, rtl: bodyRtl }),
+        );
+      }
     }
 
     // Each addition on its own line (plain wrapped text, not the addRow name+price split -
@@ -555,10 +665,20 @@ const buildReceiptSvg = (order, dailyNumber) => {
   return { part1, part2 };
 };
 
-app.get("/ping", (req, res) => res.json({ ok: true, mode: PRINTER_MODE }));
+app.get("/ping", (req, res) => res.json({ ok: true, mode: PRINTER_MODE, restaurantId: RESTAURANT_ID || null }));
 
 app.post("/print", (req, res) => {
   const order = req.body?.order;
+  const restaurantId = req.body?.restaurantId || order?.restaurantId || "";
+  const restaurantName = req.body?.restaurantName;
+
+  // Only enforced when this agent has been pinned to a restaurant (RESTAURANT_ID in
+  // printer.env) - see the constant's comment above. Prevents a stale/misconfigured
+  // printerUrl on another restaurant's dashboard from printing to this location.
+  if (RESTAURANT_ID && String(restaurantId) !== String(RESTAURANT_ID)) {
+    console.warn(`Rejected print job for restaurant "${restaurantId}" - this agent is pinned to "${RESTAURANT_ID}"`);
+    return res.status(403).json({ success: false, error: "This printer agent belongs to a different restaurant." });
+  }
 
   let device;
   try {
@@ -577,7 +697,7 @@ app.post("/print", (req, res) => {
     try {
       const printer = new Printer(device, { encoding: "CP862" });
       const dailyNumber = nextDailyOrderNumber();
-      const { part1, part2 } = buildReceiptSvg(order, dailyNumber);
+      const { part1, part2 } = await buildReceiptSvg(order, dailyNumber, restaurantName);
 
       // Renders one part to PNG (saving both stages for debugging, like the original
       // single-part version did) and returns a loaded escpos Image ready to raster.
@@ -631,4 +751,5 @@ app.post("/print", (req, res) => {
 app.listen(SERVICE_PORT, () => {
   console.log(`Printer service running on http://localhost:${SERVICE_PORT}`);
   console.log(`  mode: ${PRINTER_MODE}${PRINTER_MODE === "network" ? ` (${NETWORK_HOST}:${NETWORK_PORT})` : ` (USB ${USB_VENDOR_ID.toString(16)}:${USB_PRODUCT_ID.toString(16)})`}`);
+  console.log(`  restaurant: ${RESTAURANT_ID ? `pinned to ${RESTAURANT_ID}` : "accepting any (unpinned)"}`);
 });
