@@ -365,8 +365,6 @@ export default function ActiveOrdersPage() {
     };
   }, []);
 
-  const formatPhoneNumber = (phone) => (phone ? (phone.startsWith("0") ? `+972${phone.slice(1)}` : phone) : null);
-
   const updateOrderStatus = async (orderId, data) => {
     try {
       const res = await api.put(`/api/orders/${orderId}/status`, data);
@@ -407,28 +405,13 @@ export default function ActiveOrdersPage() {
   };
 
   const markAsDone = async (orderId) => {
-    const order = orders.find((o) => o._id === orderId);
-    const phone = order?.user?.phone || order?.phone;
     await updateOrderStatus(orderId, { status: ORDER_STATUS?.DONE });
     alert("ההזמנה מוכנה!");
-
-    if (phone && order.deliveryOption !== "EatIn") {
-      const lastSixDigits = orderId.slice(-6);
-      const message = `ההזמנה שלך (${lastSixDigits}) מוכנה!`;
-      window.open(`https://wa.me/${formatPhoneNumber(phone)}?text=${encodeURIComponent(message)}`, "_blank");
-    }
   };
 
   const markAsDelivering = async (orderId) => {
-    const order = orders.find((o) => o._id === orderId);
-    const phone = order?.user?.phone || order?.phone;
     await updateOrderStatus(orderId, { status: ORDER_STATUS?.DELIVERING });
     alert("המשלוח יצא לדרך!");
-    if (phone) {
-      const lastSixDigits = orderId.slice(-6);
-      const message = `ההזמנה שלך (${lastSixDigits}) בדרך אליך!`;
-      window.open(`https://wa.me/${formatPhoneNumber(phone)}?text=${encodeURIComponent(message)}`, "_blank");
-    }
   };
 
   // show all active orders
