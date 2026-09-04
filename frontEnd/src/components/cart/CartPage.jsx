@@ -93,7 +93,12 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
     deliveryOption === "Delivery" && deliveryAddress && restaurantConfig ? computeDeliveryFee(restaurantConfig, deliveryAddress) : null;
   const isDeliveryOutOfRange = !!deliveryPricing?.outOfRange;
   const isFeeUndetermined = !!(deliveryPricing?.zonePlaceId && !onlineZonePlaceIds.includes(deliveryPricing.zonePlaceId));
-  const deliveryFee = isFeeUndetermined ? 0 : deliveryPricing?.fee || 0;
+  // Delivery is still in the works - no drivers are online at all yet, so warn up front
+  // instead of waiting for the customer to enter an address before finding out.
+  const noDriversOnlineAnywhere = onlineZonePlaceIds.length === 0;
+  // Never charge a delivery fee while nobody is actually online to earn it - fall back to
+  // the phone-arranged flow instead, same as the per-zone "fee undetermined" case.
+  const deliveryFee = isFeeUndetermined || noDriversOnlineAnywhere ? 0 : deliveryPricing?.fee || 0;
 
   // Allow creating multiple orders without a page refresh.
   // Once the user starts building a new cart, clear the previous "submitted" lock.
@@ -934,8 +939,16 @@ const CartPage = ({ variant = "page", isOpen = true, onClose = () => {} }) => {
           <p style={{ fontSize: "14px", color: "#555", marginTop: "10px" }}>
             {t("cartPage.deliveryNote", "מחיר אינו כולל עלות משלוח ומחיר משלוח יכול להשתנות")}
           </p>
+          {noDriversOnlineAnywhere && (
+            <p style={{ fontSize: "14px", color: "#b45309", marginTop: "8px", fontWeight: "600" }}>
+              {t(
+                "cartPage.noDriversOnline",
+                "שירות המשלוחים עדיין בבנייה ואין כרגע שליחים זמינים. ניתן להמשיך בהזמנה וניצור איתך קשר טלפוני לתיאום המשלוח, או לבחור איסוף עצמי / אכילה במסעדה."
+              )}
+            </p>
+          )}
           <DeliveryAddressPicker value={deliveryAddress} onChange={setDeliveryAddress} />
-          {isFeeUndetermined && (
+          {isFeeUndetermined && !noDriversOnlineAnywhere && (
             <p style={{ fontSize: "14px", color: "#b45309", marginTop: "8px", fontWeight: "600" }}>
               {t(
                 "cartPage.feeUndetermined",
