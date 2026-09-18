@@ -573,6 +573,27 @@ router.get("/active", async (req, res) => {
   }
 });
 
+// ✅ Get orders stuck in pending_payment - a card charge can succeed at Tranzila while the
+// webhook that confirms it here never arrives (network blip, gateway misconfiguration, a
+// field Tranzila didn't echo back). /active deliberately excludes pending_payment orders
+// since their payment isn't confirmed, which means a paid-but-unconfirmed order is otherwise
+// invisible anywhere in the admin UI. This lets staff find and manually reconcile them instead
+// of silently losing a charged order.
+router.get("/pending-payment", async (req, res) => {
+  try {
+    const pendingOrders = await Order.find({ status: "pending_payment" })
+      .populate("user", "name phone")
+      .populate("items.product", "name name_en")
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.status(200).json(pendingOrders);
+  } catch (error) {
+    console.error("❌ Error fetching pending-payment orders:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ✅ Get Order History
 router.get("/history", protect, async (req, res) => {
   try {

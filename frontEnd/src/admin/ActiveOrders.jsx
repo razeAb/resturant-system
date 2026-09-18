@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLang } from "../context/LangContext";
 import api from "../api";
 import SideMenu from "../layouts/SideMenu";
+import PendingPaymentOrders from "./PendingPaymentOrders";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import notificationSound from "../assets/notificatinSound.mp3";
 import AddItemModal from "./modals/AddItemModal";
@@ -472,6 +473,8 @@ export default function ActiveOrdersPage() {
             </div>
           </div>
         </header>
+
+        <PendingPaymentOrders />
 
         {/* Table card */}
         <div className="px-4 md:px-6 mt-4">
