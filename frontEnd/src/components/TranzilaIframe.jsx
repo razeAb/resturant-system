@@ -47,14 +47,13 @@ const TranzilaIframe = ({ amount, orderId }) => {
         <input type="hidden" name="trBgColor" value="#ffffff" />
         <input type="hidden" name="trButtonColor" value="#1d4ed8" />
 
-        {/* Order tracking */}
+        {/* Order tracking - ud1/order_id let the webhook identify which order this is for.
+            No notify_url here on purpose: passing one overrides the notify URL configured on
+            the Tranzila terminal itself, which already carries the shared secret token our
+            webhook requires - a URL built here could never include that token, so every
+            charge would get silently 403'd by the webhook instead of confirming the order. */}
         <input type="hidden" name="order_id" value={orderId} />
         <input type="hidden" name="ud1" value={orderId} />
-        <input
-          type="hidden"
-          name="notify_url"
-          value={`https://resturant-system-3f33.onrender.com/api/tranzila-webhook?orderId=${orderId}`}
-        />
       </form>
 
       <div
