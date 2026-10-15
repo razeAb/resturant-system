@@ -37,6 +37,8 @@ import LanguageToggle from "./components/common/LanguageToggle";
 import RequireAdmin from "./components/common/RequireAdmin";
 import api from "./api";
 
+const NEW_SITE_URL = "https://waffle.co.il/r/hungrysmokedmeat";
+
 const AppContent = () => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
@@ -66,6 +68,25 @@ const AppContent = () => {
 
   return (
     <div>
+      {!isAdminRoute && (
+        <>
+          {/* Grays out the whole site; pointer-events-none keeps it clickable */}
+          <div
+            className="pointer-events-none fixed inset-0 z-[9998]"
+            style={{ backdropFilter: "grayscale(1)", WebkitBackdropFilter: "grayscale(1)" }}
+          />
+          <a
+            href={NEW_SITE_URL}
+            className="fixed inset-x-0 top-0 z-[9999] flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-700 px-4 py-3 text-center text-white shadow-lg"
+          >
+            <span className="text-lg font-bold">{t("home.movedTitle", "We have moved to a new site!")}</span>
+            <span className="rounded-full bg-white px-4 py-1 text-sm font-semibold text-red-700">
+              {t("home.movedCta", "Order on our new site")} →
+            </span>
+          </a>
+        </>
+      )}
+
       {isClosed && !isLoginRoute && !isAdminRoute && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 text-center ${

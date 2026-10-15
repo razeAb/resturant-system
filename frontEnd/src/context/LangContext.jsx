@@ -11,6 +11,8 @@ const translations = {
       cta: "תפריט / איסוף עצמי",
       closedTitle: "סליחה, אנחנו סגורים היום.",
       closedSubtitle: "ימי הסגירה שלנו הם ראשון ורביעי.",
+      movedTitle: "עברנו לאתר חדש!",
+      movedCta: "להזמנות באתר החדש",
     },
     about: {
       heading: "למה לאכול אצלנו?",
@@ -284,6 +286,8 @@ const translations = {
       cta: "Menu / Pickup",
       closedTitle: "We’re sorry, we are closed today.",
       closedSubtitle: "Our closing days are Sundays and Wednesdays.",
+      movedTitle: "We have moved to a new site!",
+      movedCta: "Order on our new site",
     },
     about: {
       heading: "Why eat with us?",
